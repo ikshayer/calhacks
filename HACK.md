@@ -19,7 +19,7 @@
 | Name | Strengths | Owns |
 |------|-----------|------|
 | Jamshed | full-stack, hackathon experience | sim engine, JEV/Haiku scoring, SpacetimeDB module, video-to-text pipeline |
-| Teammate (name TBD) | full-stack, hackathon experience | 3D cascade viz + UI, Apify Instagram scrape, Fetch.ai agents (Python) |
+| TM | full-stack, hackathon experience | 3D cascade viz + UI, Apify Instagram scrape, Fetch.ai agents (Python) |
 
 ## Problem
 - One sentence: Jim, who runs The Giving Garden nonprofit farm, struggles to recruit volunteers because he posts blind and can't test his messaging before it goes out.
@@ -95,7 +95,6 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Roles: TBD
 
 ## Open questions
-- Teammate's name.
 - Which transcription tool (deferred; decide after the core journey works).
 - Resolved: JEV and Anthropic API access confirmed; track requirements confirmed (see Event).
 
