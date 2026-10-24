@@ -1,18 +1,19 @@
-"""Create a separate Blender comparison scene from the four browser exports.
+"""Create a separate Blender comparison scene from the resident browser exports.
 
 Run through Blender's Python console/MCP with this file's __file__ defined.
 The original editor scene is retained; a copy is saved to assets/residents.
 """
 from pathlib import Path
+import json
 import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[1]
 if bpy.context.object and bpy.context.object.mode != 'OBJECT':
     bpy.ops.object.mode_set(mode='OBJECT')
-scene = bpy.data.scenes.new('Resident lineup')
+scene = bpy.data.scenes.new('Resident walking lineup')
 bpy.context.window.scene = scene
-scene.frame_start, scene.frame_end = 0, 85
+scene.frame_start, scene.frame_end = 0, 24
 scene.render.fps = 24
 scene.world = bpy.data.worlds.new('Resident studio')
 scene.world.color = (.12, .15, .18)
@@ -28,7 +29,11 @@ def material(name, color):
     return mat
 
 label_material = material('Resident labels', (.025, .04, .05))
-for index, (resident_id, name) in enumerate([('resident','Original'), ('nia','Nia'), ('theo','Theo'), ('rowan','Rowan')]):
+catalog = json.loads((ROOT / 'frontend/src/dev/residentCatalog.json').read_text())
+columns = 5
+for index, spec in enumerate(catalog):
+    resident_id, name = spec['id'], spec['name']
+    x, y = (index % columns - 2) * 2.1, (index // columns - .5) * 4.8
     before = set(scene.objects)
     bpy.ops.import_scene.gltf(filepath=str(ROOT / 'frontend/public/models/mii-test' / (resident_id + '.glb')))
     imported = set(scene.objects) - before
@@ -61,12 +66,18 @@ for index, (resident_id, name) in enumerate([('resident','Original'), ('nia','Ni
             obj.parent = group
             obj.matrix_world = world
     group.scale = (scale,) * 3
-    group.location = ((index - 1.5)*2.1 - center.x*scale, -center.y*scale, -low.z*scale)
+    group.location = (x - center.x*scale, y - center.y*scale, -low.z*scale)
+    for obj in imported:
+        if obj.type == 'ARMATURE' and obj.animation_data:
+            walk = next(strip for track in obj.animation_data.nla_tracks
+                        for strip in track.strips if strip.action.name.startswith('test_walk'))
+            obj.animation_data.action = walk.action
+            obj.animation_data.action_slot = walk.action_slot
     curve = bpy.data.curves.new(name+' name','FONT')
     curve.body, curve.size, curve.align_x = name, .18, 'CENTER'
     text = bpy.data.objects.new(name+' name',curve)
     scene.collection.objects.link(text)
-    text.location = ((index - 1.5)*2.1, -.7, .08)
+    text.location = (x, y - .7, .08)
     text.rotation_euler = (1.5707963268, 0, 0)
     text.data.materials.append(label_material)
 
@@ -74,10 +85,10 @@ bpy.ops.mesh.primitive_plane_add(size=200, location=(0,0,-.025))
 bpy.context.object.name = 'Studio floor'
 bpy.context.object.data.materials.append(material('Studio sand', (.44,.51,.52)))
 camera = bpy.data.cameras.new('Resident lineup camera')
-camera.type, camera.ortho_scale = 'ORTHO', 9.8
+camera.type, camera.ortho_scale = 'ORTHO', 13.8
 obj = bpy.data.objects.new('Resident lineup camera',camera)
 scene.collection.objects.link(obj)
-obj.location = (0,-12,3.5)
+obj.location = (0,-13,10)
 obj.rotation_euler = (Vector((0,0,1.2))-obj.location).to_track_quat('-Z','Y').to_euler()
 scene.camera = obj
 scene.render.resolution_x, scene.render.resolution_y = 1600, 900
@@ -90,7 +101,7 @@ for name, position, energy, size in [('Key',(-4,-6,8),900,7),('Fill',(5,-3,5),65
     obj.location = position
     obj.rotation_euler = (Vector((0,0,1))-obj.location).to_track_quat('-Z','Y').to_euler()
 scene.frame_set(0)
-for area in bpy.context.screen.areas:
+for area in (bpy.context.screen.areas if bpy.context.screen else []):
     if area.type == 'VIEW_3D':
         area.spaces.active.use_local_camera = False
         area.spaces.active.camera = scene.camera
@@ -103,5 +114,10 @@ for area in bpy.context.screen.areas:
         area.spaces.active.overlay.show_overlays = False
 path = ROOT / 'assets/residents/lineup.blend'
 path.parent.mkdir(parents=True, exist_ok=True)
+# A background run has no viewport thumbnail; avoid writing a global cache.
+previous_preview = bpy.context.preferences.filepaths.file_preview_type
+if bpy.app.background:
+    bpy.context.preferences.filepaths.file_preview_type = 'NONE'
 bpy.ops.wm.save_as_mainfile(filepath=str(path),copy=True,compress=True)
+bpy.context.preferences.filepaths.file_preview_type = previous_preview
 print('Saved lineup to ' + str(path))

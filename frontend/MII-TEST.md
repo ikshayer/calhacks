@@ -4,18 +4,20 @@ Run `npm run dev` in `frontend`, then open
 <http://127.0.0.1:5173/mii-test.html>. This is a separate development entry;
 the production island renderer has not been switched to the new character.
 
-The page supports one resident, a lineup of four designs, or 48 independent animated clones, all three
-supplied test clips, pause, neutral/island lighting, shadows, and a ten-second
+The page supports one resident, lineups of four, six, or ten designs, or 48 independent animated clones,
+Walk (initial selection), Idle, Look around, Wave, pause, neutral/island lighting, shadows, and a ten-second
 benchmark after a two-second warmup. Keep the tab visible while measuring.
-Changing rendering mode, design, count, clip, pause, lighting, or shadows cancels
+Changing rendering mode, design, count, clip, movement, speed, view, pause, lighting, or shadows cancels
 the current measurement. The Rendering selector compares the optimized crowd
 against the original export at the same camera and display settings.
 
 ## Additional designs
 
-The preview now includes **Nia**, **Theo**, and **Rowan** alongside the original.
-Use the Resident design selector for a close view, or All four designs for the
-lineup and mixed crowd. The three new authoring files and Blender comparison
+The preview includes **Nia**, **Theo**, and **Rowan** alongside the original, plus
+six newer designs: **Maya**, **Jules**, **Iris**, **Omar**, **Pip**, and **Vera**.
+It opens with the six new designs selected. Use the Resident design selector
+for a close view, or All ten designs for the full lineup and mixed crowd.
+All ten authoring files and the Blender comparison
 scene are saved in `assets/residents/`; their editor options and palettes are
 recorded in `scripts/mii_resident_presets.py`. Each preserves the hand/arm repair.
 See `assets/residents/README.md` for design descriptions and reproduction steps.
@@ -26,8 +28,9 @@ Source: [Joey Carlino — Mii Maker for Blender](https://joeycarlino.itch.io/mii
 Tested with `Mii_Maker_for_4.1_v2.blend` in Blender 5.2.0 LTS.
 
 The live source file was left at its original path and was not overwritten.
-An isolated snapshot and a corrected authoring copy were saved under the ignored
-`.tmp/mii-test/` directory. Open `authoring-fixed.blend` to continue from the fix.
+The original is now editable in `assets/residents/resident.blend`; the other nine
+designs have their own authoring files beside it. `lineup.blend` opens the walking
+comparison scene and retains the original editor scene, including the native walk action.
 
 The arm collapse was caused by the hidden `torso m weights` and `torso f weights`
 objects deforming before the body's Data Transfer modifier sampled their weights.
@@ -37,10 +40,11 @@ automatically in its separate process.
 
 ## Reproduce the export
 
-From the repository root in PowerShell, using an isolated source copy:
+From the repository root in PowerShell, using the saved authoring files:
 
 ```powershell
-& 'D:/Blender/blender.exe' --background '.tmp/mii-test/authoring-fixed.blend' --disable-autoexec --python 'scripts/export_mii_test.py'
+& 'D:/Blender/blender.exe' --background 'assets/residents/resident.blend' --disable-autoexec --python 'scripts/export_mii_test.py' -- --preserve-design
+& 'D:/Blender/blender.exe' --background 'assets/residents/nia.blend' --disable-autoexec --python 'scripts/export_mii_test.py' -- --resident nia --preserve-design
 ```
 
 The script freezes the selected procedural meshes, reduces body subdivision to
@@ -49,11 +53,42 @@ the source rig into a smaller skeleton with ordinary animation keyframes.
 It writes `public/models/mii-test/resident.glb` and `report.json` relative to
 `frontend`. Bake intermediates go into `.tmp/mii-test/`.
 
-The exported resident contains 6,088 triangles, 43 bones, and three clips:
-`test_Idle`, `test_look_around`, and `test_wave`. File size is 442,916 bytes.
+Use `--preserve-design` when updating an existing resident: it skips presets and
+keeps the current picker choices, proportions, and palette. Existing authored
+`walk` curves are preserved. Without the flag, `--resident` reapplies that preset.
+
+The exported original contains 6,088 triangles, 43 bones, and four clips:
+`test_Idle`, `test_look_around`, `test_wave`, and `test_walk`. File size is 477,284 bytes.
 Faces and arm motion were inspected in the browser; the corrected source was
 also checked in Blender. TypeScript, production build, and targeted lint passed.
 The build reports the existing large workspace bundle warning.
+
+## Walking and movement synchronization
+
+`scripts/mii_walk.py` creates the editable `walk` action only when one is missing.
+It spans frames 0–24 at 24 fps, with matching endpoint poses and a stationary root.
+Alternating IK foot targets have a 60% stance phase, constant backward velocity
+during contact, and a lifted return. Body bob is compensated at the foot controls;
+hands swing gently opposite the legs. The older clips receive static neutral COG
+keys if needed so Blender does not retain the body's last walking offset.
+
+Every exported `MiiTest` rig has `walkStrideLength: 0.44` (model units per cycle)
+and `walkCycleSeconds: 1` in its glTF extras. When manually changing step length
+or duration, update the action's stride metadata and scene fps accordingly.
+
+The preview's **In place** mode plays the stationary cycle. **Travel** adds
+`strideLength / cycleSeconds × displayedScale × playbackRate` along the existing
+forward direction (+Z in glTF). The 0.5–1.5× control changes cadence and travel
+together. Residents have independent phases. Idle/Walk fades last 0.18 seconds;
+travel follows the blended walking weight. Pausing freezes both pose and travel.
+The camera, lights, and labels follow movement. Floor lines are one preview unit
+apart; Front/Side buttons make contact and clearance easy to inspect.
+
+Regenerate the Blender comparison with:
+
+```powershell
+& 'D:/Blender/blender.exe' --background 'assets/residents/resident.blend' --disable-autoexec --python 'scripts/preview_mii_residents.py'
+```
 
 ## Crowd rendering optimization
 
@@ -77,7 +112,7 @@ the same for this first optimization pass.
 
 ## Measurements and remaining work
 
-Character-only preview on the available AMD Radeon 890M, a 970 × 609 CSS-pixel
+Historical four-design character-only preview on the available AMD Radeon 890M, a 970 × 609 CSS-pixel
 viewport, and DPR 1.5. These are local measurements, not a guarantee for other
 machines or the complete island.
 
@@ -89,6 +124,25 @@ shadows enabled. Each run uses a two-second warmup and ten-second measurement:
 | Original export | 48 | 1,393 | 540 | 23.1 | 48.2 ms |
 | Optimized crowd | 48 | 157 | 48 | 119.2 | 8.9 ms |
 
+Walking measurements with the same machine, viewport, DPR, lighting, and shadows
+(the floor grid adds one draw call):
+
+| Rendering | Movement | Residents | Draw calls | Skeletons | Average fps | 95th percentile frame |
+|---|---|---|---|---|---|---|
+| Optimized crowd | Travel, 1× | 48 | 158 | 48 | 102.4 | 10.5 ms |
+| Optimized crowd | In place, 1× | 48 | 158 | 48 | 102.3 | 10.5 ms |
+
+These are the final-export validation runs. Earlier walking runs measured 119.3
+and 119.5 fps respectively; both sessions exceed the 60 fps target. Results are
+recorded in `assets/residents/walk-validation.json`.
+
+After adding the six newer designs, a 48-resident crowd cycling through all ten
+designs measured **102.6 fps**, with an 11.2 ms 95th percentile frame, 160 draws,
+48 skeletons, Walk/Travel at 1×, and shadows enabled. Viewport and DPR were the
+same. The new sources pass native walk validation; the expanded browser check
+passes all 120 poses. These results are saved in
+`assets/residents/expansion-validation.json`.
+
 The optimized crowd exceeds the 60 fps character-preview target on this machine
 and approaches its 120 Hz display limit. Full-island performance still needs a
 separate measurement after integration. A previous single-design baseline
@@ -99,21 +153,40 @@ are not the controlled mixed-design comparison above.
 
 `npm run test:residents` checks equivalent deformation after skeleton sharing,
 independence between residents, incompatible inverse-bind matrices, and resource
-ownership on cleanup. TypeScript, targeted lint, and production build also pass.
+ownership on cleanup. It also checks stride/cadence synchronization at three
+speeds, phase offsets, pause, rapid Idle/Walk reversals, complete blend weights,
+fade duration, and metadata validation. All seven tests pass. TypeScript and
+production build pass; full lint reports only existing unrelated warnings.
 
-For all four real exports, the browser check compares indexed triangle counts
-and deformed vertex positions at nine poses per design (36 total). Run it in
+For all ten real exports, the browser check compares indexed triangle counts
+and deformed vertex positions at twelve poses per design (120 total), including
+Walk. It also verifies stride metadata, clip duration, matching endpoints,
+stationary roots, and planted foot motion after synchronized travel. Run it in
 the preview's developer console:
 
 ```javascript
 await (await import('/scripts/resident-rendering.browser-check.mjs')).checkResidentExports()
 ```
 
-All sampled surfaces match within 1e-5 world units. Faces, color, glasses, shadows,
-and wave motion were also visually checked in the optimized preview. Browser
-console checks report no errors or warnings.
+All sampled surfaces match within 1e-5 world units. Loop and root errors are zero;
+maximum exported contact drift is 0.00000394 model units. The four original GLBs
+were also compared against the previous revision: geometry, material definitions,
+and all existing clip samples are unchanged (zero numerical difference).
 
-No walk clip is supplied by this source. Phone/reaction behavior also needs
+Run native IK validation against each authoring file:
+
+```powershell
+& 'D:/Blender/blender.exe' --background 'assets/residents/nia.blend' --disable-autoexec --python-exit-code 1 --python 'scripts/check_mii_walk.py'
+```
+
+All ten pass native loop/root, contact, foot clearance, knee/hand continuity,
+helper repair, authored-action preservation, and return-to-Idle checks. Native
+contact drift stays below 0.000005 units. Front/side views in Blender and the
+browser were inspected, including the dress, glasses, and moustache. Browser UI
+checks cover 1/4/48 residents in original/optimized rendering and both movement
+modes, repeated Idle/Walk transitions, pause/resume, and all three speed settings.
+
+Phone/reaction behavior still needs
 appropriate animation mapping. Sprite selections are frozen in this test;
 runtime blinking and expression changes are not implemented. The current island
 rig helper replaces every mesh material with one shared Kenney material, so it

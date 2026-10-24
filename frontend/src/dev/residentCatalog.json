@@ -1,0 +1,12 @@
+[
+  { "id": "resident", "name": "Original", "description": "Original resident" },
+  { "id": "nia", "name": "Nia", "description": "Purple dress" },
+  { "id": "theo", "name": "Theo", "description": "Round glasses" },
+  { "id": "rowan", "name": "Rowan", "description": "Silver hair" },
+  { "id": "maya", "name": "Maya", "description": "Copper braids and coral dress", "new": true },
+  { "id": "jules", "name": "Jules", "description": "Textured hair and cobalt shirt", "new": true },
+  { "id": "iris", "name": "Iris", "description": "Lavender hair and mint dress", "new": true },
+  { "id": "omar", "name": "Omar", "description": "Cropped hair and rectangular glasses", "new": true },
+  { "id": "pip", "name": "Pip", "description": "Mint spikes and apricot shirt", "new": true },
+  { "id": "vera", "name": "Vera", "description": "Auburn hair, sunglasses, and rose dress", "new": true }
+]

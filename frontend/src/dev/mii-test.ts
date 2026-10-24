@@ -3,8 +3,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
 import { cloneResident, disposeResidentSkeletons, prepareResidentTemplate, residentRenderStats } from '../island/residentRendering'
+import { ResidentPlayback } from '../island/residentPlayback'
+import residentCatalog from './residentCatalog.json'
 
-type Result = { fps: number; p95FrameMs: number; frames: number; residents: number; clip: string; shadows: boolean; viewport: string; dpr: number; rendering: string; design: string; draws: number; skeletons: number }
+type Result = { fps: number; p95FrameMs: number; frames: number; residents: number; clip: string; shadows: boolean; viewport: string; dpr: number; rendering: string; design: string; draws: number; skeletons: number; motion: string; speed: number }
 const el = <T extends HTMLElement>(id: string) => {
   const node = document.getElementById(id)
   if (!node) throw new Error(`Missing #${id}`)
@@ -16,6 +18,9 @@ const designInput = el<HTMLSelectElement>('design')
 const renderingInput = el<HTMLSelectElement>('rendering')
 const labelLayer = el('labels')
 const clipInput = el<HTMLSelectElement>('clip')
+const motionInput = el<HTMLSelectElement>('motion')
+const speedInput = el<HTMLInputElement>('speed')
+const speedValue = el<HTMLOutputElement>('speed-value')
 const pauseInput = el<HTMLInputElement>('paused')
 const warmInput = el<HTMLInputElement>('warm')
 const shadowInput = el<HTMLInputElement>('shadows')
@@ -23,7 +28,8 @@ const benchmark = el<HTMLButtonElement>('benchmark')
 const status = el('status')
 const metrics = el('metrics')
 const result = el('result')
-const debug = { loaded: false, count: 1, rendering: '', designs: [] as string[], clips: [] as string[], bones: 0, skeletons: 0, meshes: 0, triangles: 0, draws: 0, errors: [] as string[], results: [] as Result[] }
+const debug = { loaded: false, count: 1, rendering: '', designs: [] as string[], clips: [] as string[], bones: 0, skeletons: 0, meshes: 0, triangles: 0, draws: 0, errors: [] as string[], results: [] as Result[],
+  inspectMotion: () => playbacks.map(({ playback, wrapper, distance, scale }) => ({ ...playback.snapshot(), position: wrapper.position.toArray(), distance, scale })) }
 declare global { interface Window { __miiTest: typeof debug } }
 window.__miiTest = debug
 const scene = new THREE.Scene()
@@ -48,13 +54,18 @@ Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18, n
 sun.shadow.bias = -0.0013
 const fill = new THREE.DirectionalLight('#79b2d6', 0.8)
 fill.position.set(48, 26, -40)
-scene.add(hemi, ambient, sun, fill)
+scene.add(hemi, ambient, sun, fill, sun.target, fill.target)
 const floorMaterial = new THREE.MeshLambertMaterial({ color: '#c3855a' })
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), floorMaterial)
 floor.rotation.x = -Math.PI / 2
 floor.position.y = -0.015
 floor.receiveShadow = true
 scene.add(floor)
+const markers = new THREE.GridHelper(160, 160, '#75826d', '#75826d')
+markers.position.y = -0.012
+markers.material.transparent = true
+markers.material.opacity = 0.35
+scene.add(markers)
 const residents = new THREE.Group()
 scene.add(residents)
 const resize = () => {
@@ -76,11 +87,39 @@ function light() {
 }
 warmInput.onchange = light
 light()
-let mixers: THREE.AnimationMixer[] = []
-let playbacks: { mixer: THREE.AnimationMixer; clips: THREE.AnimationClip[] }[] = []
+let playbacks: { playback: ResidentPlayback; wrapper: THREE.Group; baseZ: number; distance: number; scale: number }[] = []
 let roots: THREE.Object3D[] = []
-let labels: { node: HTMLSpanElement; anchor: THREE.Vector3 }[] = []
+let labels: { node: HTMLSpanElement; wrapper: THREE.Group }[] = []
+let travelOrigin = 0
+let followOffset = 0
+function follow(offset: number) {
+  const delta = offset - followOffset
+  camera.position.z += delta
+  controls.target.z += delta
+  sun.position.z += delta
+  sun.target.position.z += delta
+  fill.position.z += delta
+  fill.target.position.z += delta
+  floor.position.z = offset
+  followOffset = offset
+}
+function resetTravel() {
+  for (const entry of playbacks) { entry.distance = 0; entry.wrapper.position.z = entry.baseZ }
+  travelOrigin = 0
+  follow(0)
+}
 const projected = new THREE.Vector3()
+function setView(side = false) {
+  cancelMeasurement()
+  const count = Number(countInput.value)
+  const lineupGrid = count === 6 || count === 10
+  const distance = count === 1 ? 5.5 : count === 4 ? 12.5 : lineupGrid ? 14 : 24
+  camera.position.set(side ? distance : 0, count === 1 ? 1.8 : count === 4 ? 2.7 : lineupGrid ? 10 : 14,
+    followOffset + (side ? 0 : distance))
+  controls.update()
+}
+el('front').onclick = () => setView()
+el('side').onclick = () => setView(true)
 let recent: number[] = []
 let measuring: { starts: number; samples: number[] } | null = null
 let lastTime = performance.now()
@@ -113,11 +152,25 @@ renderer.setAnimationLoop(() => {
     recent.push(ms)
     if (recent.length > 120) recent.shift()
   }
-  if (!pauseInput.checked) for (const mixer of mixers) mixer.update(Math.min(ms / 1000, 0.1))
+  if (!pauseInput.checked) {
+    const travel = motionInput.value === 'travel'
+    for (const entry of playbacks) {
+      const distance = entry.playback.step(Math.min(ms / 1000, 0.1), Number(speedInput.value)) * entry.scale
+      if (travel) entry.distance += distance
+    }
+    const average = travel && playbacks.length
+      ? playbacks.reduce((sum, entry) => sum + entry.distance, 0) / playbacks.length : 0
+    // Rebase by a whole number of floor tiles to keep long previews near origin.
+    travelOrigin = Math.floor(average / 24) * 24
+    for (const entry of playbacks) entry.wrapper.position.z = entry.baseZ + (travel ? entry.distance - travelOrigin : 0)
+    follow(average - travelOrigin)
+  }
   controls.update()
   renderer.render(scene, camera)
-  for (const { node, anchor } of labels) {
-    projected.copy(anchor).project(camera)
+  for (const { node, wrapper } of labels) {
+    projected.copy(wrapper.position)
+    projected.y -= 0.12
+    projected.project(camera)
     node.style.left = `${(projected.x + 1) * viewport.clientWidth / 2}px`
     node.style.top = `${(1 - projected.y) * viewport.clientHeight / 2}px`
     node.hidden = projected.z > 1
@@ -143,6 +196,7 @@ renderer.setAnimationLoop(() => {
         dpr: renderer.getPixelRatio(),
         rendering: renderingInput.value, design: designInput.value,
         draws: debug.draws, skeletons: debug.skeletons,
+        motion: motionInput.value, speed: Number(speedInput.value),
       }
       debug.results.push(entry)
       cancelMeasurement()
@@ -152,13 +206,13 @@ renderer.setAnimationLoop(() => {
 })
 
 try {
-  const specs = [
-    { id: 'resident', name: 'Original' }, { id: 'nia', name: 'Nia' },
-    { id: 'theo', name: 'Theo' }, { id: 'rowan', name: 'Rowan' },
-  ]
+  const specs = residentCatalog
+  for (const spec of specs) designInput.add(new Option(`${spec.name} — ${spec.description}`, spec.id))
   const loader = new GLTFLoader()
   const templates = await Promise.all(specs.map(async (spec) => {
     const gltf = await loader.loadAsync(`/models/mii-test/${spec.id}.glb`)
+    const rig = gltf.scene.getObjectByName('MiiTest')
+    const walk = { strideLength: Number(rig?.userData.walkStrideLength), cycleSeconds: Number(rig?.userData.walkCycleSeconds) }
     const bounds = new THREE.Box3().setFromObject(gltf.scene)
     const size = bounds.getSize(new THREE.Vector3())
     const center = bounds.getCenter(new THREE.Vector3())
@@ -168,27 +222,25 @@ try {
       if (obj instanceof THREE.Bone) bones++
     })
     const prepared = prepareResidentTemplate(gltf.scene)
-    return { ...spec, gltf, prepared, center, floor: bounds.min.y, scale: 2.4 / size.y, bones }
+    return { ...spec, gltf, prepared, center, floor: bounds.min.y, scale: 2.4 / size.y, bones, walk }
   }))
   debug.designs = templates.map((t) => t.name)
   debug.clips = templates[0]!.gltf.animations.map((a) => a.name)
   clipInput.add(new Option('Rest pose', ''))
-  for (const name of debug.clips) clipInput.add(new Option(name.replace(/^test_/, '').replaceAll('_', ' '), name))
-  clipInput.value = debug.clips.find((name) => /idle/i.test(name)) ?? ''
+  for (const name of debug.clips) {
+    const label = name.replace(/^test_/, '').replaceAll('_', ' ')
+    clipInput.add(new Option(label[0]!.toUpperCase() + label.slice(1), name))
+  }
+  clipInput.value = 'test_walk'
   function play() {
     cancelMeasurement()
-    for (let i = 0; i < playbacks.length; i++) {
-      const { mixer, clips } = playbacks[i]!
-      mixer.stopAllAction()
-      const clip = clips.find((a) => a.name === clipInput.value)
-      if (clip) { const action = mixer.clipAction(clip); action.play(); mixer.setTime(i * 0.137 % clip.duration) }
-    }
+    for (const { playback } of playbacks) playback.select(clipInput.value)
   }
   function populate() {
     cancelMeasurement()
-    for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()) }
+    resetTravel()
+    for (const { playback } of playbacks) playback.dispose()
     for (const root of roots) disposeResidentSkeletons(root)
-    mixers = []
     playbacks = []
     roots = []
     labels = []
@@ -198,7 +250,9 @@ try {
     debug.rendering = renderingInput.value
     debug.skeletons = 0
     debug.meshes = 0
-    const choices = designInput.value === 'all' ? templates : templates.filter((t) => t.id === designInput.value)
+    const choices = designInput.value === 'all' ? templates
+      : designInput.value === 'new' ? templates.filter((t) => t.new)
+        : templates.filter((t) => t.id === designInput.value)
     debug.bones = choices[0]!.bones
     for (let i = 0; i < debug.count; i++) {
       const template = choices[i % choices.length]!
@@ -213,41 +267,46 @@ try {
       model.position.set(-template.center.x, -template.floor, -template.center.z)
       wrapper.add(model)
       if (debug.count === 4) wrapper.position.set((i - 1.5) * 2.1, 0, 0)
+      else if (debug.count === 6 || debug.count === 10) {
+        const columns = debug.count / 2
+        wrapper.position.set((i % columns - (columns - 1) / 2) * 2.1, 0, (Math.floor(i / columns) - 0.5) * 4.8)
+      }
       else if (debug.count > 1) wrapper.position.set((i % 8 - 3.5) * 1.8, 0, (Math.floor(i / 8) - 2.5) * 2.2)
       residents.add(wrapper)
-      const mixer = new THREE.AnimationMixer(model)
-      mixers.push(mixer)
-      playbacks.push({ mixer, clips: template.gltf.animations })
-      if (debug.count <= 4) {
+      const playback = new ResidentPlayback(model, template.gltf.animations, template.walk, i * 0.137)
+      playbacks.push({ playback, wrapper, baseZ: wrapper.position.z, distance: 0, scale: template.scale })
+      if (debug.count <= 10) {
         const node = document.createElement('span')
         node.textContent = template.name
         labelLayer.append(node)
-        labels.push({ node, anchor: wrapper.position.clone().add(new THREE.Vector3(0, -0.12, 0)) })
+        labels.push({ node, wrapper })
       }
     }
     controls.target.set(0, debug.count === 48 ? 0.5 : 1.25, 0)
-    camera.position.set(0, debug.count === 1 ? 1.8 : debug.count === 4 ? 2.7 : 14, debug.count === 1 ? 5.5 : debug.count === 4 ? 12.5 : 24)
-    controls.update()
+    setView()
     play()
   }
   clipInput.onchange = play
+  motionInput.onchange = () => { cancelMeasurement(); resetTravel() }
+  speedInput.oninput = () => { cancelMeasurement(); speedValue.value = `${Number(speedInput.value).toFixed(2)}×` }
   countInput.onchange = populate
   renderingInput.onchange = populate
   designInput.onchange = () => {
-    countInput.value = designInput.value === 'all' ? '4' : '1'
+    countInput.value = designInput.value === 'all' ? '10' : designInput.value === 'new' ? '6' : '1'
     populate()
   }
   shadowInput.onchange = () => { cancelMeasurement(); renderer.shadowMap.enabled = shadowInput.checked }
   pauseInput.onchange = cancelMeasurement
   warmInput.onchange = () => { cancelMeasurement(); light() }
   window.addEventListener('pagehide', () => {
+    for (const { playback } of playbacks) playback.dispose()
     for (const root of roots) disposeResidentSkeletons(root)
     for (const template of templates) template.prepared.dispose()
   }, { once: true })
   debug.loaded = true
   benchmark.disabled = false
   populate()
-  status.textContent = 'Four designs loaded. Compare the lineup or choose a resident to inspect closely.'
+  status.textContent = 'Six new residents, ten designs in total. Choose a resident for a close view, or compare the lineups.'
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error)
   debug.errors.push(message)

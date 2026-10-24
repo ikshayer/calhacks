@@ -20,6 +20,9 @@
       button:disabled { opacity: .5; cursor: wait; }
       input { accent-color: #f2b53c; }
       output { display: block; white-space: pre-line; margin-top: 20px; font: 12px/1.8 ui-monospace, monospace; }
+      #speed { width: 100%; }
+      #speed-value { display: inline; margin: 0 0 0 8px; }
+      .views { display: flex; gap: 8px; }
       .eyebrow { text-transform: uppercase; letter-spacing: .15em; font-size: 10px; color: #f2b53c; }
       #status { border-left: 2px solid #f2b53c; padding-left: 12px; }
       @media (max-width: 700px) { main { inset: 0 0 46vh; } aside { top: 54vh; width: 100%; padding: 16px; } }
@@ -31,18 +34,22 @@
       <div class="eyebrow">Asset evaluation</div>
       <h1>Meet the<br />residents.</h1>
       <p>Drag to orbit. Scroll to zoom. Inspect the face from the front and side.</p>
+      <div class="views"><button id="front" type="button">Front</button><button id="side" type="button">Side</button></div>
       <p id="status" role="status">Loading the test export…</p>
       <label>Rendering<select id="rendering"><option value="optimized">Optimized crowd</option><option value="original">Original export — compare</option></select></label>
-      <label>Resident design<select id="design"><option value="all">All four designs</option><option value="resident">Original</option><option value="nia">Nia — purple dress</option><option value="theo">Theo — glasses</option><option value="rowan">Rowan — silver hair</option></select></label>
-      <label>Residents<select id="count"><option value="1">1 — inspect details</option><option value="4" selected>4 — compare designs</option><option value="48">48 — crowd test</option></select></label>
+      <label>Resident design<select id="design"><option value="all">All ten designs</option><option value="new" selected>Six new designs</option></select></label>
+      <label>Residents<select id="count"><option value="1">1 — inspect details</option><option value="4">4 — compare designs</option><option value="6" selected>6 — new lineup</option><option value="10">10 — full lineup</option><option value="48">48 — crowd test</option></select></label>
       <label>Animation<select id="clip" aria-label="Animation"></select></label>
+      <label>Movement<select id="motion"><option value="in-place">In place</option><option value="travel">Travel</option></select></label>
+      <label for="speed">Speed<output id="speed-value" for="speed">1.00×</output></label>
+      <input id="speed" aria-label="Playback and travel speed" type="range" min="0.5" max="1.5" step="0.05" value="1" />
       <label><input id="paused" type="checkbox" /> Pause animation</label>
       <label><input id="warm" type="checkbox" checked /> Island lighting</label>
       <label><input id="shadows" type="checkbox" checked /> Shadows</label>
       <button id="benchmark" disabled>Measure for 10 seconds</button>
       <output id="metrics" aria-live="off"></output>
       <output id="result" aria-live="polite"></output>
-      <p>Character benchmark only. Water, buildings, and island effects add further cost. The supplied source has no walk clip.</p>
+      <p>Character benchmark only. Floor markers are one preview unit apart. Travel follows each resident’s stride and displayed scale. Water, buildings, and island effects add further cost.</p>
     </aside>
     <script type="module" src="/src/dev/mii-test.ts"></script>
   </body>

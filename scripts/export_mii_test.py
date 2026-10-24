@@ -1,7 +1,8 @@
 """Run in a separate Blender process against a COPY of Joey Carlino's source.
 
 blender -b source.blend --disable-autoexec --python scripts/export_mii_test.py
-The original authoring scene is never saved or overwritten.
+Editable copies are refreshed under assets/residents before browser conversion.
+The external downloaded source is never overwritten.
 """
 import json
 import argparse
@@ -15,10 +16,12 @@ from mathutils import Matrix
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mii_resident_presets import PRESETS, apply_preset
+from mii_walk import install_walk
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--resident', choices=list(PRESETS))
 parser.add_argument('--prepare-only', action='store_true')
+parser.add_argument('--preserve-design', action='store_true', help='Keep the input editor choices and palette unchanged')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 resident_id = args.resident or 'resident'
 OUT = ROOT / 'frontend/public/models/mii-test'
@@ -37,26 +40,35 @@ for donor_name in ['torso m weights', 'torso f weights']:
                 modifier.show_viewport = False
                 modifier.show_render = False
 if args.resident:
-    preset = apply_preset(args.resident)
-    authoring = ROOT / 'assets/residents' / (resident_id + '.blend')
-    authoring.parent.mkdir(parents=True, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=str(authoring), copy=True, compress=True)
-    (WORK / 'preset.json').write_text(json.dumps(preset, indent=2), encoding='utf-8')
-    if args.prepare_only:
-        print('Prepared ' + str(authoring), flush=True)
-        sys.exit(0)
+    if not args.preserve_design:
+        preset = apply_preset(args.resident)
+        (WORK / 'preset.json').write_text(json.dumps(preset, indent=2), encoding='utf-8')
+if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+    bpy.ops.object.mode_set(mode='OBJECT')
+install_walk(source)
+authoring = ROOT / 'assets/residents' / (resident_id + '.blend')
+authoring.parent.mkdir(parents=True, exist_ok=True)
+bpy.ops.wm.save_as_mainfile(filepath=str(authoring), copy=True, compress=True)
+if args.prepare_only:
+    print('Prepared ' + str(authoring), flush=True)
+    sys.exit(0)
 PARTS = ['body', 'head', 'hair', 'eye.L', 'eye.R', 'eyebrow.L',
          'eyebrow.R', 'nose', 'mouth', 'glasses', 'beard', 'mustache',
          'makeup', 'wrinkles', 'beauty mark']
 report = {'source': 'https://joeycarlino.itch.io/mii-maker-for-blender',
           'resident': resident_id,
           'blender': bpy.app.version_string, 'parts': [], 'clips': [],
-          'limitations': ['No walk clip supplied by source.',
-                          'Facial sprite selection is frozen at the test frame.',
+          'walk': {'strideLength': source['walkStrideLength'], 'cycleSeconds': source['walkCycleSeconds']},
+          'limitations': ['Facial sprite selection is frozen at the test frame.',
                           'Asset reuse license is not specified on the listing.']}
 
 # Freeze generated geometry independently of the control/picker collections.
+for track in source.animation_data.nla_tracks:
+    track.mute = True
+source.animation_data.action = bpy.data.actions['Idle']
+source.animation_data.action_slot = source.animation_data.action.slots[0]
 scene.frame_set(0)
+neutral_pose = {p.name: p.matrix_basis.copy() for p in source.pose.bones}
 body = bpy.data.objects['body']
 body.modifiers['Armature'].show_viewport = False
 body.modifiers['Subdivision'].levels = 1
@@ -82,6 +94,8 @@ for name in list(needed):
         bone = bone.parent
 rig_data = bpy.data.armatures.new('MiiTestSkeleton')
 rig = bpy.data.objects.new('MiiTest', rig_data)
+rig['walkStrideLength'] = source['walkStrideLength']
+rig['walkCycleSeconds'] = source['walkCycleSeconds']
 scene.collection.objects.link(rig)
 bpy.context.view_layer.objects.active = rig
 rig.select_set(True)
@@ -274,10 +288,16 @@ bpy.data.objects.remove(plane, do_unlink=True)
 # Sample the constrained authoring rig into ordinary local bone keyframes.
 for track in source.animation_data.nla_tracks:
     track.mute = True
-for clip_name in ['Idle', 'look around', 'wave']:
+for clip_name in ['Idle', 'look around', 'wave', 'walk']:
     action = bpy.data.actions.get(clip_name)
     if not action:
         continue
+    # Keep the original clips' evaluation order and their unkeyed controls.
+    # Walk starts independently so it cannot inherit the end of the wave.
+    if clip_name in ['Idle', 'walk']:
+        source.animation_data.action = None
+        for name, matrix in neutral_pose.items():
+            source.pose.bones[name].matrix_basis = matrix
     source.animation_data.action = action
     if action.slots:
         source.animation_data.action_slot = action.slots[0]
@@ -307,6 +327,9 @@ for clip_name in ['Idle', 'look around', 'wave']:
     print('Baked ' + baked.name, flush=True)
 
 # Compare the exported body's deformation against the source at an idle frame.
+source.animation_data.action = None
+for name, matrix in neutral_pose.items():
+    source.pose.bones[name].matrix_basis = matrix
 source.animation_data.action = bpy.data.actions['Idle']
 source.animation_data.action_slot = source.animation_data.action.slots[0]
 rig.animation_data.action = bpy.data.actions['test_Idle']
@@ -341,6 +364,7 @@ bpy.ops.export_scene.gltf(filepath=str(OUT / (resident_id + '.glb')), export_for
                           use_selection=True, export_animations=True,
                           export_animation_mode='ACTIONS', export_frame_range=False,
                           export_force_sampling=True, export_skins=True,
+                          export_extras=True,
                           export_yup=True, export_cameras=False, export_lights=False)
 report['bones'] = len(rig.data.bones)
 report['bytes'] = (OUT / (resident_id + '.glb')).stat().st_size

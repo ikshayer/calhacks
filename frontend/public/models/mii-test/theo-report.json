@@ -66,10 +66,17 @@
     {
       "name": "test_wave",
       "frames": 26
+    },
+    {
+      "name": "test_walk",
+      "frames": 25
     }
   ],
+  "walk": {
+    "strideLength": 0.44,
+    "cycleSeconds": 1.0
+  },
   "limitations": [
-    "No walk clip supplied by source.",
     "Facial sprite selection is frozen at the test frame.",
     "Asset reuse license is not specified on the listing."
   ],
@@ -80,6 +87,6 @@
     "source_preserve_volume": false
   },
   "bones": 43,
-  "bytes": 440864,
+  "bytes": 475240,
   "triangles": 5612
 }

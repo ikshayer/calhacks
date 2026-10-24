@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import * as THREE from 'three'
 import { cloneResident, disposeResidentSkeletons, residentRenderStats } from '../src/island/residentRendering.ts'
+import { ResidentPlayback } from '../src/island/residentPlayback.ts'
 
 function fixture(differentInverses = false) {
   const root = new THREE.Group()
@@ -76,4 +77,62 @@ test('cleanup disposes each owned skeleton once and preserves cached geometry', 
   disposeResidentSkeletons(copy)
   assert.equal(disposedSkeletons, 1)
   assert.equal(disposedGeometry, 0)
+})
+
+function playback(phase = 0) {
+  const root = new THREE.Group()
+  const bone = new THREE.Bone()
+  bone.name = 'hip'
+  root.add(bone)
+  const clips = ['test_Idle', 'test_walk'].map((name) => new THREE.AnimationClip(name, 1, [
+    new THREE.VectorKeyframeTrack('hip.position', [0, 0.5, 1], name === 'test_walk'
+      ? [0,0,0, 0,0.1,0, 0,0,0] : [0,0,0, 0,0,0, 0,0,0]),
+  ]))
+  return new ResidentPlayback(root, clips, { strideLength: 0.44, cycleSeconds: 1 }, phase)
+}
+
+test('walk cadence and travel scale together, including independent phases and pause', () => {
+  for (const speed of [0.5, 1, 1.5]) {
+    const player = playback(0.137)
+    player.select('test_walk')
+    assert.ok(Math.abs(player.step(0.2, speed) - 0.44 * 0.2 * speed) < 1e-12)
+    assert.ok(Math.abs(player.snapshot().time - (0.137 + 0.2 * speed)) < 1e-12)
+    const paused = player.snapshot()
+    assert.equal(player.step(0, speed), 0)
+    assert.deepEqual(player.snapshot(), paused)
+    player.dispose()
+  }
+})
+
+test('Idle/Walk fades last 0.18 real seconds and rapid reversals keep a complete pose', () => {
+  const player = playback()
+  player.select('test_Idle')
+  player.select('test_walk')
+  const distance = player.step(0.09, 1.5)
+  assert.ok(Math.abs(player.snapshot().walkWeight - 0.5) < 1e-12)
+  assert.ok(Math.abs(distance - 0.44 * 0.09 * 1.5 * 0.25) < 1e-12)
+  for (let i = 0; i < 24; i++) {
+    player.select(i % 2 ? 'test_walk' : 'test_Idle')
+    player.step(0.025, 0.5)
+    assert.ok(Math.abs(player.snapshot().totalWeight - 1) < 1e-12)
+  }
+  player.select('test_Idle')
+  player.step(0.18, 0.5)
+  assert.equal(player.snapshot().walkWeight, 0)
+  assert.equal(player.step(0.1, 1.5), 0)
+  player.select('test_walk')
+  player.step(0.18, 0.5)
+  assert.equal(player.snapshot().walkWeight, 1)
+  assert.equal(player.snapshot().totalWeight, 1)
+  player.select('')
+  assert.equal(player.snapshot().totalWeight, 0)
+  assert.equal(player.step(0.1, 1), 0)
+  player.dispose()
+})
+
+test('missing or inconsistent walk metadata fails instead of silently sliding', () => {
+  const clip = new THREE.AnimationClip('test_walk', 1, [])
+  for (const walk of [{ strideLength: 0, cycleSeconds: 1 }, { strideLength: 0.44, cycleSeconds: 2 }]) {
+    assert.throws(() => new ResidentPlayback(new THREE.Group(), [clip], walk), /metadata must agree/)
+  }
 })
