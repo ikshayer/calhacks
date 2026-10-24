@@ -119,8 +119,9 @@ const tablesSchema = __schema({
       { accessor: 'rowId', name: 'decision_row_id_idx_btree', algorithm: 'btree', columns: [
         'rowId',
       ] },
-      { accessor: 'runId', name: 'decision_run_id_idx_btree', algorithm: 'btree', columns: [
+      { accessor: 'byRunMember', name: 'decision_run_id_member_id_idx_btree', algorithm: 'btree', columns: [
         'runId',
+        'memberId',
       ] },
     ],
     constraints: [

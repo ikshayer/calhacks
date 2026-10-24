@@ -170,7 +170,7 @@ export function runCascade(
 
   return {
     rounds: canonical.rounds,
-    metrics: summarise(members, decisionList, canonical, {
+    metrics: summarise(members, decisions, canonical, {
       p10: quantile(0.1),
       p50: quantile(0.5),
       p90: quantile(0.9),
@@ -180,7 +180,8 @@ export function runCascade(
 
 function summarise(
   members: SimMember[],
-  decisions: SimDecision[],
+  /** Deduped by member, so a retried batch can never inflate coverage. */
+  decisions: Map<number, SimDecision>,
   trial: TrialOutcome,
   spread: SimMetrics['spread'],
 ): SimMetrics {
@@ -215,8 +216,13 @@ function summarise(
     }
   }
 
-  const missing = decisions.filter((d) => d.missing).length
-  const scored = decisions.length - missing
+  let scored = 0
+  let missing = 0
+  for (const member of members) {
+    const decision = decisions.get(member.id)
+    if (decision && !decision.missing) scored++
+    else missing++
+  }
 
   return {
     uniqueExposed,

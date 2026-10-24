@@ -18,8 +18,8 @@
 ## Team
 | Name | Strengths | Owns |
 |------|-----------|------|
-| Jamshed | full-stack, hackathon experience | sim engine, JEV relevance filter, Anthropic analysis/scoring, SpacetimeDB module, video-to-text pipeline |
-| TM (Shayer) | full-stack, hackathon experience | 3D cascade viz + UI, Apify reference-reel scrape, Fetch.ai agents (Python) |
+| Jamshed | full-stack, hackathon experience | sim engine, JEV relevance filter, Anthropic analysis/scoring, SpacetimeDB module + Node worker, Apify reference-reel scrape, video-to-text pipeline |
+| TM (Shayer) | full-stack, hackathon experience | 3D island viz + UI, SpacetimeDataSource (frontend <-> module), Fetch.ai agents (Python) |
 | Unassigned | | report + follow-up chat UI/backend, auth/onboarding (decide together) |
 
 ## Problem
@@ -149,3 +149,4 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Sat 2026-10-24 JEV role corrected per user: classify scraped candidate reels for niche relevance before Anthropic video analysis, reducing potentially unnecessary downstream work. Anthropic handles deep analysis, simulated audience reactions, and marketing assistance. Noul returns a yes probability; routing thresholds and end-to-end savings require evaluation.
 - Sat ~00:50 PT Adopted the new PRD on fawaz-backend (merged main). Updated Fetch.ai agent roles to the new flow, Team table, open decisions. Next: video spike + simulation spike on a temporary clip, then upload -> analysis -> simulation -> report.
 - Sat 10:07 PT hack-check: Build phase, ~23.4 h left. Frontend (TM, `shayer` branch, unmerged) is full UI on mocks; backend has no code yet, no sponsor API called. Weakest: Functionality/Technical complexity. Next: Jamshed builds analyseVideo + startRun (Haiku scoring, cascade, SpacetimeDB) against SimDataSource.
+- Sat ~10:40 PT Backend landed on fawaz-backend: SpacetimeDB TS module (backend/spacetime) mirroring frontend/src/data/types.ts, job queue, cascade ported from TM`s mock running inside a reducer (500 members/200 trials ~265 ms locally), worker (backend/worker) with Apify Reel Scraper. Jamshed took Apify from TM. Tables are public-read until the auth decision. Not yet: Apify run through the worker (needs APIFY_TOKEN), Maincloud publish (needs spacetime login), Haiku scoring/video analysis jobs.

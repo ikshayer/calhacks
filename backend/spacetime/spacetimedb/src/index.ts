@@ -159,6 +159,7 @@ export const createVideo = spacetimedb.reducer(
     sourceUrl: t.option(t.string()),
   },
   (ctx, args) => {
+    if (ctx.db.video.clientKey.find(args.clientKey)) throw new SenderError('duplicate clientKey');
     const row = ctx.db.video.insert({
       id: 0n,
       ...args,
@@ -196,6 +197,7 @@ export const startRun = spacetimedb.reducer(
     options: RunOptions,
   },
   (ctx, args) => {
+    if (ctx.db.run.clientKey.find(args.clientKey)) throw new SenderError('duplicate clientKey');
     const v = ctx.db.video.id.find(args.videoId);
     if (!v) throw new SenderError('unknown video');
     requireOwner(ctx, v.owner);
@@ -284,8 +286,11 @@ export const writeDecisions = spacetimedb.reducer(
     const r = ctx.db.run.id.find(runId);
     if (!r) throw new SenderError('unknown run');
     if (r.status !== 'scoring') throw new SenderError(`run is ${r.status}, not scoring`);
+    // A retried batch replaces its earlier rows instead of duplicating them.
     for (const d of decisions) {
-      ctx.db.decision.insert({ rowId: 0n, runId, ...d });
+      const [existing] = [...ctx.db.decision.byRunMember.filter([runId, d.memberId])];
+      if (existing) ctx.db.decision.rowId.update({ ...existing, ...d });
+      else ctx.db.decision.insert({ rowId: 0n, runId, ...d });
     }
   }
 );
@@ -304,7 +309,7 @@ export const runCascadeForRun = spacetimedb.reducer({ runId: t.u64() }, (ctx, { 
     .map((m) => ({ id: m.memberId, groupId: m.groupId }))
     .sort((a, b) => a.id - b.id);
   const edges = [...ctx.db.audienceEdge.byAudience.filter([r.profileId, r.options.audienceVersion])];
-  const decisions = [...ctx.db.decision.runId.filter(runId)];
+  const decisions = [...ctx.db.decision.byRunMember.filter(runId)];
 
   const { rounds, metrics } = runCascade(members, edges, decisions, r.options, CASCADE_TRIALS);
 
@@ -331,7 +336,16 @@ export const upsertReferenceReels = spacetimedb.reducer(
     for (const reel of reels) {
       const [existing] = [...ctx.db.referenceReel.byProfileShortCode.filter([profileId, reel.shortCode])];
       if (existing) {
-        ctx.db.referenceReel.id.update({ ...existing, ...reel, scrapedAt: ctx.timestamp });
+        // A plain re-scrape must not erase enrichment (transcript, shares) with undefined;
+        // only the expiring CDN links always refresh.
+        const defined = Object.fromEntries(Object.entries(reel).filter(([, v]) => v !== undefined));
+        ctx.db.referenceReel.id.update({
+          ...existing,
+          ...defined,
+          videoUrl: reel.videoUrl,
+          thumbnailUrl: reel.thumbnailUrl,
+          scrapedAt: ctx.timestamp,
+        });
       } else {
         ctx.db.referenceReel.insert({
           id: 0n,

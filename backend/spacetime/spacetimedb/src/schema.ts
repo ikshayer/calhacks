@@ -215,17 +215,24 @@ const run = table({ name: 'run', public: true }, {
   createdAt: t.timestamp(),
 });
 
-const decision = table({ name: 'decision', public: true }, {
-  rowId: t.u64().primaryKey().autoInc(),
-  runId: t.u64().index('btree'),
-  memberId: t.u32(),
-  pWatch: t.f64(),
-  pLike: t.f64(),
-  pComment: t.f64(),
-  pShare: t.f64(),
-  explanation: t.string(),
-  missing: t.bool(),
-});
+const decision = table(
+  {
+    name: 'decision',
+    public: true,
+    indexes: [{ accessor: 'byRunMember', algorithm: 'btree', columns: ['runId', 'memberId'] }],
+  },
+  {
+    rowId: t.u64().primaryKey().autoInc(),
+    runId: t.u64(),
+    memberId: t.u32(),
+    pWatch: t.f64(),
+    pLike: t.f64(),
+    pComment: t.f64(),
+    pShare: t.f64(),
+    explanation: t.string(),
+    missing: t.bool(),
+  }
+);
 
 /** One cascade round of the canonical trial. The island replays these. */
 const roundEvent = table({ name: 'round_event', public: true }, {
