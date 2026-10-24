@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-24",
+  "newResidents": [
+    "maya",
+    "jules",
+    "iris",
+    "omar",
+    "pip",
+    "vera"
+  ],
+  "totalDesigns": 10,
+  "nativeChecks": {
+    "residents": [
+      "maya",
+      "jules",
+      "iris",
+      "omar",
+      "pip",
+      "vera"
+    ],
+    "passed": true,
+    "checks": [
+      "stationary root",
+      "matching endpoints",
+      "planted IK feet",
+      "foot clearance",
+      "knee and hand continuity",
+      "repaired weight-transfer helpers",
+      "authored walk preserved",
+      "neutral Idle after Walk"
+    ]
+  },
+  "exportChecks": [
+    {
+      "resident": "resident",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "nia",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "theo",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "rowan",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "maya",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "jules",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "iris",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "omar",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "pip",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    },
+    {
+      "resident": "vera",
+      "poseChecks": 12,
+      "seamError": 0,
+      "rootDrift": 0,
+      "plantedDrift": 0.000003938533497688348,
+      "result": "matching surface at 1e-5 world units"
+    }
+  ],
+  "browserChecks": {
+    "rendering": [
+      "original",
+      "optimized"
+    ],
+    "individualNewResidents": true,
+    "allFourClips": true,
+    "newSixLineup": true,
+    "allTenLineup": true,
+    "labels": true,
+    "errors": []
+  },
+  "benchmark": {
+    "fps": 102.55077562772925,
+    "p95FrameMs": 11.200000002980232,
+    "frames": 1026,
+    "residents": 48,
+    "clip": "test_walk",
+    "shadows": true,
+    "viewport": "970x609",
+    "dpr": 1.5,
+    "rendering": "optimized",
+    "design": "all",
+    "draws": 160,
+    "skeletons": 48,
+    "motion": "travel",
+    "speed": 1,
+    "gpu": "AMD Radeon 890M",
+    "warmupSeconds": 2,
+    "measurementSeconds": 10
+  },
+  "checks": {
+    "residentTests": "7 passed",
+    "typeScript": "passed",
+    "lint": "passed with existing unrelated warnings",
+    "productionBuild": "passed with existing bundle size warning"
+  }
+}

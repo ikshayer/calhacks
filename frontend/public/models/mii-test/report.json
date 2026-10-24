@@ -1,0 +1,87 @@
+{
+  "source": "https://joeycarlino.itch.io/mii-maker-for-blender",
+  "resident": "resident",
+  "blender": "5.2.0 LTS",
+  "parts": [
+    {
+      "name": "resident_body",
+      "vertices": 1354,
+      "triangles": 2704
+    },
+    {
+      "name": "resident_head",
+      "vertices": 898,
+      "triangles": 1792
+    },
+    {
+      "name": "resident_hair",
+      "vertices": 543,
+      "triangles": 1004
+    },
+    {
+      "name": "resident_eye_L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "resident_eye_R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "resident_eyebrow_L",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "resident_eyebrow_R",
+      "vertices": 4,
+      "triangles": 2
+    },
+    {
+      "name": "resident_nose",
+      "vertices": 294,
+      "triangles": 578
+    },
+    {
+      "name": "resident_mouth",
+      "vertices": 4,
+      "triangles": 2
+    }
+  ],
+  "clips": [
+    {
+      "name": "test_Idle",
+      "frames": 86
+    },
+    {
+      "name": "test_look_around",
+      "frames": 102
+    },
+    {
+      "name": "test_wave",
+      "frames": 26
+    },
+    {
+      "name": "test_walk",
+      "frames": 25
+    }
+  ],
+  "walk": {
+    "strideLength": 0.44,
+    "cycleSeconds": 1.0
+  },
+  "limitations": [
+    "Facial sprite selection is frozen at the test frame.",
+    "Asset reuse license is not specified on the listing."
+  ],
+  "deformation_check": {
+    "vertices": 1354,
+    "max_error": 0.01697974162293489,
+    "mean_error": 0.0013966827587594964,
+    "source_preserve_volume": false
+  },
+  "bones": 43,
+  "bytes": 477284,
+  "triangles": 6088
+}

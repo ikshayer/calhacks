@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resident export test</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #16211c; color: #e8ebe4; font: 14px/1.5 system-ui, sans-serif; }
+      main { position: fixed; inset: 0 310px 0 0; }
+      canvas { display: block; width: 100%; height: 100%; }
+      #labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+      #labels span { position: absolute; transform: translate(-50%, 0); background: #16211cdd; color: #fff4de; border-radius: 20px; padding: 4px 12px; font-size: 12px; white-space: nowrap; }
+      aside { position: fixed; right: 0; top: 0; bottom: 0; width: 310px; padding: 26px; overflow: auto; border-left: 1px solid #34463b; }
+      h1 { font: 26px/1.15 Georgia, serif; margin: 8px 0 14px; }
+      p { color: #acbbb0; }
+      label { display: block; margin-top: 20px; }
+      select, button { width: 100%; margin-top: 6px; padding: 9px; border-radius: 7px; background: #263b30; color: #e8ebe4; border: 1px solid #4a6554; font: inherit; }
+      button { cursor: pointer; }
+      button:disabled { opacity: .5; cursor: wait; }
+      input { accent-color: #f2b53c; }
+      output { display: block; white-space: pre-line; margin-top: 20px; font: 12px/1.8 ui-monospace, monospace; }
+      #speed { width: 100%; }
+      #speed-value { display: inline; margin: 0 0 0 8px; }
+      .views { display: flex; gap: 8px; }
+      .eyebrow { text-transform: uppercase; letter-spacing: .15em; font-size: 10px; color: #f2b53c; }
+      #status { border-left: 2px solid #f2b53c; padding-left: 12px; }
+      @media (max-width: 700px) { main { inset: 0 0 46vh; } aside { top: 54vh; width: 100%; padding: 16px; } }
+    </style>
+  </head>
+  <body>
+    <main id="viewport" aria-label="Interactive character preview"><div id="labels"></div></main>
+    <aside>
+      <div class="eyebrow">Asset evaluation</div>
+      <h1>Meet the<br />residents.</h1>
+      <p>Drag to orbit. Scroll to zoom. Inspect the face from the front and side.</p>
+      <div class="views"><button id="front" type="button">Front</button><button id="side" type="button">Side</button></div>
+      <p id="status" role="status">Loading the test export…</p>
+      <label>Rendering<select id="rendering"><option value="optimized">Optimized crowd</option><option value="original">Original export — compare</option></select></label>
+      <label>Resident design<select id="design"><option value="all" selected>All 20 designs</option><option value="new">Newest 10 designs</option><option value="previous">Earlier six designs</option><option value="first">Original four designs</option></select></label>
+      <label>Residents<select id="count"><option value="1">1 — inspect details</option><option value="4">4 — compare designs</option><option value="6">6 — compare designs</option><option value="10">10 — compare designs</option><option value="20" selected>20 — full lineup</option><option value="48">48 — crowd test</option></select></label>
+      <label>Animation<select id="clip" aria-label="Animation"></select></label>
+      <label>Movement<select id="motion"><option value="in-place">In place</option><option value="travel">Travel</option></select></label>
+      <label for="speed">Speed<output id="speed-value" for="speed">1.00×</output></label>
+      <input id="speed" aria-label="Playback and travel speed" type="range" min="0.5" max="1.5" step="0.05" value="1" />
+      <label><input id="paused" type="checkbox" /> Pause animation</label>
+      <label><input id="warm" type="checkbox" checked /> Island lighting</label>
+      <label><input id="shadows" type="checkbox" checked /> Shadows</label>
+      <button id="benchmark" disabled>Measure for 10 seconds</button>
+      <output id="metrics" aria-live="off"></output>
+      <output id="result" aria-live="polite"></output>
+      <p>Character benchmark only. Floor markers are one preview unit apart. Travel follows each resident’s stride and displayed scale. Water, buildings, and island effects add further cost.</p>
+    </aside>
+    <script type="module" src="/src/dev/mii-test.ts"></script>
+  </body>
+</html>
