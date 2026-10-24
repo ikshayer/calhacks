@@ -1,6 +1,6 @@
 # Resident designs
 
-Ten residents created with the existing Mii Maker's
+Twenty residents created with the existing Mii Maker's
 picker bones and color controls. Each `.blend` retains the complete editor and
 animation rig, including the editable one-second `walk` action at frames 0–24.
 
@@ -16,7 +16,17 @@ animation rig, including the editable one-second `walk` action at frames 0–24.
 | `omar.blend` | Close-cropped hair, rectangular glasses, moustache, navy shirt |
 | `pip.blend` | Tall mint spikes, angular face, lively eyes, apricot shirt |
 | `vera.blend` | Side-parted auburn hair, sunglasses, pointed face, rose dress |
-| `lineup.blend` | Walking comparison scene with all ten residents; the original editor scene is retained |
+| `luna.blend` | Indigo tied hair, rounded face, honey dress |
+| `felix.blend` | Sandy side-swept hair, gentle face, sage shirt |
+| `zuri.blend` | Long dark textured hair, narrow face, sunflower dress |
+| `hugo.blend` | Wavy chestnut hair, moustache, periwinkle shirt |
+| `cleo.blend` | Dark bob, bold glasses, tangerine dress |
+| `eden.blend` | Rounded lilac bob, relaxed eyes, icy blue dress |
+| `kai.blend` | Close-cut dark hair, angular face, seafoam shirt |
+| `sage.blend` | Layered silver hair, glasses, plum shirt |
+| `arlo.blend` | Auburn top bun, moustache, forest shirt |
+| `bea.blend` | Pink tied-up hair, bright eyes, berry dress |
+| `lineup.blend` | Walking comparison scene with all twenty residents; the original editor scene is retained |
 
 The live Blender session is showing the **Resident walking lineup** scene. To edit a
 resident's options, open its individual `.blend` and use the original pickers.
@@ -24,14 +34,14 @@ The arm weight-transfer helper fix is included in each file.
 
 Browser-ready exports and per-resident reports live in
 `frontend/public/models/mii-test/`, using the same resident filenames.
-All ten include idle, look-around, wave, and walk clips and stride metadata.
+All twenty include idle, look-around, wave, and walk clips and stride metadata.
 Their authoring files retain the repaired weight-transfer helpers.
 Each new resident starts from `resident.blend` so
 accessories and proportions do not accidentally carry over from another preset.
 
 Open <http://127.0.0.1:5173/mii-test.html> with the frontend development server
-running. The preview opens on the six new residents. Select **All ten designs**
-for the full lineup, choose a resident for a close view, or show a mixed
+running. The preview opens on **All 20 designs**. The newest ten, the earlier six,
+and the original four each have a separate group. Choose a resident for a close view, or show a mixed
 48-resident crowd. Both original and optimized rendering are available.
 The production simulation has not been switched to these models.
 
@@ -48,7 +58,7 @@ base snapshot as input:
 & 'D:/Blender/blender.exe' --background '.tmp/mii-residents/base.blend' --disable-autoexec --python 'scripts/export_mii_test.py' -- --resident nia
 ```
 
-Replace `nia` with any preset ID from the table. For the six newest designs, use
+Replace `nia` with any preset ID from the table. For the newer designs, use
 `assets/residents/resident.blend` as the input. This writes the corresponding editable
 `.blend`, exported `.glb`, and report. Use `--prepare-only` to save the editor
 design without exporting. Running an export replaces that design's generated

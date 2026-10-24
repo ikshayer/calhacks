@@ -5,6 +5,7 @@ The original editor scene is retained; a copy is saved to assets/residents.
 """
 from pathlib import Path
 import json
+import math
 import bpy
 from mathutils import Vector
 
@@ -30,10 +31,13 @@ def material(name, color):
 
 label_material = material('Resident labels', (.025, .04, .05))
 catalog = json.loads((ROOT / 'frontend/src/dev/residentCatalog.json').read_text())
-columns = 5
+columns = 7 if len(catalog) > 10 else 5
+rows = math.ceil(len(catalog) / columns)
 for index, spec in enumerate(catalog):
     resident_id, name = spec['id'], spec['name']
-    x, y = (index % columns - 2) * 2.1, (index // columns - .5) * 4.8
+    row = index // columns
+    row_count = min(columns, len(catalog) - row * columns)
+    x, y = (index % columns - (row_count - 1) / 2) * 2.1, (row - (rows - 1) / 2) * 4.8
     before = set(scene.objects)
     bpy.ops.import_scene.gltf(filepath=str(ROOT / 'frontend/public/models/mii-test' / (resident_id + '.glb')))
     imported = set(scene.objects) - before
@@ -85,15 +89,17 @@ bpy.ops.mesh.primitive_plane_add(size=200, location=(0,0,-.025))
 bpy.context.object.name = 'Studio floor'
 bpy.context.object.data.materials.append(material('Studio sand', (.44,.51,.52)))
 camera = bpy.data.cameras.new('Resident lineup camera')
-camera.type, camera.ortho_scale = 'ORTHO', 13.8
+camera.type, camera.ortho_scale = 'ORTHO', 18.8 if len(catalog) > 10 else 13.8
 obj = bpy.data.objects.new('Resident lineup camera',camera)
 scene.collection.objects.link(obj)
-obj.location = (0,-13,10)
+obj.location = (0,-19,14) if len(catalog) > 10 else (0,-13,10)
 obj.rotation_euler = (Vector((0,0,1.2))-obj.location).to_track_quat('-Z','Y').to_euler()
 scene.camera = obj
-scene.render.resolution_x, scene.render.resolution_y = 1600, 900
+scene.render.resolution_x, scene.render.resolution_y = (2000, 1200) if len(catalog) > 10 else (1600, 900)
 scene.render.resolution_percentage = 100
-for name, position, energy, size in [('Key',(-4,-6,8),900,7),('Fill',(5,-3,5),650,6)]:
+lights = ([('Key',(-6,-8,11),1800,11),('Fill',(8,-4,9),1400,10)] if len(catalog) > 10
+          else [('Key',(-4,-6,8),900,7),('Fill',(5,-3,5),650,6)])
+for name, position, energy, size in lights:
     light = bpy.data.lights.new(name,'AREA')
     light.energy, light.shape, light.size = energy, 'DISK', size
     obj = bpy.data.objects.new(name,light)

@@ -112,9 +112,9 @@ const projected = new THREE.Vector3()
 function setView(side = false) {
   cancelMeasurement()
   const count = Number(countInput.value)
-  const lineupGrid = count === 6 || count === 10
-  const distance = count === 1 ? 5.5 : count === 4 ? 12.5 : lineupGrid ? 14 : 24
-  camera.position.set(side ? distance : 0, count === 1 ? 1.8 : count === 4 ? 2.7 : lineupGrid ? 10 : 14,
+  const lineupGrid = count === 6 || count === 10 || count === 20
+  const distance = count === 1 ? 5.5 : count === 4 ? 12.5 : count === 20 ? 20 : lineupGrid ? 14 : 24
+  camera.position.set(side ? distance : 0, count === 1 ? 1.8 : count === 4 ? 2.7 : count === 20 ? 14 : lineupGrid ? 10 : 14,
     followOffset + (side ? 0 : distance))
   controls.update()
 }
@@ -207,6 +207,7 @@ renderer.setAnimationLoop(() => {
 
 try {
   const specs = residentCatalog
+  const latestBatch = Math.max(...specs.map((spec) => spec.batch))
   for (const spec of specs) designInput.add(new Option(`${spec.name} — ${spec.description}`, spec.id))
   const loader = new GLTFLoader()
   const templates = await Promise.all(specs.map(async (spec) => {
@@ -225,6 +226,10 @@ try {
     return { ...spec, gltf, prepared, center, floor: bounds.min.y, scale: 2.4 / size.y, bones, walk }
   }))
   debug.designs = templates.map((t) => t.name)
+  const groups = new Map([
+    ['all', templates], ['new', templates.filter((t) => t.batch === latestBatch)],
+    ['previous', templates.filter((t) => t.batch === 1)], ['first', templates.filter((t) => t.batch === 0)],
+  ])
   debug.clips = templates[0]!.gltf.animations.map((a) => a.name)
   clipInput.add(new Option('Rest pose', ''))
   for (const name of debug.clips) {
@@ -250,9 +255,7 @@ try {
     debug.rendering = renderingInput.value
     debug.skeletons = 0
     debug.meshes = 0
-    const choices = designInput.value === 'all' ? templates
-      : designInput.value === 'new' ? templates.filter((t) => t.new)
-        : templates.filter((t) => t.id === designInput.value)
+    const choices = groups.get(designInput.value) ?? templates.filter((t) => t.id === designInput.value)
     debug.bones = choices[0]!.bones
     for (let i = 0; i < debug.count; i++) {
       const template = choices[i % choices.length]!
@@ -267,15 +270,18 @@ try {
       model.position.set(-template.center.x, -template.floor, -template.center.z)
       wrapper.add(model)
       if (debug.count === 4) wrapper.position.set((i - 1.5) * 2.1, 0, 0)
-      else if (debug.count === 6 || debug.count === 10) {
-        const columns = debug.count / 2
-        wrapper.position.set((i % columns - (columns - 1) / 2) * 2.1, 0, (Math.floor(i / columns) - 0.5) * 4.8)
+      else if (debug.count > 4 && debug.count <= 20) {
+        const columns = debug.count <= 10 ? debug.count / 2 : 7
+        const rows = Math.ceil(debug.count / columns)
+        const row = Math.floor(i / columns)
+        const rowCount = Math.min(columns, debug.count - row * columns)
+        wrapper.position.set((i % columns - (rowCount - 1) / 2) * 2.1, 0, (row - (rows - 1) / 2) * 4.8)
       }
       else if (debug.count > 1) wrapper.position.set((i % 8 - 3.5) * 1.8, 0, (Math.floor(i / 8) - 2.5) * 2.2)
       residents.add(wrapper)
       const playback = new ResidentPlayback(model, template.gltf.animations, template.walk, i * 0.137)
       playbacks.push({ playback, wrapper, baseZ: wrapper.position.z, distance: 0, scale: template.scale })
-      if (debug.count <= 10) {
+      if (debug.count <= 20) {
         const node = document.createElement('span')
         node.textContent = template.name
         labelLayer.append(node)
@@ -292,7 +298,7 @@ try {
   countInput.onchange = populate
   renderingInput.onchange = populate
   designInput.onchange = () => {
-    countInput.value = designInput.value === 'all' ? '10' : designInput.value === 'new' ? '6' : '1'
+    countInput.value = String(groups.get(designInput.value)?.length ?? 1)
     populate()
   }
   shadowInput.onchange = () => { cancelMeasurement(); renderer.shadowMap.enabled = shadowInput.checked }
@@ -306,7 +312,7 @@ try {
   debug.loaded = true
   benchmark.disabled = false
   populate()
-  status.textContent = 'Six new residents, ten designs in total. Choose a resident for a close view, or compare the lineups.'
+  status.textContent = `${specs.length} resident designs. Choose a group to compare, or a resident for a close view.`
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error)
   debug.errors.push(message)

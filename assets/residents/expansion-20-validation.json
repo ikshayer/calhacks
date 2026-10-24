@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-24",
+  "newResidents": [
+    "luna",
+    "felix",
+    "zuri",
+    "hugo",
+    "cleo",
+    "eden",
+    "kai",
+    "sage",
+    "arlo",
+    "bea"
+  ],
+  "totalDesigns": 20,
+  "previousAssets": {
+    "residents": 10,
+    "files": 20,
+    "sha256Unchanged": true
+  },
+  "nativeWalkChecks": {
+    "newResidents": 10,
+    "passed": true,
+    "rootDrift": 0,
+    "seamError": 0,
+    "maxPlantedDrift": 0.000004293758673577889,
+    "footClearance": 0.04480759799480438,
+    "maxJointStepRadians": 0.22376015782356262,
+    "authoredWalkPreserved": true,
+    "weightTransferRepairPreserved": true
+  },
+  "exportChecks": {
+    "residents": 20,
+    "poseChecks": 240,
+    "surfaceTolerance": 0.00001,
+    "rootDrift": 0,
+    "seamError": 0,
+    "maxPlantedDrift": 0.000003938533497688348
+  },
+  "previewChecks": {
+    "originalAndOptimized": true,
+    "allFourClipsOnNewDesigns": true,
+    "groups": {
+      "all": 20,
+      "newest": 10,
+      "earlier": 6,
+      "original": 4
+    },
+    "counts": [
+      1,
+      4,
+      6,
+      10,
+      20,
+      48
+    ],
+    "movement": [
+      "in-place",
+      "travel"
+    ],
+    "labels": true,
+    "default": "All 20 designs",
+    "errors": []
+  },
+  "benchmark": {
+    "fps": 111.37438389173809,
+    "p95FrameMs": 10.5,
+    "frames": 1114,
+    "residents": 48,
+    "clip": "test_walk",
+    "shadows": true,
+    "viewport": "970x609",
+    "dpr": 1.5,
+    "rendering": "optimized",
+    "design": "all",
+    "draws": 158,
+    "skeletons": 48,
+    "motion": "travel",
+    "speed": 1,
+    "gpu": "AMD Radeon 890M",
+    "warmupSeconds": 2,
+    "measurementSeconds": 10
+  },
+  "checks": {
+    "residentTests": "7 passed",
+    "typeScript": "passed",
+    "lint": "passed with existing unrelated warnings",
+    "productionBuild": "passed with existing bundle-size warning"
+  }
+}
