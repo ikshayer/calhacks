@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+/*
+  The chrome sits next to a bright, saturated, toy-like 3D island. Matching it
+  would produce a garish interface and unreadable text over a moving scene, so
+  the registers are deliberately opposed: the canvas is playful, the panel
+  around it is a calm dark instrument. Greens here are pulled from deep garden
+  shade rather than being a tinted near-black.
+*/
+@theme {
+  --color-ink: #121a16;
+  --color-panel: #1b2520;
+  --color-raised: #243029;
+  --color-line: #2e3b34;
+  --color-paper: #e8ebe4;
+  --color-muted: #93a09a;
+  --color-faint: #6b7872;
+
+  /* Marigold. Deliberately bound to the share-trail colour in the 3D scene, so
+     the accent in the UI and the thing moving on the island are the same idea. */
+  --color-sun: #f2b53c;
+  --color-bloom: #e2735f;
+  --color-leaf: #7fb069;
+  --color-water: #6aa9c9;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-ui: 'Archivo', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+  font-synthesis-weight: none;
+}
+
+/* Metrics are compared down a column, so figures must not shift width. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variation-settings: 'SOFT' 40, 'WONK' 0;
+  letter-spacing: -0.012em;
+}
+
+/* Keyboard focus must stay visible everywhere, including over the 3D canvas. */
+:focus-visible {
+  outline: 2px solid var(--color-sun);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection {
+  background: var(--color-sun);
+  color: var(--color-ink);
+}
+
+/* Scrollbars inside the dense sidebar, so they do not read as OS chrome. */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+.scroll-slim::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover {
+  background: #3c4c43;
+  background-clip: content-box;
+}
+
+/*
+  Panels floating over the 3D scene. Backdrop blur keeps text readable while the
+  island keeps moving underneath, which a flat translucent fill does not.
+*/
+.over-canvas {
+  background: color-mix(in oklab, var(--color-ink) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+  box-shadow: 0 18px 40px -22px rgb(0 0 0 / 0.75);
+}
+
+input[type='range'] {
+  accent-color: var(--color-sun);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
