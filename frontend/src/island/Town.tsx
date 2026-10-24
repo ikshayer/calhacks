@@ -8,6 +8,7 @@ import { architectureFor, planTown } from './townArchitecture'
 import { planLandscape } from './landscapePlanning'
 import { createFoliageMaterial, type FoliageMode } from './foliageMaterial'
 import { createLeafCardBatch, isFoliageColor, leafSurfaces, sampleLeafCards, type LeafCard } from './leafCards'
+import { planGrassLeaves } from './grassLeaves'
 
 const TOWN_MODEL_PATHS = islandModelKeys().map((key) => `/models/${key}.glb`)
 
@@ -189,6 +190,8 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
             'bush', gardenBlocked))
         }
       }
+      const grassLeaves = planGrassLeaves(island, [...treeBlocked, ...landscape.obstacles.map(obstacle => obstacle.bounds)])
+      leafCards.push(...grassLeaves.cards)
       if (leafCards.length) {
         const cards = createLeafCardBatch(leafCards)
         ownedGeometry.push(cards.geometry); ownedMaterials.push(cards.material); ownedTextures.push(cards.texture)
@@ -214,7 +217,8 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
           height: detail.footprint.max.y, footprint: detail.totalBounds.getSize(new THREE.Vector3()).toArray(),
           footprintBounds: { min: detail.totalBounds.min.toArray(), max: detail.totalBounds.max.toArray() },
           door: detail.door, horizontal: style.fit.horizontal, courseExtra: style.fit.courseExtra })),
-        batches: meshes.length, trimParts: boxes.length, leafCards: leafCards.length } })
+        batches: meshes.length, trimParts: boxes.length, leafCards: leafCards.length,
+        grassPatches: grassLeaves.patches, grassLeafCards: grassLeaves.cards.length } })
       return dispose
     } catch (error) {
       // A1 requires a missing-asset fallback rather than a blank simulation. The

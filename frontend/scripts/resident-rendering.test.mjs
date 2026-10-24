@@ -21,6 +21,62 @@ import { islandModelKeys } from '../src/island/scene/island.ts'
 import { planLandscape, walkCorridors, WALK_CLEARANCE } from '../src/island/landscapePlanning.ts'
 import { createFountainGeometry, FOUNTAIN_RADIUS, FOUNTAIN_POOL_Y } from '../src/island/fountainGeometry.ts'
 import { createLeafCardBatch, leafSurfaces, sampleLeafCards } from '../src/island/leafCards.ts'
+import { planGrassLeaves } from '../src/island/grassLeaves.ts'
+
+test('grass beds span adjoining tiles, stay connected and keep paths, doors, buildings and furniture clear', () => {
+  const island = buildIsland(hashSeed('giving-garden-island'))
+  const town = planTown(island.plots, island, deliveredTownBounds())
+  const landscape = planLandscape(island, town, deliveredTownBounds())
+  const blocked = [...landscape.corridors, ...landscape.buildingBounds, ...landscape.approaches, ...landscape.obstacles.map(item => item.bounds)]
+  const before = JSON.stringify(island)
+  const grass = planGrassLeaves(island, blocked)
+  assert.deepEqual(grass, planGrassLeaves(island, blocked))
+  assert.equal(JSON.stringify(island), before)
+  assert.ok(grass.patches.length >= 10 && grass.patches.length <= 18)
+  const tufts = grass.patches.reduce((sum, patch) => sum + patch.tufts.length, 0)
+  assert.ok(grass.cards.length >= tufts * 6 && grass.cards.length <= tufts * 8)
+  for (const patch of grass.patches) {
+    assert.ok(patch.tiles.length >= 2, 'a bed must extend across adjoining grass tiles')
+    assert.ok(patch.tufts.length >= 28, 'a bed must read as a substantial planting')
+    const connected = new Set([0])
+    const queue = [0]
+    for (const at of queue) {
+      patch.tufts.forEach((tuft, index) => {
+        if (connected.has(index) || Math.hypot(tuft.x - patch.tufts[at].x, tuft.z - patch.tufts[at].z) > 0.60) return
+        connected.add(index)
+        queue.push(index)
+      })
+    }
+    assert.equal(connected.size, patch.tufts.length, 'no detached sprigs may escape a bed')
+  }
+  const unitLeaf = new THREE.Box3(new THREE.Vector3(-0.5, 0, 0), new THREE.Vector3(0.5, 1, 0))
+  for (const card of grass.cards) {
+    const bounds = unitLeaf.clone().applyMatrix4(card.matrix)
+    assert.ok(bounds.min.y >= 0.003 && bounds.max.y < 0.48)
+    assert.ok(!blocked.some(box => box.intersectsBox(bounds)))
+    for (const x of [bounds.min.x, bounds.max.x]) for (const z of [bounds.min.z, bounds.max.z]) {
+      assert.equal(islandTileAt(island, x, z), Tile.Grass)
+    }
+  }
+})
+
+test('grass beds require shared grass edges and cannot bridge a blocked seam', () => {
+  const tiles = new Uint8Array(GRID * GRID)
+  const center = Math.floor(GRID / 2) * GRID + Math.floor(GRID / 2)
+  const island = { tiles, plots: [], walkable: [], links: [], lamps: [] }
+  tiles[center] = Tile.Grass
+  tiles[center + GRID + 1] = Tile.Grass
+  assert.equal(planGrassLeaves(island, []).cards.length, 0, 'diagonal grass tiles are separate lawns')
+  tiles[center + GRID + 1] = Tile.Water
+  tiles[center + 1] = Tile.Grass
+  const grass = planGrassLeaves(island, [])
+  assert.equal(grass.patches.length, 1)
+  assert.deepEqual([...grass.patches[0].tiles].sort((a, b) => a - b), [center, center + 1])
+  const barrier = new THREE.Box3(new THREE.Vector3(TILE / 2 - 0.2, -1, -TILE), new THREE.Vector3(TILE / 2 + 0.2, 1, TILE))
+  assert.equal(planGrassLeaves(island, [barrier]).cards.length, 0, 'a blocked seam cannot connect the planting')
+  tiles.fill(Tile.Water)
+  assert.deepEqual(planGrassLeaves(island, []), { cards: [], patches: [] })
+})
 
 test('leaf cards attach reproducibly to transformed green surfaces and respect blocked routes', () => {
   const geometry = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2)
