@@ -17,11 +17,16 @@ export const config = {
   spacetimeHost: process.env.SPACETIME_HOST ?? 'ws://127.0.0.1:3000',
   spacetimeDb: required('SPACETIME_DB'),
   workerSecret: required('WORKER_SECRET'),
-  /** Where the worker keeps its SpacetimeDB token, so it keeps one identity across restarts. */
-  /** One token per database: a token from the local server is not valid on Maincloud. */
+  /**
+   * Where the worker keeps its SpacetimeDB token, so it keeps one identity across
+   * restarts. One file per database: a local-server token is not valid on Maincloud.
+   */
   tokenFile: process.env.WORKER_TOKEN_FILE ?? `.worker-token-${process.env.SPACETIME_DB}`,
   apifyToken: process.env.APIFY_TOKEN,
   /** Niche accounts scraped for every profile, in addition to its inspiration accounts. */
   referenceAccounts: list('REFERENCE_ACCOUNTS'),
+  /** Required only when a score_run job runs, so the worker still starts without it. */
+  jevApiKey: process.env.JEV_API_KEY,
+  jevConcurrency: Number(process.env.JEV_CONCURRENCY ?? 16),
   reelsPerAccount: Number(process.env.REELS_PER_ACCOUNT ?? 10),
 };

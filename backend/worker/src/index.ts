@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { config } from './config.ts';
 import { scrapeReels } from './apify.ts';
+import { scoreRun } from './jobs/scoreRun.ts';
 import { DbConnection } from './module_bindings/index.ts';
 import type { Job } from './module_bindings/types.ts';
 
@@ -31,8 +32,9 @@ const handlers: Record<string, Handler> = {
     }
     console.log(`[scrape] stored ${reels.length} reels for ${profile.id}`);
   },
-  // analyse_video and score_run land with the Anthropic pipeline. Until then
-  // those jobs stay queued rather than being claimed and failed.
+  score_run: scoreRun,
+  // analyse_video lands with the Anthropic pipeline. Until then those jobs stay
+  // queued rather than being claimed and failed.
 };
 
 /** Jobs already picked up by this process, so an insert and the initial sync don't double-claim. */
@@ -45,25 +47,40 @@ async function handleJob(conn: DbConnection, job: Job) {
 
   try {
     await conn.reducers.claimJob({ jobId: job.id });
-  } catch {
-    return; // Another worker claimed it first.
+  } catch (error) {
+    // Losing the race to another worker is expected; anything else is a real failure.
+    const message = errorMessage(error);
+    if (message.includes('job already claimed')) return;
+    console.error(`[job ${job.id}] could not claim ${job.kind}: ${message}`);
+    seen.delete(job.id);
+    return;
   }
 
   try {
     await handler(conn, job);
     await conn.reducers.finishJob({ jobId: job.id });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = errorMessage(error);
     console.error(`[job ${job.id}] ${job.kind} failed: ${message}`);
-    await conn.reducers.failJob({ jobId: job.id, error: message }).catch(() => {});
+    try {
+      await conn.reducers.failJob({ jobId: job.id, error: message });
+    } catch (reportError) {
+      console.error(`[job ${job.id}] could not record the failure; job stays claimed: ${errorMessage(reportError)}`);
+    }
   }
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/** A missing token file means first run; any other read error is a real problem. */
 async function loadToken(): Promise<string | undefined> {
   try {
     return (await readFile(config.tokenFile, 'utf8')).trim() || undefined;
-  } catch {
-    return undefined;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
   }
 }
 
@@ -94,7 +111,13 @@ DbConnection.builder()
         for (const job of queued) void handleJob(conn, job);
       })
       .onError((ctx) => console.error('[worker] subscription error', ctx))
-      .subscribe(['SELECT * FROM job', 'SELECT * FROM company_profile']);
+      .subscribe([
+        'SELECT * FROM job',
+        'SELECT * FROM company_profile',
+        'SELECT * FROM run',
+        'SELECT * FROM video',
+        'SELECT * FROM audience_member',
+      ]);
   })
   .onConnectError((_ctx, error) => {
     console.error('[worker] could not connect:', error.message);
