@@ -5,6 +5,7 @@ import { config } from '../config.ts';
 import { models } from '../models.ts';
 import type { DbConnection } from '../module_bindings/index.ts';
 import type { Job } from '../module_bindings/types.ts';
+import { setStage } from '../stage.ts';
 import { readVideo } from '../video/analyse.ts';
 import { extractFrames, probe } from '../video/ffmpeg.ts';
 import { resolveSource } from '../video/source.ts';
@@ -23,14 +24,18 @@ export async function analyseVideo(conn: DbConnection, job: Job): Promise<void> 
   const company = conn.db.companyProfile.id.find(video.profileId);
   if (!company) throw new Error(`analyse_video: video ${job.targetId} references unknown profile "${video.profileId}"`);
 
+  await setStage(conn, job, 'Loading the video');
   const source = await resolveSource(video.sourceUrl);
   const work = await mkdtemp(join(tmpdir(), 'frames-'));
   try {
     const { durationSec, hasAudio } = await probe(source.path);
+    await setStage(conn, job, 'Sampling frames and transcribing speech');
     const [frames, transcript] = await Promise.all([extractFrames(source.path, durationSec, work), transcribe(source.path, hasAudio, durationSec)]);
+    await setStage(conn, job, 'Reading the video with Claude');
     const { reading, inputTokens, outputTokens } = await readVideo({ apiKey, company, durationSec, frames, transcript });
 
-    await conn.reducers.setVideoAnalysis({ videoId, signals: { ...reading.signals, durationSec }, summary: reading.summary });
+    const analysisJson = JSON.stringify({ transcript, onScreenText: reading.onScreenText, notes: reading.notes });
+    await conn.reducers.setVideoAnalysis({ videoId, signals: { ...reading.signals, durationSec }, summary: reading.summary, analysisJson });
 
     await mkdir(CACHE_DIR, { recursive: true });
     await writeFile(

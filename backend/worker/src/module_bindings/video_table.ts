@@ -31,4 +31,5 @@ export default __t.row({
   error: __t.option(__t.string()),
   createdAt: __t.timestamp().name("created_at"),
   profileId: __t.string().name("profile_id"),
+  analysisJson: __t.string().name("analysis_json"),
 });

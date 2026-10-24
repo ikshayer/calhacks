@@ -35,15 +35,24 @@ import {
 
 // Import all reducer arg schemas
 import ClaimJobReducer from "./claim_job_reducer";
+import CompareRunsReducer from "./compare_runs_reducer";
 import CreateVideoReducer from "./create_video_reducer";
 import FailJobReducer from "./fail_job_reducer";
 import FinishJobReducer from "./finish_job_reducer";
 import RegisterWorkerReducer from "./register_worker_reducer";
+import RequestExplanationReducer from "./request_explanation_reducer";
 import RequestReferencesReducer from "./request_references_reducer";
+import RequestReportReducer from "./request_report_reducer";
 import ReviseSignalsReducer from "./revise_signals_reducer";
 import RunCascadeForRunReducer from "./run_cascade_for_run_reducer";
 import SaveAudienceReducer from "./save_audience_reducer";
+import SendChatMessageReducer from "./send_chat_message_reducer";
+import SetChatReplyReducer from "./set_chat_reply_reducer";
+import SetComparisonSummaryReducer from "./set_comparison_summary_reducer";
+import SetExplanationReducer from "./set_explanation_reducer";
+import SetJobStageReducer from "./set_job_stage_reducer";
 import SetReelRelevanceReducer from "./set_reel_relevance_reducer";
+import SetReportReducer from "./set_report_reducer";
 import SetVideoAnalysisReducer from "./set_video_analysis_reducer";
 import SetWorkerSecretReducer from "./set_worker_secret_reducer";
 import StartRunReducer from "./start_run_reducer";
@@ -56,10 +65,13 @@ import WriteDecisionsReducer from "./write_decisions_reducer";
 // Import all table schema definitions
 import AudienceEdgeRow from "./audience_edge_table";
 import AudienceMemberRow from "./audience_member_table";
+import ChatMessageRow from "./chat_message_table";
 import CompanyProfileRow from "./company_profile_table";
+import ComparisonRow from "./comparison_table";
 import DecisionRow from "./decision_table";
 import JobRow from "./job_table";
 import ReferenceReelRow from "./reference_reel_table";
+import ReportRow from "./report_table";
 import RoundEventRow from "./round_event_table";
 import RunRow from "./run_table";
 import VideoRow from "./video_table";
@@ -99,6 +111,20 @@ const tablesSchema = __schema({
       { name: 'audience_member_row_id_key', constraint: 'unique', columns: ['rowId'] },
     ],
   }, AudienceMemberRow),
+  chatMessage: __table({
+    name: 'chat_message',
+    indexes: [
+      { accessor: 'id', name: 'chat_message_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'runId', name: 'chat_message_run_id_idx_btree', algorithm: 'btree', columns: [
+        'runId',
+      ] },
+    ],
+    constraints: [
+      { name: 'chat_message_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ChatMessageRow),
   companyProfile: __table({
     name: 'company_profile',
     indexes: [
@@ -113,6 +139,20 @@ const tablesSchema = __schema({
       { name: 'company_profile_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, CompanyProfileRow),
+  comparison: __table({
+    name: 'comparison',
+    indexes: [
+      { accessor: 'id', name: 'comparison_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'owner', name: 'comparison_owner_idx_btree', algorithm: 'btree', columns: [
+        'owner',
+      ] },
+    ],
+    constraints: [
+      { name: 'comparison_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ComparisonRow),
   decision: __table({
     name: 'decision',
     indexes: [
@@ -157,6 +197,20 @@ const tablesSchema = __schema({
       { name: 'reference_reel_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, ReferenceReelRow),
+  report: __table({
+    name: 'report',
+    indexes: [
+      { accessor: 'owner', name: 'report_owner_idx_btree', algorithm: 'btree', columns: [
+        'owner',
+      ] },
+      { accessor: 'runId', name: 'report_run_id_idx_btree', algorithm: 'btree', columns: [
+        'runId',
+      ] },
+    ],
+    constraints: [
+      { name: 'report_run_id_key', constraint: 'unique', columns: ['runId'] },
+    ],
+  }, ReportRow),
   roundEvent: __table({
     name: 'round_event',
     indexes: [
@@ -229,15 +283,24 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("claim_job", ClaimJobReducer),
+  __reducerSchema("compare_runs", CompareRunsReducer),
   __reducerSchema("create_video", CreateVideoReducer),
   __reducerSchema("fail_job", FailJobReducer),
   __reducerSchema("finish_job", FinishJobReducer),
   __reducerSchema("register_worker", RegisterWorkerReducer),
+  __reducerSchema("request_explanation", RequestExplanationReducer),
   __reducerSchema("request_references", RequestReferencesReducer),
+  __reducerSchema("request_report", RequestReportReducer),
   __reducerSchema("revise_signals", ReviseSignalsReducer),
   __reducerSchema("run_cascade_for_run", RunCascadeForRunReducer),
   __reducerSchema("save_audience", SaveAudienceReducer),
+  __reducerSchema("send_chat_message", SendChatMessageReducer),
+  __reducerSchema("set_chat_reply", SetChatReplyReducer),
+  __reducerSchema("set_comparison_summary", SetComparisonSummaryReducer),
+  __reducerSchema("set_explanation", SetExplanationReducer),
+  __reducerSchema("set_job_stage", SetJobStageReducer),
   __reducerSchema("set_reel_relevance", SetReelRelevanceReducer),
+  __reducerSchema("set_report", SetReportReducer),
   __reducerSchema("set_video_analysis", SetVideoAnalysisReducer),
   __reducerSchema("set_worker_secret", SetWorkerSecretReducer),
   __reducerSchema("start_run", StartRunReducer),

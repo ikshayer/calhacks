@@ -1,5 +1,7 @@
 /** Worker configuration, read once from the environment (repo-root .env). */
 
+import { fileURLToPath } from 'node:url';
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name} in .env (see .env.example)`);
@@ -31,4 +33,9 @@ export const config = {
   /** Required only when an analyse_video job runs. */
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   reelsPerAccount: Number(process.env.REELS_PER_ACCOUNT ?? 10),
+  /**
+   * Folder that `demo:<file>` sourceUrls resolve against. Defaults to the
+   * frontend's public/demo, so the browser plays the same file the worker analyses.
+   */
+  demoVideosDir: process.env.DEMO_VIDEOS_DIR || fileURLToPath(new URL('../../../frontend/public/demo/', import.meta.url)),
 };

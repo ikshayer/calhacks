@@ -20,4 +20,5 @@ export default {
     return ContentSignals;
   },
   summary: __t.string(),
+  analysisJson: __t.string(),
 };

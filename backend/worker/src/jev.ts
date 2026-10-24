@@ -53,8 +53,8 @@ export interface JevScore {
   inputTokens: number;
 }
 
-interface JevResponse {
-  answers?: Partial<Record<Signal, { noul?: unknown }>>;
+export interface JevBody {
+  answers?: Record<string, { noul?: unknown } | undefined>;
   usage?: { input_tokens?: unknown };
 }
 
@@ -63,13 +63,13 @@ export class JevAuthError extends Error {}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Score one member. Retries 429s with exponential backoff; any other failure throws. */
-export async function scoreMember(apiKey: string, state: JevState): Promise<JevScore> {
+/** Calls JEV with the given state and questions. Retries 429s with exponential backoff; any other failure throws. */
+export async function askJev(apiKey: string, state: unknown, questions: object): Promise<JevBody> {
   for (let attempt = 1; ; attempt++) {
     const res = await fetch(JEV_URL, {
       method: 'POST',
       headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ model: JEV_MODEL, state, questions: QUESTIONS }),
+      body: JSON.stringify({ model: JEV_MODEL, state, questions }),
     });
     if (res.status === 429 && attempt < MAX_ATTEMPTS) {
       await sleep(BACKOFF_MS * 2 ** (attempt - 1));
@@ -79,18 +79,29 @@ export async function scoreMember(apiKey: string, state: JevState): Promise<JevS
       throw new JevAuthError(`JEV rejected the API key (${res.status}): ${(await res.text()).slice(0, 300)}`);
     }
     if (!res.ok) throw new Error(`JEV ${res.status}${res.status === 429 ? ` after ${attempt} attempts` : ''}: ${(await res.text()).slice(0, 300)}`);
-
-    const body = (await res.json()) as JevResponse;
-    const p = {} as Record<Signal, number>;
-    for (const signal of SIGNALS) {
-      const value = body.answers?.[signal]?.noul;
-      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
-        throw new Error(`JEV returned an invalid "${signal}" answer: ${JSON.stringify(body.answers?.[signal])}`);
-      }
-      p[signal] = value;
-    }
-    const inputTokens = body.usage?.input_tokens;
-    if (typeof inputTokens !== 'number') throw new Error(`JEV response has no usage.input_tokens: ${JSON.stringify(body.usage)}`);
-    return { p, inputTokens };
+    return (await res.json()) as JevBody;
   }
+}
+
+/** Reads one Noul answer, which must be a probability in [0, 1]. */
+export function noulAnswer(body: JevBody, id: string): number {
+  const value = body.answers?.[id]?.noul;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error(`JEV returned an invalid "${id}" answer: ${JSON.stringify(body.answers?.[id])}`);
+  }
+  return value;
+}
+
+export function inputTokensOf(body: JevBody): number {
+  const inputTokens = body.usage?.input_tokens;
+  if (typeof inputTokens !== 'number') throw new Error(`JEV response has no usage.input_tokens: ${JSON.stringify(body.usage)}`);
+  return inputTokens;
+}
+
+/** Score one member. */
+export async function scoreMember(apiKey: string, state: JevState): Promise<JevScore> {
+  const body = await askJev(apiKey, state, QUESTIONS);
+  const p = {} as Record<Signal, number>;
+  for (const signal of SIGNALS) p[signal] = noulAnswer(body, signal);
+  return { p, inputTokens: inputTokensOf(body) };
 }

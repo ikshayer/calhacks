@@ -57,6 +57,17 @@ export const AudienceMember = __t.object("AudienceMember", {
 });
 export type AudienceMember = __Infer<typeof AudienceMember>;
 
+export const ChatMessage = __t.object("ChatMessage", {
+  id: __t.u64(),
+  runId: __t.u64(),
+  owner: __t.identity(),
+  role: __t.string(),
+  content: __t.string(),
+  status: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type ChatMessage = __Infer<typeof ChatMessage>;
+
 export const CompanyProfile = __t.object("CompanyProfile", {
   id: __t.string(),
   owner: __t.identity(),
@@ -75,6 +86,44 @@ export const CompanyProfile = __t.object("CompanyProfile", {
   updatedAt: __t.timestamp(),
 });
 export type CompanyProfile = __Infer<typeof CompanyProfile>;
+
+export const Comparison = __t.object("Comparison", {
+  id: __t.u64(),
+  owner: __t.identity(),
+  baseRunId: __t.u64(),
+  revisedRunId: __t.u64(),
+  status: __t.string(),
+  audienceSize: __t.u32(),
+  matched: __t.u32(),
+  coverage: __t.f64(),
+  get baseMeans() {
+    return Means;
+  },
+  get revisedMeans() {
+    return Means;
+  },
+  get deltaMeans() {
+    return Means;
+  },
+  get groups() {
+    return __t.array(GroupComparison);
+  },
+  get metricDeltas() {
+    return MetricDeltas;
+  },
+  get baseSpread() {
+    return Spread;
+  },
+  get revisedSpread() {
+    return Spread;
+  },
+  verdict: __t.string(),
+  summary: __t.string(),
+  error: __t.option(__t.string()),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type Comparison = __Infer<typeof Comparison>;
 
 export const ContentSignals = __t.object("ContentSignals", {
   hookStrength: __t.f64(),
@@ -116,6 +165,21 @@ export const EdgeInput = __t.object("EdgeInput", {
 });
 export type EdgeInput = __Infer<typeof EdgeInput>;
 
+export const GroupComparison = __t.object("GroupComparison", {
+  groupId: __t.string(),
+  matched: __t.u32(),
+  get base() {
+    return Means;
+  },
+  get revised() {
+    return Means;
+  },
+  get delta() {
+    return Means;
+  },
+});
+export type GroupComparison = __Infer<typeof GroupComparison>;
+
 export const GroupMetrics = __t.object("GroupMetrics", {
   groupId: __t.string(),
   exposed: __t.u32(),
@@ -135,8 +199,17 @@ export const Job = __t.object("Job", {
   error: __t.option(__t.string()),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  stage: __t.string(),
 });
 export type Job = __Infer<typeof Job>;
+
+export const Means = __t.object("Means", {
+  pWatch: __t.f64(),
+  pLike: __t.f64(),
+  pComment: __t.f64(),
+  pShare: __t.f64(),
+});
+export type Means = __Infer<typeof Means>;
 
 export const MemberInput = __t.object("MemberInput", {
   memberId: __t.u32(),
@@ -151,6 +224,23 @@ export const MemberInput = __t.object("MemberInput", {
   onIsland: __t.bool(),
 });
 export type MemberInput = __Infer<typeof MemberInput>;
+
+export const MetricDeltas = __t.object("MetricDeltas", {
+  uniqueExposed: __t.i32(),
+  watch: __t.i32(),
+  likes: __t.i32(),
+  comments: __t.i32(),
+  shares: __t.i32(),
+  rounds: __t.i32(),
+});
+export type MetricDeltas = __Infer<typeof MetricDeltas>;
+
+export const ObservedMetrics = __t.object("ObservedMetrics", {
+  plays: __t.option(__t.u64()),
+  likes: __t.option(__t.u64()),
+  comments: __t.option(__t.u64()),
+});
+export type ObservedMetrics = __Infer<typeof ObservedMetrics>;
 
 export const ReelInput = __t.object("ReelInput", {
   shortCode: __t.string(),
@@ -169,6 +259,17 @@ export const ReelInput = __t.object("ReelInput", {
   transcript: __t.option(__t.string()),
 });
 export type ReelInput = __Infer<typeof ReelInput>;
+
+export const ReferenceExample = __t.object("ReferenceExample", {
+  title: __t.string(),
+  account: __t.string(),
+  url: __t.option(__t.string()),
+  get observed() {
+    return ObservedMetrics;
+  },
+  whyRelevant: __t.string(),
+});
+export type ReferenceExample = __Infer<typeof ReferenceExample>;
 
 export const ReferenceReel = __t.object("ReferenceReel", {
   id: __t.u64(),
@@ -192,6 +293,34 @@ export const ReferenceReel = __t.object("ReferenceReel", {
   scrapedAt: __t.timestamp(),
 });
 export type ReferenceReel = __Infer<typeof ReferenceReel>;
+
+export const Report = __t.object("Report", {
+  runId: __t.u64(),
+  owner: __t.identity(),
+  status: __t.string(),
+  summary: __t.string(),
+  get notes() {
+    return __t.array(TimestampedNote);
+  },
+  get hooks() {
+    return __t.array(RewrittenHook);
+  },
+  get references() {
+    return __t.array(ReferenceExample);
+  },
+  assumptions: __t.array(__t.string()),
+  error: __t.option(__t.string()),
+  updatedAt: __t.timestamp(),
+});
+export type Report = __Infer<typeof Report>;
+
+export const RewrittenHook = __t.object("RewrittenHook", {
+  label: __t.string(),
+  original: __t.string(),
+  suggestion: __t.string(),
+  rationale: __t.string(),
+});
+export type RewrittenHook = __Infer<typeof RewrittenHook>;
 
 export const RoundEvent = __t.object("RoundEvent", {
   rowId: __t.u64(),
@@ -267,6 +396,14 @@ export const Spread = __t.object("Spread", {
 });
 export type Spread = __Infer<typeof Spread>;
 
+export const TimestampedNote = __t.object("TimestampedNote", {
+  at: __t.f64(),
+  severity: __t.string(),
+  title: __t.string(),
+  detail: __t.string(),
+});
+export type TimestampedNote = __Infer<typeof TimestampedNote>;
+
 export const Video = __t.object("Video", {
   id: __t.u64(),
   clientKey: __t.string(),
@@ -284,6 +421,7 @@ export const Video = __t.object("Video", {
   error: __t.option(__t.string()),
   createdAt: __t.timestamp(),
   profileId: __t.string(),
+  analysisJson: __t.string(),
 });
 export type Video = __Infer<typeof Video>;
 

@@ -109,6 +109,37 @@ export const ReelInput = t.object('ReelInput', {
   transcript: t.option(t.string()),
 });
 
+/** Report shapes mirror frontend/src/data/types.ts (TimestampedNote, RewrittenHook, ReferenceExample). */
+export const TimestampedNote = t.object('TimestampedNote', {
+  at: t.f64(),
+  /** 'strength' | 'risk' | 'fix' */
+  severity: t.string(),
+  title: t.string(),
+  detail: t.string(),
+});
+
+export const RewrittenHook = t.object('RewrittenHook', {
+  label: t.string(),
+  original: t.string(),
+  suggestion: t.string(),
+  rationale: t.string(),
+});
+
+/** Observed metrics are copied from the scrape, never written by a model. Missing stays missing. */
+export const ObservedMetrics = t.object('ObservedMetrics', {
+  plays: t.option(t.u64()),
+  likes: t.option(t.u64()),
+  comments: t.option(t.u64()),
+});
+
+export const ReferenceExample = t.object('ReferenceExample', {
+  title: t.string(),
+  account: t.string(),
+  url: t.option(t.string()),
+  observed: ObservedMetrics,
+  whyRelevant: t.string(),
+});
+
 // ---------------------------------------------------------------------------
 // Tables
 // ---------------------------------------------------------------------------
@@ -199,6 +230,11 @@ const video = table({ name: 'video', public: true }, {
   createdAt: t.timestamp(),
   /** The company profile this video is for. Appended with a default so existing databases migrate. */
   profileId: t.string().default(''),
+  /**
+   * The worker's full reading as JSON: { transcript, onScreenText, notes }, with
+   * timestamps in seconds. Grounds the report and chat. Empty until analysed.
+   */
+  analysisJson: t.string().default(''),
 });
 
 const run = table({ name: 'run', public: true }, {
@@ -263,6 +299,8 @@ const job = table({ name: 'job', public: true }, {
   error: t.option(t.string()),
   createdAt: t.timestamp(),
   updatedAt: t.timestamp(),
+  /** What a claimed job is doing right now, e.g. 'Transcribing speech' or 'Scoring 120/300 members'. For the UI. */
+  stage: t.string().default(''),
 });
 
 /** Public reference reels scraped with Apify for a company's niche. */
@@ -298,7 +336,97 @@ const referenceReel = table(
   }
 );
 
+/** One report per run, written by the worker after the cascade completes. */
+const report = table({ name: 'report', public: true }, {
+  runId: t.u64().primaryKey(),
+  owner: t.identity().index('btree'),
+  /** 'writing' | 'ready' | 'failed' */
+  status: t.string(),
+  summary: t.string(),
+  notes: t.array(TimestampedNote),
+  hooks: t.array(RewrittenHook),
+  references: t.array(ReferenceExample),
+  /** Disclosures written by code, not by the model. */
+  assumptions: t.array(t.string()),
+  error: t.option(t.string()),
+  updatedAt: t.timestamp(),
+});
+
+/** Follow-up chat about one run. An assistant row starts 'pending' and the worker fills it. */
+const chatMessage = table({ name: 'chat_message', public: true }, {
+  id: t.u64().primaryKey().autoInc(),
+  runId: t.u64().index('btree'),
+  owner: t.identity(),
+  /** 'user' | 'assistant' */
+  role: t.string(),
+  content: t.string(),
+  /** 'done' | 'pending' | 'failed' */
+  status: t.string(),
+  createdAt: t.timestamp(),
+});
+
+// --- Original-vs-revision comparison ----------------------------------------
+
+/** Mean calibrated per-exposure probabilities over matched members. */
+export const Means = t.object('Means', {
+  pWatch: t.f64(),
+  pLike: t.f64(),
+  pComment: t.f64(),
+  pShare: t.f64(),
+});
+
+export const GroupComparison = t.object('GroupComparison', {
+  groupId: t.string(),
+  /** Members with a valid decision in both runs. */
+  matched: t.u32(),
+  base: Means,
+  revised: Means,
+  /** revised - base. */
+  delta: Means,
+});
+
+/** Run-metric differences, revised minus original (canonical trial). */
+export const MetricDeltas = t.object('MetricDeltas', {
+  uniqueExposed: t.i32(),
+  watch: t.i32(),
+  likes: t.i32(),
+  comments: t.i32(),
+  shares: t.i32(),
+  rounds: t.i32(),
+});
+
+/** One original-vs-revision comparison, computed in the module; the worker only writes the prose summary. */
+const comparison = table({ name: 'comparison', public: true }, {
+  id: t.u64().primaryKey().autoInc(),
+  owner: t.identity().index('btree'),
+  baseRunId: t.u64(),
+  revisedRunId: t.u64(),
+  /** 'computing' | 'ready' | 'failed'. Numbers are final at insert; 'computing' covers the summary. */
+  status: t.string(),
+  audienceSize: t.u32(),
+  /** Members with a valid decision in both runs. */
+  matched: t.u32(),
+  /** matched / audienceSize. */
+  coverage: t.f64(),
+  baseMeans: Means,
+  revisedMeans: Means,
+  /** revised - original, over matched members. */
+  deltaMeans: Means,
+  groups: t.array(GroupComparison),
+  metricDeltas: MetricDeltas,
+  /** Total actions per trial across the seeded trials, from each run's metrics. */
+  baseSpread: Spread,
+  revisedSpread: Spread,
+  /** 'revised' | 'original' | 'inconclusive' */
+  verdict: t.string(),
+  summary: t.string(),
+  error: t.option(t.string()),
+  createdAt: t.timestamp(),
+  updatedAt: t.timestamp(),
+});
+
 const spacetimedb = schema({
+  comparison,
   admin,
   workerSecret,
   worker,
@@ -311,5 +439,7 @@ const spacetimedb = schema({
   roundEvent,
   job,
   referenceReel,
+  report,
+  chatMessage,
 });
 export default spacetimedb;

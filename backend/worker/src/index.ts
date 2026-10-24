@@ -2,8 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { config } from './config.ts';
 import { scrapeReels } from './apify.ts';
 import { analyseVideo } from './jobs/analyseVideo.ts';
+import { filterReferenceReels, filterReferences } from './jobs/filterReferences.ts';
+import { chatReply } from './jobs/chatReply.ts';
+import { explainComparison } from './jobs/explainComparison.ts';
+import { explainMember } from './jobs/explainMember.ts';
 import { scoreRun } from './jobs/scoreRun.ts';
+import { writeReport } from './jobs/writeReport.ts';
 import { DbConnection } from './module_bindings/index.ts';
+import { setStage } from './stage.ts';
 import type { Job } from './module_bindings/types.ts';
 
 /**
@@ -26,15 +32,23 @@ const handlers: Record<string, Handler> = {
       ...new Set([...(profile.instagram ? [profile.instagram] : []), ...profile.inspirationAccounts, ...config.referenceAccounts]),
     ].map((a) => a.replace(/^@/, ''));
     console.log(`[scrape] ${profile.name}: ${accounts.join(', ')}`);
+    await setStage(conn, job, `Collecting reference reels from ${accounts.length} Instagram accounts`);
 
     const reels = await scrapeReels(accounts);
+    await setStage(conn, job, `Saving ${reels.length} reels`);
     for (let i = 0; i < reels.length; i += REEL_BATCH) {
       await conn.reducers.upsertReferenceReels({ profileId: profile.id, reels: reels.slice(i, i + REEL_BATCH) });
     }
     console.log(`[scrape] stored ${reels.length} reels for ${profile.id}`);
+    await filterReferenceReels(conn, job, profile.id);
   },
+  filter_references: filterReferences,
   score_run: scoreRun,
   analyse_video: analyseVideo,
+  write_report: writeReport,
+  chat_reply: chatReply,
+  explain_member: explainMember,
+  explain_comparison: explainComparison,
 };
 
 /** Jobs already picked up by this process, so an insert and the initial sync don't double-claim. */
@@ -117,6 +131,11 @@ DbConnection.builder()
         'SELECT * FROM run',
         'SELECT * FROM video',
         'SELECT * FROM audience_member',
+        'SELECT * FROM decision',
+        'SELECT * FROM reference_reel',
+        'SELECT * FROM report',
+        'SELECT * FROM chat_message',
+        'SELECT * FROM comparison',
       ]);
   })
   .onConnectError((_ctx, error) => {

@@ -2,10 +2,13 @@ import { config } from '../config.ts';
 import { calibrate, calibration } from '../calibration.ts';
 import { JevAuthError, scoreMember, type JevState } from '../jev.ts';
 import type { DbConnection } from '../module_bindings/index.ts';
+import { reportStage, setStage } from '../stage.ts';
 import type { AudienceMember, CompanyProfile, ContentSignals, DecisionInput, Job, Video } from '../module_bindings/types.ts';
 
 /** Decisions are written in chunks so one reducer call stays small. */
 const DECISION_BATCH = 50;
+/** Members between live progress updates. */
+const PROGRESS_EVERY = 25;
 const USD_PER_INPUT_TOKEN = 0.042 / 1_000_000;
 const FAILED_EXPLANATION = 'Scoring failed for this member - no prediction.';
 
@@ -87,8 +90,12 @@ export async function scoreRun(conn: DbConnection, job: Job): Promise<void> {
   let firstError: string | undefined;
   let authError: JevAuthError | undefined;
 
+  const scoring = (done: number) => `Scoring ${done}/${members.length} members`;
+  await setStage(conn, job, scoring(0));
   await pool(members, Math.max(1, config.jevConcurrency), async (member) => {
     try {
+      // Fire-and-forget progress after each batch, so the lanes are not slowed.
+      if (decisions.length > 0 && decisions.length % PROGRESS_EVERY === 0) reportStage(conn, job, scoring(decisions.length));
       const { p: raw, inputTokens: tokens } = await scoreMember(apiKey, stateFor(member, profile, video, signals));
       const p = calibrate(raw);
       inputTokens += tokens;
@@ -110,9 +117,11 @@ export async function scoreRun(conn: DbConnection, job: Job): Promise<void> {
   if (authError) throw authError;
 
   decisions.sort((a, b) => a.memberId - b.memberId);
+  await setStage(conn, job, 'Saving predictions');
   for (let i = 0; i < decisions.length; i += DECISION_BATCH) {
     await conn.reducers.writeDecisions({ runId, decisions: decisions.slice(i, i + DECISION_BATCH) });
   }
+  await setStage(conn, job, 'Running the sharing simulation');
   await conn.reducers.runCascadeForRun({ runId });
 
   const missing = decisions.filter((d) => d.missing).length;
