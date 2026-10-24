@@ -58,7 +58,7 @@ Done means: the demo shows two reels spreading differently across a twin audienc
 - Anthropic TS SDK (`npm install @anthropic-ai/sdk`): Haiku for persona generation, reel-to-text summary (vision on frames), and JEV fallback via forced structured tool output. Needs API key with credits (Claude Pro does not include API).
 - JEV (not in catalog, verify): typed per-twin decisions with probabilities. Early access/waitlist, text only. https://typesafe.ai/blog/introducing-system-one-models-and-jev
 - FFmpeg (not in catalog): sample frames and extract audio from each reel.
-- Transcription (required, the b-roll has speech): Claude does not transcribe audio, so use local whisper.cpp or another speech-to-text service (not in catalog, verify; spike alongside JEV). Transcribe each reel once and cache it.
+- Transcription: deferred. Needed eventually (the b-roll has speech), but build first with frames + on-screen text only. Later: local whisper.cpp or a hosted speech-to-text service (Claude does not transcribe audio); transcribe each reel once and cache it.
 - SpacetimeDB (not in catalog, verify track rules): twins, edges, runs, and per-round cascade events as tables; frontend subscribes. Fallback: WebSocket/SSE from the Node sim.
 - Vite + React + shadcn/ui + react-force-graph-3d (Three.js under the hood, clickable nodes built in; not in catalog, verify).
 - Apify (not in catalog, verify): Instagram profile/post scraper actor for Giving Garden's posts and stats. Stretch: consented on-the-spot judge twin.
@@ -96,7 +96,7 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 
 ## Open questions
 - Teammate's name.
-- Which transcription tool (whisper.cpp local vs a hosted service).
+- Which transcription tool (deferred; decide after the core journey works).
 - Resolved: JEV and Anthropic API access confirmed; track requirements confirmed (see Event).
 
 ## Status log
@@ -104,4 +104,5 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Fri ~23:45 PT Stack chosen (TS, Anthropic SDK, JEV, SpacetimeDB, React/shadcn). .gitignore and .env.example created.
 - Sat ~00:00 PT Added Apify and Fetch.ai to MVP stack. Build order: sim + cascade first, agents wrap it second, Apify third.
 - Sat ~00:30 PT PRD review: two-video variants, mixed twin audience, weighted-engagement winner, react-force-graph-3d, Python agent service, sim spec, sponsors placed in the journey, ownership split. Next: JEV spike.
-- Sat ~00:45 PT JEV + Anthropic API access confirmed; track requirements confirmed; transcription is required. Next: JEV spike + transcription spike.
+- Sat ~00:45 PT JEV + Anthropic API access confirmed; track requirements confirmed; transcription is required.
+- Sat ~00:50 PT Transcription deferred; reel summaries use frames + on-screen text for now. Next: JEV spike.
