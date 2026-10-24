@@ -89,7 +89,7 @@ Done means: signup/onboarding, private upload, reference analysis, a working liv
 - FFmpeg (not in catalog): sample frames and extract audio from each reel.
 - Transcription: required for speech-bearing uploads and timestamped feedback. Select a transcription tool during the video spike; transcribe once and cache. A manually verified timestamped transcript is an explicitly disclosed demo fallback, not a general upload solution.
 - SpacetimeDB: company profiles, campaigns, audience members, edges, runs, and per-round events with owner-scoped reads/subscriptions. Frontend subscribes to the authorized run. Fallback: authenticated WebSocket/SSE from the Node sim.
-- Vite + React + shadcn/ui + react-force-graph-3d (Three.js under the hood, clickable nodes built in; not in catalog, verify).
+- Vite + React + react-three-fiber 3D island town: animated villagers react and share (TM's frontend, replaces react-force-graph-3d). Backend must implement `frontend/src/data/SimDataSource.ts` using the types in `frontend/src/data/types.ts`.
 - Apify: collect relevant public reference reels and available metrics; cache data for comparisons and demo resilience. Keep private uploaded campaign assets out of public reference datasets.
 - Marketing assistant: structured report plus contextual follow-up chat; use content timestamps and reference evidence, and never invent observed retention or unsupported performance improvements.
 - Fetch.ai uAgents + Agentverse + Chat Protocol (Python, not in catalog, verify), discoverable via ASI:One. Each agent calls the TS backend over HTTP:
@@ -122,6 +122,9 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Accuracy is claimed only for the outcomes actually measured on held-out examples; report evaluation limits. Synthetic explanations and simulated ranges are not observed human behavior.
 - JEV relevance probabilities are model estimates; measure niche-filter quality and actual savings on our inputs. They are not predictions of engagement or virality.
 - Design ideas drew on a reference brief (ideas only, no code).
+- Frontend currently runs on `MockDataSource` (cascade, report, chat all generated in the browser) and mock local auth. The UI labels the mock; any demo on it must say so.
+- Demo videos are Remotion text animations with scripts written by Claude and a Windows built-in TTS voice; script claims to be confirmed with Jim.
+- 3D character/town models are third-party assets (see frontend/public/ASSET-CREDITS.md).
 
 ## Pitch
 - One-liner: A private marketing assistant that simulates audience reception and helps small teams improve their videos before publishing.
@@ -145,3 +148,4 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Sat 2026-10-24 PRD clarification: broader small-business/stealth marketing product; Giving Garden confirmed as demo. Signup/onboarding, private audience simulation, historical reference analysis, timestamped feedback, rewritten hooks/scripts, and grounded follow-up chat are core. Automatic editing is stretch. Final demo videos will be produced after the core build; recommend an early temporary clip for pipeline validation. Current sections above supersede conflicting historical scope decisions.
 - Sat 2026-10-24 JEV role corrected per user: classify scraped candidate reels for niche relevance before Anthropic video analysis, reducing potentially unnecessary downstream work. Anthropic handles deep analysis, simulated audience reactions, and marketing assistance. Noul returns a yes probability; routing thresholds and end-to-end savings require evaluation.
 - Sat ~00:50 PT Adopted the new PRD on fawaz-backend (merged main). Updated Fetch.ai agent roles to the new flow, Team table, open decisions. Next: video spike + simulation spike on a temporary clip, then upload -> analysis -> simulation -> report.
+- Sat 10:07 PT hack-check: Build phase, ~23.4 h left. Frontend (TM, `shayer` branch, unmerged) is full UI on mocks; backend has no code yet, no sponsor API called. Weakest: Functionality/Technical complexity. Next: Jamshed builds analyseVideo + startRun (Haiku scoring, cascade, SpacetimeDB) against SimDataSource.
