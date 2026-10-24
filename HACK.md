@@ -19,7 +19,8 @@
 | Name | Strengths | Owns |
 |------|-----------|------|
 | Jamshed | full-stack, hackathon experience | sim engine, JEV relevance filter, Anthropic analysis/scoring, SpacetimeDB module, video-to-text pipeline |
-| Teammate (name TBD) | full-stack, hackathon experience | 3D cascade viz + UI, Apify Instagram scrape, Fetch.ai agents (Python) |
+| TM (Shayer) | full-stack, hackathon experience | 3D cascade viz + UI, Apify reference-reel scrape, Fetch.ai agents (Python) |
+| Unassigned | | report + follow-up chat UI/backend, auth/onboarding (decide together) |
 
 ## Problem
 - Product: a private marketing assistant that analyzes past video performance, simulates audience reception, and recommends specific improvements before a campaign is published.
@@ -82,7 +83,7 @@ Done means: signup/onboarding, private upload, reference analysis, a working liv
 - Cut outright (not a stretch): bulk LinkedIn scrape of the attendee list (ToS and privacy)
 
 ## Stack
-- TypeScript app + small Python service for agents (uAgents is Python). Setup budget ~3.5 h (~10% of 34 h).
+- TypeScript app + small Python service for agents (uAgents is Python). Setup budget ~3.5 h (~10% of the ~33 h left at Sat 00:50 PT).
 - Anthropic TS SDK (`npm install @anthropic-ai/sdk`): models analyze retained reference reels and private uploads, generate audience personas and structured simulation decisions, and produce timestamped recommendations, rewritten hooks/scripts, and follow-up chat. Haiku is the initial candidate for lightweight/batched work; evaluate quality during the spike. Needs an API key with credits.
 - JEV: primary niche-relevance classifier for scraped reference candidates, placed before Anthropic analysis. Use Noul probabilities over lightweight text metadata, with explicit accept/reject/uncertain routing. API access is team-confirmed; verify live behavior during the filter spike. See [Noul](https://docs.typesafe.ai/primitives/noul) and [models](https://docs.typesafe.ai/models).
 - FFmpeg (not in catalog): sample frames and extract audio from each reel.
@@ -92,10 +93,10 @@ Done means: signup/onboarding, private upload, reference analysis, a working liv
 - Apify: collect relevant public reference reels and available metrics; cache data for comparisons and demo resilience. Keep private uploaded campaign assets out of public reference datasets.
 - Marketing assistant: structured report plus contextual follow-up chat; use content timestamps and reference evidence, and never invent observed retention or unsupported performance improvements.
 - Fetch.ai uAgents + Agentverse + Chat Protocol (Python, not in catalog, verify), discoverable via ASI:One. Each agent calls the TS backend over HTTP:
-  - Orchestrator: takes Jim's request, routes, returns the verdict
-  - Audience agent: triggers the Apify scrape, loads the twin audience
-  - Simulation agent: starts a run, waits for it to finish
-  - Verdict agent: ranks A vs B, explains which groups respond, suggests a fix
+  - Orchestrator: takes the user's request (e.g. "analyze my campaign video"), routes, returns the report summary
+  - Reference agent: triggers the Apify reel scrape + JEV filter + reference analysis for the company's niche
+  - Simulation agent: starts a run for a campaign, waits for it to finish
+  - Advisor agent: returns the report highlights (timestamped feedback, rewritten hook) and, when a revision exists, the original-vs-revision comparison
   Twins are simulated audience records with Anthropic-scored reactions, not individually hosted Fetch.ai agents.
 - Filter spike (30 min): label a small, varied sample of candidate reels for niche relevance, including sparse-caption cases. Check JEV output validity, relevant reels retained, irrelevant reels removed, uncertain rate, and end-to-end cost/latency against analyzing all candidates. Separate threshold tuning examples from evaluation examples. If the filter is unavailable, use a bounded, disclosed manually curated reference set for the demo.
 - Simulation spike: independently score ~50 audience members on temporary real clip inputs with Anthropic to check output validity, latency, cost, and ranking stability. A stable or different ranking is not proof of predictive accuracy; retain genuine ties.
@@ -127,7 +128,9 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Roles: TBD
 
 ## Open questions
-- Teammate's name.
+- Decide together: real auth + owner-scoped privacy vs a seeded demo account (recommend seeded; real auth is hours of work).
+- Decide together: who owns the report + follow-up chat (Jamshed already owns sim, SpacetimeDB, video pipeline, JEV filter, Anthropic scoring).
+- Decide together: fixed slot to film the final demo video (recommend Sat evening, regardless of build state).
 - Transcription tool, authentication implementation, and engagement-score normalization (resolve during implementation spikes).
 - Final demo-video production owner and recording slot, after the core app is built and before rehearsal.
 - Resolved: JEV and Anthropic API access confirmed; track requirements confirmed (see Event).
@@ -141,3 +144,4 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Sat ~00:50 PT Transcription deferred; reel summaries use frames + on-screen text for now. Next: JEV spike.
 - Sat 2026-10-24 PRD clarification: broader small-business/stealth marketing product; Giving Garden confirmed as demo. Signup/onboarding, private audience simulation, historical reference analysis, timestamped feedback, rewritten hooks/scripts, and grounded follow-up chat are core. Automatic editing is stretch. Final demo videos will be produced after the core build; recommend an early temporary clip for pipeline validation. Current sections above supersede conflicting historical scope decisions.
 - Sat 2026-10-24 JEV role corrected per user: classify scraped candidate reels for niche relevance before Anthropic video analysis, reducing potentially unnecessary downstream work. Anthropic handles deep analysis, simulated audience reactions, and marketing assistance. Noul returns a yes probability; routing thresholds and end-to-end savings require evaluation.
+- Sat ~00:50 PT Adopted the new PRD on fawaz-backend (merged main). Updated Fetch.ai agent roles to the new flow, Team table, open decisions. Next: video spike + simulation spike on a temporary clip, then upload -> analysis -> simulation -> report.
