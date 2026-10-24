@@ -4,5 +4,5 @@
 node_modules/
 dist/
 out/
-.worker-token
+.worker-token*
 cache/

@@ -18,7 +18,8 @@ export const config = {
   spacetimeDb: required('SPACETIME_DB'),
   workerSecret: required('WORKER_SECRET'),
   /** Where the worker keeps its SpacetimeDB token, so it keeps one identity across restarts. */
-  tokenFile: process.env.WORKER_TOKEN_FILE ?? '.worker-token',
+  /** One token per database: a token from the local server is not valid on Maincloud. */
+  tokenFile: process.env.WORKER_TOKEN_FILE ?? `.worker-token-${process.env.SPACETIME_DB}`,
   apifyToken: process.env.APIFY_TOKEN,
   /** Niche accounts scraped for every profile, in addition to its inspiration accounts. */
   referenceAccounts: list('REFERENCE_ACCOUNTS'),
