@@ -84,7 +84,8 @@ export class MockDataSource implements SimDataSource {
       durationSec: input.durationSec,
       signals,
       summary: describeContent(signals, input.name),
-      objectUrl: input.file ? URL.createObjectURL(input.file) : undefined,
+      // No file means a pre-loaded demo video, served from public/demo.
+      objectUrl: input.file ? URL.createObjectURL(input.file) : `/demo/${input.name}`,
     }
     this.videos.set(id, analysis)
     return analysis
@@ -221,6 +222,18 @@ export class MockDataSource implements SimDataSource {
     const audience = this.audience
     if (!video || !audience) return 'I am missing the video analysis for that run.'
     return answerFromRun(message, video.signals, stored.cascade.metrics, audience, this.groupLabels())
+  }
+
+  /** The mock writes every explanation at scoring time. */
+  async explainMember(runId: RunId, memberId: number): Promise<string> {
+    const decision = this.runs.get(runId)?.decisions.find((d) => d.memberId === memberId)
+    if (!decision) throw new Error(`explainMember: no decision for member ${memberId} in run ${runId}`)
+    return decision.explanation
+  }
+
+  /** The local simulation has no written comparison; ComparePanel's verdict stands alone. */
+  async compareRuns(): Promise<string | null> {
+    return null
   }
 
   private groupLabels(): Map<string, string> {

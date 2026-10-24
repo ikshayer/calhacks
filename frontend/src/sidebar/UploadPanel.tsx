@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { useAppStore, selectActiveVideo } from '@/store/useAppStore'
 import type { ContentSignals } from '@/data/types'
 import { Button, Section } from '@/components/ui'
+import { DEMO_VIDEOS } from '@/data/spacetime/SpacetimeDataSource'
 
 const SIGNAL_FIELDS: { key: keyof Omit<ContentSignals, 'topics' | 'durationSec'>; label: string }[] = [
   { key: 'hookStrength', label: 'Opening' },
@@ -52,6 +53,20 @@ export function UploadPanel() {
     },
     [analyseUpload, video],
   )
+
+  // The live backend can only analyse these (no upload storage); the mock accepts them too.
+  const [demoBusy, setDemoBusy] = useState(false)
+  const pickDemo = async (demo: (typeof DEMO_VIDEOS)[number]) => {
+    setError(null)
+    setDemoBusy(true)
+    try {
+      await analyseUpload({ name: demo.file, durationSec: demo.durationSec }, demo.label)
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'The demo video could not be analysed.')
+    } finally {
+      setDemoBusy(false)
+    }
+  }
 
   const patchSignal = (key: keyof ContentSignals, value: number) => {
     if (!video) return
@@ -157,6 +172,24 @@ export function UploadPanel() {
           </div>
         </div>
       )}
+
+      <div className="mt-4 border-t border-line pt-3">
+        <p className="mb-2 text-[11.5px] text-faint">
+          {demoBusy ? 'Analysing the demo video… about 20 seconds' : 'Or use a pre-loaded demo video'}
+        </p>
+        <div className="flex gap-2">
+          {DEMO_VIDEOS.map((demo) => (
+            <Button
+              key={demo.file}
+              variant="secondary"
+              disabled={demoBusy}
+              onClick={() => void pickDemo(demo)}
+            >
+              {demo.label} demo
+            </Button>
+          ))}
+        </div>
+      </div>
 
       {error && (
         <p role="alert" className="mt-3 text-[12.5px] leading-snug text-bloom">

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { MockDataSource } from '@/data/mock/MockDataSource'
+import { SpacetimeDataSource } from '@/data/spacetime/SpacetimeDataSource'
 import type { SimDataSource } from '@/data/SimDataSource'
 import type {
   Audience,
@@ -99,8 +100,22 @@ interface AppState {
 /** Live subscriptions, keyed by run. Kept outside the store: not render state. */
 const subscriptions = new Map<RunId, () => void>()
 
+/**
+ * `VITE_DATA_SOURCE=spacetime` uses the live backend; anything else, the local
+ * mock. Both stay available so a venue with no network can still run the demo.
+ */
+function createSource(): SimDataSource {
+  if (import.meta.env.VITE_DATA_SOURCE !== 'spacetime') return new MockDataSource(AUDIENCE_SIZE)
+  const host = import.meta.env.VITE_SPACETIME_HOST
+  const database = import.meta.env.VITE_SPACETIME_DB
+  if (!host || !database) {
+    throw new Error('VITE_DATA_SOURCE=spacetime needs VITE_SPACETIME_HOST and VITE_SPACETIME_DB in frontend/.env.local')
+  }
+  return new SpacetimeDataSource(host, database, AUDIENCE_SIZE)
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
-  source: new MockDataSource(AUDIENCE_SIZE),
+  source: createSource(),
   profile: null,
   audience: null,
   audienceError: null,

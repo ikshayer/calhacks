@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createAvatar } from '@dicebear/core'
 import { openPeeps } from '@dicebear/collection'
 import type { AudienceGroup, AudienceMember, Decision } from '@/data/types'
 import { Pill } from '@/components/ui'
+import { useAppStore } from '@/store/useAppStore'
 
 /**
  * One audience member, opened by clicking them on the island.
@@ -90,7 +91,7 @@ export function VillagerCard({
             </div>
 
             <div className="mt-3 border-t border-line pt-3">
-              <p className="text-[12.5px] leading-relaxed text-muted">{decision.explanation}</p>
+              <Explanation decision={decision} />
               <p className="mt-2 text-[11px] leading-relaxed text-faint">
                 A generated rationale for a simulated decision, not something this person did.
               </p>
@@ -104,6 +105,42 @@ export function VillagerCard({
       )}
     </aside>
   )
+}
+
+/**
+ * The mock writes explanations at scoring time; the live backend writes one on
+ * demand (Claude) the first time a member is opened, so it may arrive a moment
+ * after the card does.
+ */
+function Explanation({ decision }: { decision: Decision }) {
+  const source = useAppStore((state) => state.source)
+  const runId = useAppStore((state) => state.activeRunId)
+  // Keyed by member, so a card reopened on someone else never shows the previous answer.
+  const [fetched, setFetched] = useState<{ memberId: number; text: string; error?: string } | null>(null)
+
+  useEffect(() => {
+    if (decision.explanation || !runId) return
+    let live = true
+    const memberId = decision.memberId
+    source
+      .explainMember(runId, memberId)
+      .then((text) => {
+        if (live) setFetched({ memberId, text })
+      })
+      .catch((cause: unknown) => {
+        if (live) setFetched({ memberId, text: '', error: cause instanceof Error ? cause.message : 'The explanation could not be written.' })
+      })
+    return () => {
+      live = false
+    }
+  }, [source, runId, decision.memberId, decision.explanation])
+
+  const current = fetched?.memberId === decision.memberId ? fetched : null
+  const text = decision.explanation || current?.text || ''
+  const error = current?.error
+  if (error) return <p className="text-[12px] leading-relaxed text-bloom">{error}</p>
+  if (!text) return <p className="text-[12.5px] leading-relaxed text-faint">Writing an explanation…</p>
+  return <p className="text-[12.5px] leading-relaxed text-muted">{text}</p>
 }
 
 function Probability({
