@@ -283,6 +283,7 @@ export const Video = __t.object("Video", {
   summary: __t.string(),
   error: __t.option(__t.string()),
   createdAt: __t.timestamp(),
+  profileId: __t.string(),
 });
 export type Video = __Infer<typeof Video>;
 

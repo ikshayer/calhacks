@@ -30,4 +30,5 @@ export default __t.row({
   summary: __t.string(),
   error: __t.option(__t.string()),
   createdAt: __t.timestamp().name("created_at"),
+  profileId: __t.string().name("profile_id"),
 });

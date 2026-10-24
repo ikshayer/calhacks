@@ -28,5 +28,7 @@ export const config = {
   /** Required only when a score_run job runs, so the worker still starts without it. */
   jevApiKey: process.env.JEV_API_KEY,
   jevConcurrency: Number(process.env.JEV_CONCURRENCY ?? 16),
+  /** Required only when an analyse_video job runs. */
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   reelsPerAccount: Number(process.env.REELS_PER_ACCOUNT ?? 10),
 };

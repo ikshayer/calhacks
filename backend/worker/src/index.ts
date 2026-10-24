@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { config } from './config.ts';
 import { scrapeReels } from './apify.ts';
+import { analyseVideo } from './jobs/analyseVideo.ts';
 import { scoreRun } from './jobs/scoreRun.ts';
 import { DbConnection } from './module_bindings/index.ts';
 import type { Job } from './module_bindings/types.ts';
@@ -33,8 +34,7 @@ const handlers: Record<string, Handler> = {
     console.log(`[scrape] stored ${reels.length} reels for ${profile.id}`);
   },
   score_run: scoreRun,
-  // analyse_video lands with the Anthropic pipeline. Until then those jobs stay
-  // queued rather than being claimed and failed.
+  analyse_video: analyseVideo,
 };
 
 /** Jobs already picked up by this process, so an insert and the initial sync don't double-claim. */

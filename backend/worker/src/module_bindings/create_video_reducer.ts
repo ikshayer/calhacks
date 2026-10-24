@@ -12,6 +12,7 @@ import {
 
 export default {
   clientKey: __t.string(),
+  profileId: __t.string(),
   campaignId: __t.string(),
   label: __t.string(),
   name: __t.string(),

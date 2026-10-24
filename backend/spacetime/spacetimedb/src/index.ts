@@ -152,6 +152,7 @@ export const saveAudience = spacetimedb.reducer(
 export const createVideo = spacetimedb.reducer(
   {
     clientKey: t.string(),
+    profileId: t.string(),
     campaignId: t.string(),
     label: t.string(),
     name: t.string(),
@@ -160,6 +161,9 @@ export const createVideo = spacetimedb.reducer(
   },
   (ctx, args) => {
     if (ctx.db.video.clientKey.find(args.clientKey)) throw new SenderError('duplicate clientKey');
+    const profile = ctx.db.companyProfile.id.find(args.profileId);
+    if (!profile) throw new SenderError('unknown profile');
+    requireOwner(ctx, profile.owner);
     const row = ctx.db.video.insert({
       id: 0n,
       ...args,

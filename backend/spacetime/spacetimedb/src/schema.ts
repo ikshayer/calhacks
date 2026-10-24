@@ -197,6 +197,8 @@ const video = table({ name: 'video', public: true }, {
   summary: t.string(),
   error: t.option(t.string()),
   createdAt: t.timestamp(),
+  /** The company profile this video is for. Appended with a default so existing databases migrate. */
+  profileId: t.string().default(''),
 });
 
 const run = table({ name: 'run', public: true }, {
