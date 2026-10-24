@@ -18,7 +18,7 @@
 ## Team
 | Name | Strengths | Owns |
 |------|-----------|------|
-| Jamshed | full-stack, hackathon experience | sim engine, JEV/Haiku scoring, SpacetimeDB module, video-to-text pipeline |
+| Jamshed | full-stack, hackathon experience | sim engine, JEV relevance filter, Anthropic analysis/scoring, SpacetimeDB module, video-to-text pipeline |
 | Teammate (name TBD) | full-stack, hackathon experience | 3D cascade viz + UI, Apify Instagram scrape, Fetch.ai agents (Python) |
 
 ## Problem
@@ -37,7 +37,7 @@
 
 ## MVP: the one journey
 1. **Onboard:** Jim creates Giving Garden's profile and confirms the suggested audience.
-2. **Learn from examples:** use **Apify** to collect relevant public reels, video content, and available performance metrics from Giving Garden and comparable accounts. Include stronger and weaker performers, not just viral examples. Cache successful collections.
+2. **Learn from examples:** use **Apify** to discover candidate public reels and collect lightweight metadata. **JEV** filters candidates for the company's niche before expensive **Anthropic** video analysis. Analyze retained reels using frames and transcripts; include stronger and weaker performers, not just viral examples. Cache successful collections and analyses.
 3. **Upload and analyze:** Jim uploads an unpublished campaign video. Sampled frames, on-screen text, and a timestamped transcript produce a structured content summary (hook, pacing, tone, topic, format). Keep observations tied to actual timestamps.
 4. **Simulate:** ~500 audience members react; sharing exposes linked members. Animate the cascade live through **SpacetimeDB** subscriptions. Show engagement components, responding groups, and clickable simulated explanations.
 5. **Improve:** show a structured report with timestamped feedback, rewritten hooks/scripts, and supporting reference examples where available. Follow-up chat answers questions such as "Why would this group share it?" and "Make the hook more playful," grounded in the company profile, uploaded video, reference set, and run results.
@@ -54,13 +54,17 @@ Done means: signup/onboarding, private upload, reference analysis, a working liv
 ## Simulation spec (v1, tune after the spike)
 - **Audience (~500):** synthetic archetypes based on the confirmed company profile. Giving Garden examples include students, retirees, local families, foodies, sustainability/environment, and community groups. Each member: id, name, group, 3-5 interest tags, short persona summary, hot buttons, ignores. Generate once per audience version and persist. Any opted-in hacker/judge profiles form an explicitly labeled optional group; no sensitive traits inferred.
 - **Graph:** each twin links to 3-8 others, mostly within shared tags, a few random cross-links (small world). Seeded so runs repeat.
-- **Scoring:** one decision per member per reel (JEV typed output; Haiku fallback batched ~10 members per call). Return P(watch-through), P(like), P(comment), P(share), plus explanations linked to observed content. Define probabilities consistently as conditional on exposure. Baseline assumptions must be explicit; prompting for realistic rates does not establish calibration. A failed batch = "no prediction"; >20% missing fails the run. Compare only matched valid members and report coverage.
+- **Scoring:** Anthropic structured decisions, initially Haiku batched ~10 members per call, with one decision per member per reel. Return P(watch-through), P(like), P(comment), P(share), plus explanations linked to observed content. Define probabilities consistently as conditional on exposure. Baseline assumptions must be explicit; prompting for realistic rates does not establish calibration. A failed batch = "no prediction"; >20% missing fails the run. Compare only matched valid members and report coverage. JEV's role is reference relevance filtering, separate from audience-response simulation.
 - **Cascade:** round 0 exposes a seed set (~10% of the audience, a declared starting-exposure assumption). Each exposed member rolls its probabilities; a share exposes neighbors next round. Max 6 rounds; 200 seeded local trials per reel. Count each member once for unique simulated exposure and prevent duplicate actions from repeated exposure. The graph represents a simplified sharing scenario, not Instagram's recommendation algorithm.
 - **Fair comparison:** preserve audience, graph, initial exposure, scoring configuration, and trial seeds across original and revision. Test sensitivity to reasonable audience and sharing assumptions; flag unstable rankings.
 - **Score:** engagement components are the primary evidence; show simulated unique exposure and view assumptions separately. Do not sum raw reach, views, and interactions as if they were interchangeable. A transparent relative summary score may accompany the components; its exact normalization and weights need a small data spike before implementation. No volunteer-specific weight. A score is not a probability of going viral.
 - **Uncertainty:** P10/P50/P90 describe variability within the simulation assumptions, not validated real-world prediction intervals. Allow inconclusive comparisons rather than forcing a winner.
 
 ## Reference data and evaluation
+- **JEV's intended role:** a fast relevance gate before Anthropic analyzes reference videos. Ask whether the candidate reel fits the user's niche, using the onboarding niche/audience definition and the reel's caption, hashtags, account context, and any already-available transcript. Do not ask whether the reel is successful; relevant failures must pass too.
+- **Input boundary:** JEV's documented model accepts text/structured state, not raw video. Start from scraped text metadata. Do not generate an Anthropic summary for every candidate before filtering, since that pays the analysis cost the filter is meant to avoid. Sparse captions and visual-only content need an uncertain path rather than automatic rejection. See [model documentation](https://docs.typesafe.ai/models).
+- **Decision:** use [Noul](https://docs.typesafe.ai/primitives/noul), which returns P(yes) from 0 to 1; application thresholds turn this into an accept/reject decision. Proposed initial routing: >=0.7 retain, <=0.3 reject when sufficient text evidence exists, otherwise enrich the text or send to a budgeted Anthropic review. These are starting thresholds to evaluate, not measured accuracy guarantees. API failures are unknown, not irrelevant. Audit a sample of rejects for missed relevant clips.
+- **Savings:** Apify still performs discovery/scraping. JEV can reduce downstream Anthropic calls, tokens, and video-processing work by excluding irrelevant candidates. Measure total latency and cost including scraping, JEV, enrichment, uncertain cases, and retained-video analysis; speedup is not guaranteed when most candidates pass or scraping dominates. Cache by reel content plus niche/classifier version.
 - Candidate source: [Apify Instagram Reel Scraper](https://apify.com/apify/instagram-reel-scraper), which documents media, captions, transcripts, timestamps, likes, comments, plays/views, and optional shares. [Apify's tutorial](https://blog.apify.com/scrape-instagram-reels/) describes share collection as a paid option. Verify actual field availability with a small run; missing values stay missing, not zero.
 - Do not assume the scrape supplies unique reach, retention, paid-distribution details, or actual audience demographics. Keep observed reference metrics separate from simulated outputs.
 - Build comparison sets from relevant accounts and include low/ordinary performers. Consider account baseline, post age, topic, and format; flag unknown promotion rather than attributing every difference to creative quality.
@@ -79,8 +83,8 @@ Done means: signup/onboarding, private upload, reference analysis, a working liv
 
 ## Stack
 - TypeScript app + small Python service for agents (uAgents is Python). Setup budget ~3.5 h (~10% of 34 h).
-- Anthropic TS SDK (`npm install @anthropic-ai/sdk`): Haiku for persona generation, reel-to-text summary (vision on frames), and JEV fallback via forced structured tool output. Needs API key with credits (Claude Pro does not include API).
-- JEV (not in catalog, verify): typed per-twin decisions with probabilities. Early access/waitlist, text only. https://typesafe.ai/blog/introducing-system-one-models-and-jev
+- Anthropic TS SDK (`npm install @anthropic-ai/sdk`): models analyze retained reference reels and private uploads, generate audience personas and structured simulation decisions, and produce timestamped recommendations, rewritten hooks/scripts, and follow-up chat. Haiku is the initial candidate for lightweight/batched work; evaluate quality during the spike. Needs an API key with credits.
+- JEV: primary niche-relevance classifier for scraped reference candidates, placed before Anthropic analysis. Use Noul probabilities over lightweight text metadata, with explicit accept/reject/uncertain routing. API access is team-confirmed; verify live behavior during the filter spike. See [Noul](https://docs.typesafe.ai/primitives/noul) and [models](https://docs.typesafe.ai/models).
 - FFmpeg (not in catalog): sample frames and extract audio from each reel.
 - Transcription: required for speech-bearing uploads and timestamped feedback. Select a transcription tool during the video spike; transcribe once and cache. A manually verified timestamped transcript is an explicitly disclosed demo fallback, not a general upload solution.
 - SpacetimeDB: company profiles, campaigns, audience members, edges, runs, and per-round events with owner-scoped reads/subscriptions. Frontend subscribes to the authorized run. Fallback: authenticated WebSocket/SSE from the Node sim.
@@ -92,8 +96,9 @@ Done means: signup/onboarding, private upload, reference analysis, a working liv
   - Audience agent: triggers the Apify scrape, loads the twin audience
   - Simulation agent: starts a run, waits for it to finish
   - Verdict agent: ranks A vs B, explains which groups respond, suggests a fix
-  Twins are NOT agents (they're cheap JEV calls).
-- Scoring spike (30 min): API access is team-confirmed. Score ~50 audience members on temporary real clip inputs repeatedly to check output validity, latency, cost, and ranking stability. Use Haiku structured decisions if JEV fails the integration checks. A stable or different ranking is not proof of predictive accuracy; retain genuine ties.
+  Twins are simulated audience records with Anthropic-scored reactions, not individually hosted Fetch.ai agents.
+- Filter spike (30 min): label a small, varied sample of candidate reels for niche relevance, including sparse-caption cases. Check JEV output validity, relevant reels retained, irrelevant reels removed, uncertain rate, and end-to-end cost/latency against analyzing all candidates. Separate threshold tuning examples from evaluation examples. If the filter is unavailable, use a bounded, disclosed manually curated reference set for the demo.
+- Simulation spike: independently score ~50 audience members on temporary real clip inputs with Anthropic to check output validity, latency, cost, and ranking stability. A stable or different ranking is not proof of predictive accuracy; retain genuine ties.
 - Hosting: frontend + Node sim on the demo laptop (deploy to a URL during Harden), SpacetimeDB cloud or local, agents on Agentverse (verify mailbox/hosted setup).
 - Offline fallback: an explicitly labeled precomputed demo replay with cached reference data and reports. Live signup, cloud analysis, and chat still require their services.
 
@@ -101,10 +106,11 @@ Architecture:
 ```
 Jim -> signup/onboarding -> React + react-force-graph-3d <-authorized subscription- SpacetimeDB
                                                           ^ writes
-ASI:One -> Fetch.ai agents (Python) -HTTP-> Node backend: sim engine -> JEV / Haiku (scoring, personas, reel summary)
-                                               |-> Apify (public reference reels + metrics)
-                                               |-> FFmpeg + transcription (private uploads)
-                                               |-> structured report + contextual assistant chat
+ASI:One -> Fetch.ai agents (Python) -HTTP-> Node backend
+    Reference pipeline: Apify metadata -> JEV niche filter -> retained/uncertain review -> Anthropic reference analysis
+    Private campaign:   upload -> FFmpeg + transcription -> Anthropic content analysis
+    Simulation:         company audience + campaign + reference context -> Anthropic reactions -> local cascade
+    Assistant:          campaign + reference evidence + run results -> Anthropic report and follow-up chat
 ```
 
 ## Honesty
@@ -113,7 +119,7 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Twin audience is synthetic archetypes plus opted-in people; no bulk scrape of real attendees.
 - Outputs are synthetic variant rankings, not measured engagement.
 - Accuracy is claimed only for the outcomes actually measured on held-out examples; report evaluation limits. Synthetic explanations and simulated ranges are not observed human behavior.
-- JEV "calibrated" claims are the vendor's, not ours.
+- JEV relevance probabilities are model estimates; measure niche-filter quality and actual savings on our inputs. They are not predictions of engagement or virality.
 - Design ideas drew on a reference brief (ideas only, no code).
 
 ## Pitch
@@ -134,3 +140,4 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Sat ~00:45 PT JEV + Anthropic API access confirmed; track requirements confirmed; transcription is required.
 - Sat ~00:50 PT Transcription deferred; reel summaries use frames + on-screen text for now. Next: JEV spike.
 - Sat 2026-10-24 PRD clarification: broader small-business/stealth marketing product; Giving Garden confirmed as demo. Signup/onboarding, private audience simulation, historical reference analysis, timestamped feedback, rewritten hooks/scripts, and grounded follow-up chat are core. Automatic editing is stretch. Final demo videos will be produced after the core build; recommend an early temporary clip for pipeline validation. Current sections above supersede conflicting historical scope decisions.
+- Sat 2026-10-24 JEV role corrected per user: classify scraped candidate reels for niche relevance before Anthropic video analysis, reducing potentially unnecessary downstream work. Anthropic handles deep analysis, simulated audience reactions, and marketing assistance. Noul returns a yes probability; routing thresholds and end-to-end savings require evaluation.
