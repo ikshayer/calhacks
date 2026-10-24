@@ -1,0 +1,14 @@
+{
+  "original": [
+    { "id": "o1", "seconds": 4, "onScreen": "The Giving Garden", "voice": "The Giving Garden is a nonprofit farm." },
+    { "id": "o2", "seconds": 5, "onScreen": "We grow sustainable food", "voice": "We grow sustainable food for our community." },
+    { "id": "o3", "seconds": 5, "onScreen": "Volunteers needed", "voice": "We are looking for volunteers to help on the farm." },
+    { "id": "o4", "seconds": 4, "onScreen": "Link in bio", "voice": "Visit the link in our bio to sign up." }
+  ],
+  "revised": [
+    { "id": "r1", "seconds": 4, "onScreen": "We couldn't harvest it all.", "voice": "Last season, we couldn't harvest it all." },
+    { "id": "r2", "seconds": 5, "onScreen": "Half the volunteers we needed", "voice": "We had less than half the volunteers we needed." },
+    { "id": "r3", "seconds": 5, "onScreen": "One morning. Real food. Real people.", "voice": "Give us one morning, and help get fresh food to real people." },
+    { "id": "r4", "seconds": 4, "onScreen": "Sign up: link in bio", "voice": "Sign up at the link in our bio. Bring a friend." }
+  ]
+}
