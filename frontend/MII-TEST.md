@@ -7,7 +7,9 @@ the production island renderer has not been switched to the new character.
 The page supports one resident, a lineup of four designs, or 48 independent animated clones, all three
 supplied test clips, pause, neutral/island lighting, shadows, and a ten-second
 benchmark after a two-second warmup. Keep the tab visible while measuring.
-Changing the count, clip, pause, or shadow setting cancels the current measurement.
+Changing rendering mode, design, count, clip, pause, lighting, or shadows cancels
+the current measurement. The Rendering selector compares the optimized crowd
+against the original export at the same camera and display settings.
 
 ## Additional designs
 
@@ -53,21 +55,63 @@ Faces and arm motion were inspected in the browser; the corrected source was
 also checked in Blender. TypeScript, production build, and targeted lint passed.
 The build reports the existing large workspace bundle warning.
 
+## Crowd rendering optimization
+
+The optimized preview prepares each design once at load time:
+
+- Combine solid body/head/hair geometry into one skinned mesh, with the original
+  linear PBR colors stored as vertex colors.
+- Pack the facial PNGs into one padded sRGB atlas and combine their skinned
+  geometry into one transparent, single-pass mesh. Keep lenses separate and
+  translucent. Facial decals do not cast additional shadows; the solid geometry
+  continues to cast the resident's silhouette.
+- Share one compatible skeleton across each resident's mesh parts after cloning.
+  Separate residents retain independent bones, mixers, and animation phases.
+- Dispose owned skeleton textures on cleanup while retaining cached geometry.
+
+The same clone/cleanup helper is used by the island's existing character rigs.
+The Mii material batching remains in the separate preview until model integration.
+Blender files and source GLB exports are preserved. Animation cadence, bone count,
+geometry detail, lighting, resolution, and the conservative culling policy remain
+the same for this first optimization pass.
+
 ## Measurements and remaining work
 
 Character-only preview on the available AMD Radeon 890M, a 970 × 609 CSS-pixel
 viewport, and DPR 1.5. These are local measurements, not a guarantee for other
 machines or the complete island.
 
-| Residents | Clip | Shadows | Average fps | 95th percentile frame |
-|---|---|---|---|---|
-| 48 | Idle | On | 30.8 | 36.4 ms |
-| 48 | Idle | Off | 33.1 | 38.6 ms |
+Same-session comparison with all four designs mixed evenly, Idle animation, and
+shadows enabled. Each run uses a two-second warmup and ten-second measurement:
 
-The initial export passes visual feasibility, but misses the 60 fps target.
-It still uses several separately skinned parts and materials per resident;
-mesh/material consolidation and the existing island's animation budget should
-be evaluated before a crowd integration. Turning off shadows alone is insufficient.
+| Rendering | Residents | Draw calls | Skeletons | Average fps | 95th percentile frame |
+|---|---|---|---|---|---|
+| Original export | 48 | 1,393 | 540 | 23.1 | 48.2 ms |
+| Optimized crowd | 48 | 157 | 48 | 119.2 | 8.9 ms |
+
+The optimized crowd exceeds the 60 fps character-preview target on this machine
+and approaches its 120 Hz display limit. Full-island performance still needs a
+separate measurement after integration. A previous single-design baseline
+measured 30.8 fps with shadows and 33.1 fps without them; these historical values
+are not the controlled mixed-design comparison above.
+
+## Verification
+
+`npm run test:residents` checks equivalent deformation after skeleton sharing,
+independence between residents, incompatible inverse-bind matrices, and resource
+ownership on cleanup. TypeScript, targeted lint, and production build also pass.
+
+For all four real exports, the browser check compares indexed triangle counts
+and deformed vertex positions at nine poses per design (36 total). Run it in
+the preview's developer console:
+
+```javascript
+await (await import('/scripts/resident-rendering.browser-check.mjs')).checkResidentExports()
+```
+
+All sampled surfaces match within 1e-5 world units. Faces, color, glasses, shadows,
+and wave motion were also visually checked in the optimized preview. Browser
+console checks report no errors or warnings.
 
 No walk clip is supplied by this source. Phone/reaction behavior also needs
 appropriate animation mapping. Sprite selections are frozen in this test;

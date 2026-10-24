@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { cloneResident, disposeResidentSkeletons } from './residentRendering'
 import type { GLTF } from 'three-stdlib'
 import { CHARACTER_MODELS } from '@/data/mock/personas'
 
@@ -70,7 +70,7 @@ export function createRig(
   material: THREE.Material,
   castShadow: boolean,
 ): VillagerRig {
-  const root = cloneSkeleton(gltf.scene) as THREE.Group
+  const root = cloneResident(gltf.scene) as THREE.Group
 
   let head: THREE.Object3D | undefined
   root.traverse((node) => {
@@ -120,7 +120,5 @@ export function playClip(rig: VillagerRig, next: string, fade = 0.18): void {
 export function disposeRig(rig: VillagerRig): void {
   rig.mixer.stopAllAction()
   rig.mixer.uncacheRoot(rig.root)
-  rig.root.traverse((node) => {
-    if (node instanceof THREE.Mesh) node.geometry.dispose()
-  })
+  disposeResidentSkeletons(rig.root)
 }

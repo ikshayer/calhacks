@@ -2,8 +2,9 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
+import { cloneResident, disposeResidentSkeletons, prepareResidentTemplate, residentRenderStats } from '../island/residentRendering'
 
-type Result = { fps: number; p95FrameMs: number; frames: number; residents: number; clip: string; shadows: boolean; viewport: string; dpr: number }
+type Result = { fps: number; p95FrameMs: number; frames: number; residents: number; clip: string; shadows: boolean; viewport: string; dpr: number; rendering: string; design: string; draws: number; skeletons: number }
 const el = <T extends HTMLElement>(id: string) => {
   const node = document.getElementById(id)
   if (!node) throw new Error(`Missing #${id}`)
@@ -12,6 +13,7 @@ const el = <T extends HTMLElement>(id: string) => {
 const viewport = el('viewport')
 const countInput = el<HTMLSelectElement>('count')
 const designInput = el<HTMLSelectElement>('design')
+const renderingInput = el<HTMLSelectElement>('rendering')
 const labelLayer = el('labels')
 const clipInput = el<HTMLSelectElement>('clip')
 const pauseInput = el<HTMLInputElement>('paused')
@@ -21,7 +23,7 @@ const benchmark = el<HTMLButtonElement>('benchmark')
 const status = el('status')
 const metrics = el('metrics')
 const result = el('result')
-const debug = { loaded: false, count: 1, designs: [] as string[], clips: [] as string[], bones: 0, triangles: 0, draws: 0, errors: [] as string[], results: [] as Result[] }
+const debug = { loaded: false, count: 1, rendering: '', designs: [] as string[], clips: [] as string[], bones: 0, skeletons: 0, meshes: 0, triangles: 0, draws: 0, errors: [] as string[], results: [] as Result[] }
 declare global { interface Window { __miiTest: typeof debug } }
 window.__miiTest = debug
 const scene = new THREE.Scene()
@@ -76,6 +78,7 @@ warmInput.onchange = light
 light()
 let mixers: THREE.AnimationMixer[] = []
 let playbacks: { mixer: THREE.AnimationMixer; clips: THREE.AnimationClip[] }[] = []
+let roots: THREE.Object3D[] = []
 let labels: { node: HTMLSpanElement; anchor: THREE.Vector3 }[] = []
 const projected = new THREE.Vector3()
 let recent: number[] = []
@@ -123,7 +126,7 @@ renderer.setAnimationLoop(() => {
   debug.triangles = renderer.info.render.triangles
   if (now > nextUi) {
     const avg = recent.reduce((sum, v) => sum + v, 0) / recent.length
-    metrics.textContent = `${Number.isFinite(avg) ? (1000 / avg).toFixed(1) : '…'} fps (rolling)\n${debug.draws} draws · ${debug.triangles.toLocaleString()} triangles\n${debug.bones} bones / resident\n${renderer.domElement.width} × ${renderer.domElement.height} render pixels`
+    metrics.textContent = `${Number.isFinite(avg) ? (1000 / avg).toFixed(1) : '…'} fps (rolling)\n${debug.draws} draws · ${debug.triangles.toLocaleString()} triangles\n${debug.skeletons} skeletons · ${debug.meshes} meshes\n${debug.bones} bones / resident\n${renderer.domElement.width} × ${renderer.domElement.height} render pixels`
     nextUi = now + 500
   }
   if (measuring && now >= measuring.starts) {
@@ -138,6 +141,8 @@ renderer.setAnimationLoop(() => {
         frames: samples.length, residents: debug.count, clip: clipInput.value,
         shadows: shadowInput.checked, viewport: `${viewport.clientWidth}x${viewport.clientHeight}`,
         dpr: renderer.getPixelRatio(),
+        rendering: renderingInput.value, design: designInput.value,
+        draws: debug.draws, skeletons: debug.skeletons,
       }
       debug.results.push(entry)
       cancelMeasurement()
@@ -162,7 +167,8 @@ try {
       if (obj instanceof THREE.Mesh) { obj.castShadow = true; obj.frustumCulled = false }
       if (obj instanceof THREE.Bone) bones++
     })
-    return { ...spec, gltf, center, floor: bounds.min.y, scale: 2.4 / size.y, bones }
+    const prepared = prepareResidentTemplate(gltf.scene)
+    return { ...spec, gltf, prepared, center, floor: bounds.min.y, scale: 2.4 / size.y, bones }
   }))
   debug.designs = templates.map((t) => t.name)
   debug.clips = templates[0]!.gltf.animations.map((a) => a.name)
@@ -181,17 +187,27 @@ try {
   function populate() {
     cancelMeasurement()
     for (const mixer of mixers) { mixer.stopAllAction(); mixer.uncacheRoot(mixer.getRoot()) }
+    for (const root of roots) disposeResidentSkeletons(root)
     mixers = []
     playbacks = []
+    roots = []
     labels = []
     labelLayer.replaceChildren()
     residents.clear()
     debug.count = Number(countInput.value)
+    debug.rendering = renderingInput.value
+    debug.skeletons = 0
+    debug.meshes = 0
     const choices = designInput.value === 'all' ? templates : templates.filter((t) => t.id === designInput.value)
     debug.bones = choices[0]!.bones
     for (let i = 0; i < debug.count; i++) {
       const template = choices[i % choices.length]!
-      const model = clone(template.gltf.scene)
+      const model = renderingInput.value === 'original'
+        ? clone(template.gltf.scene) : cloneResident(template.prepared.root)
+      roots.push(model)
+      const stats = residentRenderStats(model)
+      debug.skeletons += stats.skeletons
+      debug.meshes += stats.meshes
       const wrapper = new THREE.Group()
       wrapper.scale.setScalar(template.scale)
       model.position.set(-template.center.x, -template.floor, -template.center.z)
@@ -216,12 +232,18 @@ try {
   }
   clipInput.onchange = play
   countInput.onchange = populate
+  renderingInput.onchange = populate
   designInput.onchange = () => {
     countInput.value = designInput.value === 'all' ? '4' : '1'
     populate()
   }
   shadowInput.onchange = () => { cancelMeasurement(); renderer.shadowMap.enabled = shadowInput.checked }
   pauseInput.onchange = cancelMeasurement
+  warmInput.onchange = () => { cancelMeasurement(); light() }
+  window.addEventListener('pagehide', () => {
+    for (const root of roots) disposeResidentSkeletons(root)
+    for (const template of templates) template.prepared.dispose()
+  }, { once: true })
   debug.loaded = true
   benchmark.disabled = false
   populate()
