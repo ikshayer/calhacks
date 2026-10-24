@@ -30,7 +30,7 @@ def material(name, color):
     return mat
 
 label_material = material('Resident labels', (.025, .04, .05))
-catalog = json.loads((ROOT / 'frontend/src/dev/residentCatalog.json').read_text())
+catalog = json.loads((ROOT / 'frontend/src/island/residentCatalog.json').read_text())
 columns = 7 if len(catalog) > 10 else 5
 rows = math.ceil(len(catalog) / columns)
 for index, spec in enumerate(catalog):

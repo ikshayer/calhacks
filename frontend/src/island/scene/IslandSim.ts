@@ -1,6 +1,6 @@
 import type { AudienceMember, ReactionKind, RoundEvent } from '@/data/types'
-import { createRng, type Rng } from '@/lib/rng'
-import { TILE, tileToWorld, type Island } from './island'
+import { createRng, type Rng } from '../../lib/rng.ts'
+import { TILE, tileToWorld, type Island } from './island.ts'
 
 /**
  * What a villager is doing. Drives both the animation clip and the floating
@@ -110,6 +110,7 @@ export class IslandSim {
     island: Island,
     homesByGroup: Map<string, number[]>,
     seed: number,
+    walkSpeed = WALK_SPEED,
   ) {
     const cohort = members.filter((m) => m.onIsland)
     this.count = cohort.length
@@ -156,12 +157,15 @@ export class IslandSim {
       this.toNode[index] = this.chooseNext(index, start)
       this.progress[index] = this.rng.next()
       this.lane[index] = this.rng.range(-1, 1) * (TILE * 0.26)
-      this.speed[index] = this.rng.range(WALK_SPEED.min, WALK_SPEED.max)
+      this.speed[index] = this.rng.range(walkSpeed.min, walkSpeed.max)
       this.activity[index] = Activity.Walking
       this.writePosition(index)
       this.angle[index] = this.headingOf(index)
     })
   }
+
+  /** Intended speed avoids cadence spikes when the lane changes at a junction. */
+  locomotionSpeed(index: number): number { return this.speed[index] ?? 0 }
 
   indexOfMember(memberId: number): number | undefined {
     return this.indexByMember.get(memberId)

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { cloneResident, prepareResidentTemplate, disposeResidentSkeletons } from '../src/island/residentRendering.ts'
-import residentCatalog from '../src/dev/residentCatalog.json'
+import residentCatalog from '../src/island/residentCatalog.json'
 
 function surface(root) {
   root.updateMatrixWorld(true)

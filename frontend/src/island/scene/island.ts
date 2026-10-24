@@ -1,4 +1,4 @@
-import { createRng, type Rng } from '@/lib/rng'
+import { createRng, type Rng } from '../../lib/rng.ts'
 
 /**
  * The island, built as a grid of tiles rather than a disc.
@@ -11,10 +11,13 @@ import { createRng, type Rng } from '@/lib/rng'
  */
 
 /** Side length of one tile, in world units. */
-export const TILE = 2.4
+export const TILE = 3.4
+/** Authoring lattice preserves the existing shape, plot choices and home-slot ordering. */
+export const REFERENCE_TILE = 2.4
+export const ISLAND_SPACING = TILE / REFERENCE_TILE
 /** Tiles across. Odd, so there is a true centre tile. */
 export const GRID = 29
-/** Nominal land radius before the coastline is perturbed. */
+/** Nominal radius in reference units; actual land expands with tile spacing. */
 const BASE_RADIUS = 26
 
 export const Tile = {
@@ -64,13 +67,18 @@ export interface Island {
   lamps: Lamp[]
 }
 
-export const tileToWorld = (index: number) => {
+const tileToReference = (index: number) => {
   const gx = index % GRID
   const gz = Math.floor(index / GRID)
   return {
-    x: (gx - (GRID - 1) / 2) * TILE,
-    z: (gz - (GRID - 1) / 2) * TILE,
+    x: (gx - (GRID - 1) / 2) * REFERENCE_TILE,
+    z: (gz - (GRID - 1) / 2) * REFERENCE_TILE,
   }
+}
+
+export const tileToWorld = (index: number) => {
+  const { x, z } = tileToReference(index)
+  return { x: x * ISLAND_SPACING, z: z * ISLAND_SPACING }
 }
 
 const inBounds = (gx: number, gz: number) => gx >= 0 && gz >= 0 && gx < GRID && gz < GRID
@@ -151,7 +159,8 @@ function carveLand(tiles: Uint8Array) {
   for (let gz = 0; gz < GRID; gz++) {
     for (let gx = 0; gx < GRID; gx++) {
       const index = gz * GRID + gx
-      const { x, z } = tileToWorld(index)
+      // Evaluate the original lattice exactly so resizing cannot change the mask.
+      const { x, z } = tileToReference(index)
       const angle = Math.atan2(z, x)
       const radius =
         BASE_RADIUS *
@@ -318,11 +327,9 @@ function buildWalkGraph(tiles: Uint8Array) {
  * Fills the blocks.
  *
  * Buildings are placed on 2x2 plots, not on single tiles. A house model is
- * about 3.6 units across and a tile is 2.4, so a building given one tile
- * overhangs its neighbours by half a metre on every side — which is exactly
- * how residents ended up walking through walls. A 4.8-unit plot holds the
- * footprint with room to spare, and because plots are claimed out of block
- * interiors they never touch a road tile.
+ * about 3.6 units across. Retaining the claimed 2x2 lots while increasing
+ * tile spacing leaves wider gardens around the original-sized buildings.
+ * Plots remain inside blocks, clear of the widened walking lanes.
  *
  * Plots are claimed greedily, scanning in order; whatever is left over gets
  * trees and clutter, which is what gives blocks a built edge and a green
@@ -348,9 +355,11 @@ function placeBuildings(tiles: Uint8Array, rng: Rng): Plot[] {
       if (facing === null) continue
 
       // Plot centre sits between the four tiles.
-      const x = (gx + 0.5 - (GRID - 1) / 2) * TILE
-      const z = (gz + 0.5 - (GRID - 1) / 2) * TILE
-      const distance = Math.hypot(x, z) / BASE_RADIUS
+      const referenceX = (gx + 0.5 - (GRID - 1) / 2) * REFERENCE_TILE
+      const referenceZ = (gz + 0.5 - (GRID - 1) / 2) * REFERENCE_TILE
+      const x = referenceX * ISLAND_SPACING
+      const z = referenceZ * ISLAND_SPACING
+      const distance = Math.hypot(referenceX, referenceZ) / BASE_RADIUS
 
       const builtUp = distance < 0.45
       if (!rng.chance(builtUp ? 0.92 : distance < 0.75 ? 0.8 : 0.6)) continue
@@ -418,8 +427,8 @@ function decorateLeftovers(
         if (rng.chance(0.26)) {
           plots.push({
             model: rng.chance(0.6) ? 'island/rocks-low' : 'island/rocks-high',
-            x: x + rng.range(-0.5, 0.5),
-            z: z + rng.range(-0.5, 0.5),
+            x: x + rng.range(-0.5, 0.5) * ISLAND_SPACING,
+            z: z + rng.range(-0.5, 0.5) * ISLAND_SPACING,
             rotation: rng.next() * Math.PI * 2,
             scale: rng.range(0.7, 1.15),
           })
@@ -434,8 +443,8 @@ function decorateLeftovers(
         // A front garden: low fence and planting rather than bare ground.
         plots.push({
           model: rng.chance(0.5) ? 'town/suburban/fence-low' : 'town/suburban/planter',
-          x: x + rng.range(-0.3, 0.3),
-          z: z + rng.range(-0.3, 0.3),
+          x: x + rng.range(-0.3, 0.3) * ISLAND_SPACING,
+          z: z + rng.range(-0.3, 0.3) * ISLAND_SPACING,
           rotation: rng.pick([0, Math.PI / 2]),
           scale: BUILDING_SCALE * rng.range(0.85, 1),
         })
@@ -445,8 +454,8 @@ function decorateLeftovers(
       if (rng.chance(0.62)) {
         plots.push({
           model: `town/suburban/${rng.chance(0.55) ? 'tree-large' : 'tree-small'}`,
-          x: x + rng.range(-0.6, 0.6),
-          z: z + rng.range(-0.6, 0.6),
+          x: x + rng.range(-0.6, 0.6) * ISLAND_SPACING,
+          z: z + rng.range(-0.6, 0.6) * ISLAND_SPACING,
           rotation: rng.next() * Math.PI * 2,
           scale: BUILDING_SCALE * rng.range(0.8, 1.25),
         })
@@ -519,7 +528,8 @@ export function assignHomeTiles(
 ): Map<string, number[]> {
   const byAngle = island.walkable
     .map((tileIndex, slot) => {
-      const { x, z } = tileToWorld(tileIndex)
+      // Canonical angles retain stable ordering for collinear home nodes.
+      const { x, z } = tileToReference(tileIndex)
       return { slot, angle: Math.atan2(z, x) }
     })
     .sort((a, b) => a.angle - b.angle)
@@ -569,8 +579,8 @@ function placeLamps(tiles: Uint8Array, links: number[][], walkable: number[]): L
 // Distance field
 // ---------------------------------------------------------------------------
 
-/** Samples per tile edge in the distance field. Four is enough for soft foam. */
-const FIELD_SCALE = 4
+/** Retain at least the original world-space shoreline sampling density. */
+const FIELD_SCALE = Math.ceil(4 * ISLAND_SPACING)
 
 /**
  * Tiles of open water added around the grid before the field is computed.

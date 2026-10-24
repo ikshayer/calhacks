@@ -106,7 +106,7 @@ The optimized preview prepares each design once at load time:
 - Dispose owned skeleton textures on cleanup while retaining cached geometry.
 
 The same clone/cleanup helper is used by the island's existing character rigs.
-The Mii material batching remains in the separate preview until model integration.
+The workspace now uses this optimized Mii material batching too.
 Blender files and source GLB exports are preserved. Animation cadence, bone count,
 geometry detail, lighting, resolution, and the conservative culling policy remain
 the same for this first optimization pass.
@@ -194,11 +194,78 @@ browser were inspected, including the dress, glasses, and moustache. Browser UI
 checks cover 1/4/48 residents in original/optimized rendering and both movement
 modes, repeated Idle/Walk transitions, pause/resume, and all three speed settings.
 
-Phone/reaction behavior still needs
-appropriate animation mapping. Sprite selections are frozen in this test;
-runtime blinking and expression changes are not implemented. The current island
-rig helper replaces every mesh material with one shared Kenney material, so it
-cannot be reused unchanged for these textured faces.
+The production adapter temporarily maps phone, ordinary reactions and dismissal
+to Idle and Sharing to a single wave. Dedicated poses remain follow-up work.
+Sprite selections are frozen in this test; runtime blinking and expression
+changes are not implemented. The legacy Kenney renderer remains available for
+development comparison without changing the approved Mii materials.
 
 The creator's listing does not state an asset reuse license. Record the applicable
 terms before treating the experiment as a production asset.
+
+
+## Production island integration
+
+The workspace now uses all twenty approved resident designs by default. The
+single roster is `src/island/residentCatalog.json`; no exported assets moved.
+Appearance is assigned by a separate deterministic hash of profile/audience
+context and stable member id. Explicit Mii ids are honored, while Kenney stems
+and unknown legacy values are adapted without consuming audience RNG.
+
+Each prepared design shares geometry/materials across clones; each resident
+owns its skeleton and animation mixer. Effect-owned template leases handle
+StrictMode replay and asynchronous unmounts, and release prepared/raw resources
+when the final scene unmounts. A missing design uses the original or another
+available design; if all exports fail, the existing Kenney renderer is retained.
+
+Residents are normalized to 2.4 world units tall. Intended movement is 0.50 to 0.75
+world units/second; the authored rig stride/cycle metadata and displayed scale
+set Walk cadence independently for each design. IslandSim remains the only
+source of world positions. Budgeted controllers retain activity/time samples,
+advance fades in real time, and never apply walk speed to Idle or gestures.
+Phone, ordinary reactions and dismissal temporarily use Idle; Sharing waves
+once on entry, then returns to Idle. Dedicated phone/dismissal poses and facial
+expressions remain follow-up animation work. Cascade pause continues to pause
+round progression while ambient walking continues.
+
+Development inspection: `/workspace?residents=roster` cycles all twenty designs
+across actual cohort bodies; `/workspace?residents=kenney` restores the legacy
+renderer and its original ambient speed. `window.__residentScene.inspect()`
+provides stable member/model assignments, rig UUIDs, weights and animation
+clocks; `.budget.lastUpdated` reports animation evaluations. These inspection
+options do not modify persisted audience data.
+
+
+## Island surface pass
+
+The first island pass derives continuous retaining walls/caps, path curbs,
+grass/sand edging, plaza paving bands, and dock fascia/posts/rails from the
+existing tile mask. Repeated details share one instanced box batch, with two
+small plaza paving rings. Walkable surfaces, graph slots/links, group homes,
+building placements, and the water/foam implementation remain unchanged.
+Existing disconnected dock graph components are retained rather than silently
+rewriting navigation during a surface pass. The configured visible target is
+48; subgroup rounding produces 50 visible bodies for the reviewed profile,
+which is the actual count used in before/after performance measurements.
+Building multipart batching, architectural trim, and additional inhabited
+props are the next passes, pending visual review.
+
+## Spacing revision
+
+The island grid now uses 3.4-world-unit spacing in place of 2.4. The same 309
+land tiles cover 3572.04 square world units, approximately twice the previous
+1779.84. Streets and lots are 42 percent wider while Mii height remains 2.4,
+building/prop dimensions and movement speeds remain fixed, and the audience
+cohort is preserved. Plot and furniture locations spread with the land.
+
+Coastline generation, plot probability and home sorting use the original
+reference lattice, preserving the exact tile mask, route links, seeded model
+choices and group home slots. Shoreline field extent increases to 103.7, with
+six samples per tile to retain the original physical sampling density. The
+water shader, foam maps, colors and flow behavior are unchanged. Overview
+framing, fog clearance and shadow coverage account for the enlarged land;
+close zoom remains available for individual residents.
+
+`npm run test:residents` now runs 22 tests. The five spacing tests compare a
+saved baseline for exact topology/home/plot decisions, area and physical size,
+shoreline coverage/density, overview fit and simulation member/speed behavior.

@@ -43,7 +43,7 @@ Open <http://127.0.0.1:5173/mii-test.html> with the frontend development server
 running. The preview opens on **All 20 designs**. The newest ten, the earlier six,
 and the original four each have a separate group. Choose a resident for a close view, or show a mixed
 48-resident crowd. Both original and optimized rendering are available.
-The production simulation has not been switched to these models.
+The production workspace now uses these models with stable member appearance assignment; the standalone preview remains a regression tool.
 
 ## Recreate a design
 
@@ -80,7 +80,7 @@ designs, repaired helpers, geometry, materials, and older exported clips are ret
 See `frontend/MII-TEST.md` for playback controls, measurements, and validation commands.
 
 The preview, Blender lineup, and browser deformation check share
-`frontend/src/dev/residentCatalog.json` so every exported design is included.
+`frontend/src/island/residentCatalog.json` so every exported design is included.
 
 Authoring source: Joey Carlino's
 [Mii Maker for Blender](https://joeycarlino.itch.io/mii-maker-for-blender).

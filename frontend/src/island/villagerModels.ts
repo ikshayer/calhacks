@@ -25,6 +25,7 @@ export interface VillagerRig {
   playing: string
   /** Time owed to the mixer because the animation budget skipped it. */
   owed: number
+  advance(dt: number): void
   /** The head bone, for parenting accessories. */
   head?: THREE.Object3D
 }
@@ -101,7 +102,7 @@ export function createRig(
   const idle = actions.get('idle')
   if (idle) idle.setEffectiveWeight(1)
 
-  return { root, mixer, actions, playing: 'idle', owed: 0, head }
+  return { root, mixer, actions, playing: 'idle', owed: 0, head, advance: (dt) => { mixer.update(dt) } }
 }
 
 /** Crossfades a rig to `next`, leaving it alone if it is already playing. */

@@ -9,13 +9,16 @@ import { Town } from './Town'
 import { Villagers } from './Villagers'
 import { AmbientChatter } from './fx/AmbientChatter'
 import { GroupHighlight } from './fx/GroupHighlight'
-import type { Island } from './scene/island'
+import { ISLAND_SPACING, type Island } from './scene/island'
 import type { IslandSim } from './scene/IslandSim'
+import { residentAppearance, RESIDENT_IDS } from './residentAppearance'
+import { ISLAND_VIEW } from './scene/islandView'
 
 export interface IslandCanvasProps {
   sim: IslandSim
   island: Island
   members: AudienceMember[]
+  appearanceContext: string
   selectedIndex: number | null
   onSelect(index: number | null): void
   /** Group to ring on the ground, or null. Driven by the sidebar. */
@@ -24,6 +27,8 @@ export interface IslandCanvasProps {
   /** Dropped first when frames get expensive. */
   shadows: boolean
   paused: boolean
+  /** The town degrades to an empty island rather than failing the scene; this reports that. */
+  onTownError?(error: unknown): void
 }
 
 /**
@@ -37,7 +42,7 @@ export interface IslandCanvasProps {
  * flat plane.
  */
 const SUN = {
-  position: [-52, 44, 42] as const,
+  position: [-52 * ISLAND_SPACING, 44 * ISLAND_SPACING, 42 * ISLAND_SPACING] as const,
   color: '#ffa652',
   intensity: 3.2,
 }
@@ -60,21 +65,23 @@ const SKY_TOP = '#f6a765'
  */
 // Exactly the background colour: any difference leaves the water plane's own
 // edge faintly visible where it meets the sky.
-const FOG = { color: SKY_TOP, near: 96, far: 152 }
+const FOG = { color: SKY_TOP, near: 108 * ISLAND_SPACING, far: 164 * ISLAND_SPACING }
 
 export function IslandCanvas({
   sim,
   island,
   members,
+  appearanceContext,
   selectedIndex,
   onSelect,
   highlightGroupId,
   highlightColor,
   shadows,
   paused,
+  onTownError,
 }: IslandCanvasProps) {
   // Model stems indexed by villager, not by member id — only the cohort has bodies.
-  const models = useMemo(() => {
+  const legacyModels = useMemo(() => {
     const byId = new Map(members.map((member) => [member.id, member.model]))
     return Array.from(
       { length: sim.count },
@@ -82,12 +89,22 @@ export function IslandCanvas({
     )
   }, [members, sim])
 
+  const models = useMemo(() => {
+    const byId = new Map(members.map((member) => [member.id, member]))
+    const roster = import.meta.env.DEV && new URLSearchParams(location.search).get('residents') === 'roster'
+    return Array.from({ length: sim.count }, (_, index) => {
+      if (roster) return RESIDENT_IDS[index % RESIDENT_IDS.length]!
+      const member = byId.get(sim.memberOfIndex(index))
+      return member ? residentAppearance(member, appearanceContext) : 'resident'
+    })
+  }, [members, sim, appearanceContext])
+
   return (
     <Canvas
       shadows={shadows}
       // Capped so a high-DPI laptop does not quietly render four times the pixels.
       dpr={[1, 1.6]}
-      camera={{ position: [0, 48, 60], fov: 38, near: 1, far: 900 }}
+      camera={{ position: [...ISLAND_VIEW.position], fov: ISLAND_VIEW.fov, near: 1, far: 900 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       onCreated={({ gl, scene }) => {
         // ACES filmic rolls the strong orange key off gracefully instead of
@@ -108,13 +125,13 @@ export function IslandCanvas({
         intensity={SUN.intensity}
         castShadow={shadows}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-62}
-        shadow-camera-right={62}
-        shadow-camera-top={62}
-        shadow-camera-bottom={-62}
+        shadow-camera-left={-62 * ISLAND_SPACING}
+        shadow-camera-right={62 * ISLAND_SPACING}
+        shadow-camera-top={62 * ISLAND_SPACING}
+        shadow-camera-bottom={-62 * ISLAND_SPACING}
         shadow-camera-near={1}
-        shadow-camera-far={190}
-        shadow-bias={-0.0013}
+        shadow-camera-far={190 * ISLAND_SPACING}
+        shadow-bias={-0.0013 / ISLAND_SPACING}
       />
 
       {/* Cool counter-light so shadow sides read blue rather than black. */}
@@ -122,10 +139,12 @@ export function IslandCanvas({
 
       <Suspense fallback={null}>
         <Terrain island={island} shadows={shadows} />
-        <Town placements={island.plots} shadows={shadows} />
+        <Town placements={island.plots} island={island} shadows={shadows} onError={onTownError} />
         <Villagers
           sim={sim}
           models={models}
+          legacyModels={legacyModels}
+          appearanceContext={appearanceContext}
           selectedIndex={selectedIndex}
           onSelect={onSelect}
           shadows={shadows}
@@ -149,9 +168,9 @@ export function IslandCanvas({
       </EffectComposer>
 
       <OrbitControls
-        target={[0, 0, 0]}
-        minDistance={18}
-        maxDistance={115}
+        target={[...ISLAND_VIEW.target]}
+        minDistance={ISLAND_VIEW.minDistance}
+        maxDistance={ISLAND_VIEW.maxDistance}
         // Stop short of the horizon so the camera cannot slide under the island.
         maxPolarAngle={Math.PI / 2.3}
         minPolarAngle={0.2}

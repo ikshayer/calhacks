@@ -1,3 +1,4 @@
+import { RESIDENT_ANCHORS } from '../residentAppearance'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
@@ -65,7 +66,7 @@ export function ShareTrails({ sim }: { sim: IslandSim }) {
 
       array[i * 3] = fromX + (toX - fromX) * t
       // A parabola peaking at the midpoint.
-      array[i * 3 + 1] = 1.9 + Math.sin(t * Math.PI) * ARC_HEIGHT
+      array[i * 3 + 1] = RESIDENT_ANCHORS.trail + Math.sin(t * Math.PI) * ARC_HEIGHT
       array[i * 3 + 2] = fromZ + (toZ - fromZ) * t
     }
 

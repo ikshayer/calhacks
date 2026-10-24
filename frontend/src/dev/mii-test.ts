@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
 import { cloneResident, disposeResidentSkeletons, prepareResidentTemplate, residentRenderStats } from '../island/residentRendering'
 import { ResidentPlayback } from '../island/residentPlayback'
-import residentCatalog from './residentCatalog.json'
+import residentCatalog from '../island/residentCatalog.json'
 
 type Result = { fps: number; p95FrameMs: number; frames: number; residents: number; clip: string; shadows: boolean; viewport: string; dpr: number; rendering: string; design: string; draws: number; skeletons: number; motion: string; speed: number }
 const el = <T extends HTMLElement>(id: string) => {

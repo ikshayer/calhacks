@@ -1,3 +1,4 @@
+import { RESIDENT_ANCHORS } from '../residentAppearance'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
@@ -169,7 +170,7 @@ export function AmbientChatter({ sim, paused }: { sim: IslandSim; paused: boolea
       }
       sprite.position.set(
         sim.x[bubble.villager] as number,
-        1.85,
+        RESIDENT_ANCHORS.chatter,
         sim.z[bubble.villager] as number,
       )
       // Fade out over the last half second rather than vanishing mid-sentence.
