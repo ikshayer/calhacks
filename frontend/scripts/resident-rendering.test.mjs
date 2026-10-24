@@ -18,6 +18,8 @@ import { readFileSync } from 'node:fs'
 import { collectStaticParts, placedStaticMatrix, prepareBuilding, fitBuilding, remapBuildingY, BUILDING_PROFILES } from '../src/island/staticTown.ts'
 import { planTown, architectureFor, islandTileAt } from '../src/island/townArchitecture.ts'
 import { islandModelKeys } from '../src/island/scene/island.ts'
+import { planLandscape, walkCorridors, WALK_CLEARANCE } from '../src/island/landscapePlanning.ts'
+import { createFountainGeometry, FOUNTAIN_RADIUS, FOUNTAIN_POOL_Y } from '../src/island/fountainGeometry.ts'
 
 test('static town batches preserve visible nested transforms and material groups without owning raw resources', () => {
   const parent = new THREE.Group(); parent.position.x = 100
@@ -146,6 +148,67 @@ test('actual building bounds fit complete entrances and move pier houses/blocked
 const expandedIsland = buildIsland(hashSeed('giving-garden-island'))
 const expandedHomes = assignHomeTiles(expandedIsland,
   spacingBaseline.groups.map((group) => group.id), spacingBaseline.groups.map((group) => group.share))
+
+test('fountain geometry stays inside its original footprint, lands water inside the basin and releases all owned geometry', () => {
+  const fountain = createFountainGeometry()
+  const geometries = [fountain.stone, fountain.trim, fountain.pools, fountain.streams, fountain.ripple]
+  for (const geometry of geometries) {
+    for (const attribute of Object.values(geometry.attributes)) {
+      assert.ok([...attribute.array].every(Number.isFinite))
+    }
+  }
+  for (const geometry of geometries.slice(0, 4)) {
+    const bounds = geometry.boundingBox
+    assert.ok(bounds.min.x >= -FOUNTAIN_RADIUS - 1e-5 && bounds.max.x <= FOUNTAIN_RADIUS + 1e-5)
+    assert.ok(bounds.min.z >= -FOUNTAIN_RADIUS - 1e-5 && bounds.max.z <= FOUNTAIN_RADIUS + 1e-5)
+    assert.ok(bounds.min.y >= -1e-5)
+  }
+  assert.equal(fountain.splashCenters.length, 6)
+  for (const point of fountain.splashCenters) {
+    assert.ok(Math.hypot(point.x, point.z) + 0.17 < 1.34, 'expanding splash rings must stay inside the pool')
+    assert.ok(Math.abs(point.y - FOUNTAIN_POOL_Y - 0.012) < 1e-6)
+  }
+  let released = 0
+  geometries.forEach(geometry => geometry.addEventListener('dispose', () => released++))
+  fountain.dispose()
+  assert.equal(released, 5)
+})
+
+test('landscape composition preserves seeded island data and keeps every new obstacle clear of lanes, doors and buildings', () => {
+  const assets = deliveredTownBounds()
+  const town = planTown(expandedIsland.plots, expandedIsland, assets)
+  const sourceBefore = JSON.stringify({ island: expandedIsland, town: town.plots })
+  const landscape = planLandscape(expandedIsland, town, assets)
+  const repeat = planLandscape(expandedIsland, town, assets)
+  assert.equal(JSON.stringify({ island: expandedIsland, town: town.plots }), sourceBefore)
+  assert.deepEqual(landscape.summary, repeat.summary)
+  assert.deepEqual(landscape.plots, repeat.plots)
+  assert.deepEqual(landscape.parts.map(part => part.matrix.elements), repeat.parts.map(part => part.matrix.elements))
+  assert.ok(landscape.summary.trees >= 12, JSON.stringify(landscape.summary))
+  assert.ok(landscape.summary.coastBeds >= 5, JSON.stringify(landscape.summary))
+  assert.ok(landscape.summary.coastalSeats >= 1, JSON.stringify(landscape.summary))
+  assert.ok(landscape.summary.plazaSeats >= 2, JSON.stringify(landscape.summary))
+  assert.equal(landscape.summary.urns, 4)
+  for (const obstacle of landscape.obstacles) {
+    assert.ok(!landscape.corridors.some(corridor => corridor.intersectsBox(obstacle.bounds)), `${obstacle.feature} intrudes into a lane`)
+    assert.ok(!landscape.buildingBounds.some(bounds => bounds.intersectsBox(obstacle.bounds)), `${obstacle.feature} clips a building`)
+    assert.ok(!landscape.approaches.some(bounds => bounds.intersectsBox(obstacle.bounds)), `${obstacle.feature} blocks a door`)
+    for (const x of [obstacle.bounds.min.x, obstacle.bounds.max.x]) for (const z of [obstacle.bounds.min.z, obstacle.bounds.max.z]) {
+      assert.notEqual(islandTileAt(expandedIsland, x, z), Tile.Water)
+    }
+  }
+})
+
+test('walking reservations cover both lane extremes and junction nodes without changing the graph', () => {
+  const corridors = walkCorridors(expandedIsland)
+  assert.ok(WALK_CLEARANCE > TILE * 0.26)
+  for (const tile of expandedIsland.walkable) {
+    const { x, z } = tileToWorld(tile)
+    for (const [dx, dz] of [[WALK_CLEARANCE - 0.001, 0], [-WALK_CLEARANCE + 0.001, 0], [0, WALK_CLEARANCE - 0.001], [0, -WALK_CLEARANCE + 0.001]]) {
+      assert.ok(corridors.some(bounds => bounds.containsPoint(new THREE.Vector3(x + dx, 0, z + dz))))
+    }
+  }
+})
 
 test('expanded island doubles usable land area while preserving exact coastline, routes and home slots', () => {
   assert.equal(TILE, 3.4)

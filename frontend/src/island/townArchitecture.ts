@@ -121,7 +121,9 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
   const cz = (bounds.min.z + bounds.max.z) / 2
   const x = style.fit.profile.doorX * style.fit.horizontal * plot.scale
   const z = style.fit.profile.doorZ * style.fit.horizontal * plot.scale + 0.065
-  const accent = plot.theme === 'cafe' ? '#527d78' : plot.theme === 'bakery' ? '#b77659' : plot.theme === 'market' ? '#b09253' : '#5a7480'
+  const accent = plot.theme === 'cafe' ? '#3f9290' : plot.theme === 'bakery' ? '#c97667'
+    : plot.theme === 'market' ? '#78984f' : plot.theme === 'harbour' ? '#477f9c'
+      : plot.x < 0 ? '#789578' : '#638895'
 
   // Solid foundation edges stop at the doorway; paving remains flush and navigable.
   add(cx, 0.10, bounds.min.z - 0.025, width + 0.09, 0.20, 0.10, '#967f69')
@@ -129,7 +131,7 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
   add(bounds.max.x + 0.025, 0.10, cz, 0.10, 0.20, depth, '#967f69')
   const doorWidth = 1.28
   const doorHeight = 2.42
-  add(x, doorHeight / 2 + 0.035, z, doorWidth, doorHeight, 0.05, '#37545b')
+  add(x, doorHeight / 2 + 0.035, z, doorWidth, doorHeight, 0.05, accent)
   add(x - doorWidth / 2 - 0.055, 1.27, z + 0.015, 0.11, 2.54, 0.10, '#e9d7b5')
   add(x + doorWidth / 2 + 0.055, 1.27, z + 0.015, 0.11, 2.54, 0.10, '#e9d7b5')
   add(x, 2.56, z + 0.015, doorWidth + 0.22, 0.13, 0.10, '#e9d7b5')
@@ -140,19 +142,8 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
   const pathStart = z + 0.10
   if (edge > pathStart) add(x, 0.018, (pathStart + edge) / 2, 1.55, 0.024, edge - pathStart, '#d4bc96')
 
-  // Kit walls stop at a flat cut where the roof begins, which is what makes these
-  // read as untrimmed boxes from the overview camera. A darker fascia band restores
-  // the overhang shadow a finished roof casts. Type P reports no roof line, so it
-  // keeps its original silhouette rather than gaining a band at an invented height.
-  const roofLine = remapBuildingY(style.fit.profile.roofMin, style.fit) * plot.scale
-  if (Number.isFinite(roofLine)) {
-    const over = 0.13
-    const fascia = new THREE.Color(style.fit.profile.roofColor).multiplyScalar(0.66).getStyle()
-    add(cx, roofLine, bounds.max.z + over / 2, width + over * 2, 0.14, over, fascia)
-    add(cx, roofLine, bounds.min.z - over / 2, width + over * 2, 0.14, over, fascia)
-    add(bounds.min.x - over / 2, roofLine, cz, over, 0.14, depth, fascia)
-    add(bounds.max.x + over / 2, roofLine, cz, over, 0.14, depth, fascia)
-  }
+  // Keep the kit's roof silhouette. The overall model bounds include porches and
+  // setbacks, so a rectangular fascia derived from them floats away from the roof.
 
   // A low fence across the frontage, split by the entrance, gives each lot a
   // readable boundary. The gap is wider than the paving so the approach the
@@ -163,7 +154,7 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
   // the railing without pushing totalBounds past the plot allowance.
   const fenceGap = 0.86
   const fenceZ = bounds.max.z + 0.26
-  const rail = '#d8c7a3'
+  const rail = plot.x < 0 ? '#d8d9b7' : '#b9d1c9'
   for (const side of style.scope === 'land' ? ([-1, 1] as const) : []) {
     const outer = side < 0 ? bounds.min.x : bounds.max.x
     const inner = x + side * fenceGap
@@ -186,24 +177,25 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
     for (let i = 0; i < blooms; i++) {
       const t = (i + 0.5) / blooms
       const at = Math.min(outer, inner) + span * t
-      add(at, 0.23, bedZ, 0.18, 0.16, 0.18, BLOOM_COLORS[(i + plot.sourceIndex) % BLOOM_COLORS.length]!)
+      add(at, 0.27, bedZ, 0.28, 0.24, 0.22, BLOOM_COLORS[(i + plot.sourceIndex) % BLOOM_COLORS.length]!)
     }
   }
 
   if (plot.theme !== 'home') {
-    const awningWidth = Math.min(2.1, width - 0.24)
+    const awningWidth = Math.min(2.65, width - 0.24)
     const awningX = THREE.MathUtils.clamp(x, bounds.min.x + awningWidth / 2, bounds.max.x - awningWidth / 2)
     const awningZ = Math.min(z + 0.29, edge - 0.32)
     add(awningX, 2.88, awningZ, awningWidth, 0.12, 0.62, accent)
     add(awningX, 2.76, awningZ + 0.29, awningWidth, 0.22, 0.07, accent)
     for (let stripe = 0; stripe < 5; stripe++) add(awningX - awningWidth / 2 + (stripe + 0.5) * awningWidth / 5,
       2.947, awningZ, awningWidth / 10, 0.016, 0.61, '#ead6b5')
-    signs.push({ theme: plot.theme, matrix: rotation.clone().multiply(new THREE.Matrix4().makeScale(awningWidth, 0.34, 1)
-      .setPosition(awningX, 2.77, awningZ + 0.335)) })
+    // A taller fascia and visible stripe color identify shops from the overview.
+    signs.push({ theme: plot.theme, matrix: rotation.clone().multiply(new THREE.Matrix4().makeScale(awningWidth, 0.51, 1)
+      .setPosition(awningX, 3.23, awningZ + 0.335)) })
     if (plot.theme === 'harbour') {
       // A small gabled harbor-office pennant gives the waterfront its own silhouette.
       add(cx, bounds.max.y + 0.36, cz, 0.06, 0.72, 0.06, '#80674d')
-      add(cx + 0.25, bounds.max.y + 0.53, cz, 0.48, 0.24, 0.035, '#b77e55')
+      add(cx + 0.44, bounds.max.y + 0.53, cz, 0.86, 0.36, 0.035, accent)
     }
   }
   const totalBounds = bounds.clone().applyMatrix4(rotation)

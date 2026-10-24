@@ -5,6 +5,7 @@ import type { GLTF } from 'three-stdlib'
 import { islandModelKeys, type Island, type Plot } from './scene/island'
 import { collectStaticParts, placedStaticMatrix, prepareBuilding, type PixelSampler, type StaticPart } from './staticTown'
 import { architectureFor, planTown } from './townArchitecture'
+import { planLandscape } from './landscapePlanning'
 
 const TOWN_MODEL_PATHS = islandModelKeys().map((key) => `/models/${key}.glb`)
 
@@ -84,6 +85,7 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
     try {
       const assets = new Map(keys.map((key, index) => [key, collectStaticParts(gltfs[index]!.scene)]))
       const plan = planTown(placements, island, assets)
+      const landscape = planLandscape(island, plan, assets)
       const partsByStyle = new Map<string, StaticPart[]>()
       for (const style of plan.styles.values()) {
         const parts = assets.get(style.model)!
@@ -92,7 +94,7 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
         partsByStyle.set(style.key, template.parts)
       }
       const grouped = new Map<string, typeof plan.plots>()
-      for (const plot of plan.plots) {
+      for (const plot of landscape.plots) {
         const key = plot.style ?? plot.model
         const group = grouped.get(key) ?? []
         group.push(plot); grouped.set(key, group)
@@ -105,7 +107,9 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
           mesh.name = `Town ${key} ${part.name}`
           instances.forEach((plot, index) => {
             mesh.setMatrixAt(index, placedStaticMatrix(plot, part.matrix))
-            mesh.setColorAt(index, color.set(plot.tint ?? '#ffffff'))
+            color.set(plot.tint ?? '#ffffff')
+            if (plot.style) color.lerp(new THREE.Color(plot.x < 0 ? '#edf0d6' : '#dae8e5'), 0.34)
+            mesh.setColorAt(index, color)
           })
           mesh.instanceMatrix.needsUpdate = true
           if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
@@ -115,7 +119,8 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
       }
       const buildings = plan.plots.filter((plot) => plot.style).map((plot) => ({ plot,
         style: plan.styles.get(plot.style!)!, detail: architectureFor(plot, plan.styles.get(plot.style!)!) }))
-      const boxes = buildings.flatMap((building) => building.detail.boxes)
+      const boxes = [...buildings.flatMap((building) => building.detail.boxes),
+        ...landscape.parts.filter(part => part.shape === 'box')]
       const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
       const boxMaterial = new THREE.MeshLambertMaterial()
       ownedGeometry.push(boxGeometry); ownedMaterials.push(boxMaterial)
@@ -126,6 +131,22 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
       if (trim.instanceColor) trim.instanceColor.needsUpdate = true
       trim.castShadow = shadowsRef.current; trim.receiveShadow = shadowsRef.current
       trim.computeBoundingSphere(); architecture.add(trim); meshes.push(trim)
+      // Landscape boxes join the architectural batch; rounded planting and urns add two.
+      for (const shape of ['round', 'cylinder'] as const) {
+        const instances = landscape.parts.filter(part => part.shape === shape)
+        if (!instances.length) continue
+        const geometry = shape === 'round' ? new THREE.SphereGeometry(0.5, 10, 6)
+            : new THREE.CylinderGeometry(0.5, 0.42, 1, 12)
+        const material = new THREE.MeshLambertMaterial()
+        ownedGeometry.push(geometry); ownedMaterials.push(material)
+        const mesh = new THREE.InstancedMesh(geometry, material, instances.length)
+        mesh.name = `Landscape ${shape}`
+        instances.forEach((part, index) => { mesh.setMatrixAt(index, part.matrix); mesh.setColorAt(index, color.set(part.color)) })
+        mesh.instanceMatrix.needsUpdate = true
+        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+        mesh.castShadow = shadowsRef.current; mesh.receiveShadow = shadowsRef.current
+        mesh.computeBoundingSphere(); architecture.add(mesh); meshes.push(mesh)
+      }
       for (const [theme, label] of [['cafe','CAFE'],['bakery','BAKERY'],['market','MARKET'],['harbour','HARBOUR']] as const) {
         const signs = buildings.flatMap((building) => building.detail.signs).filter((sign) => sign.theme === theme)
         if (!signs.length) continue
@@ -139,7 +160,7 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
         architecture.add(mesh); meshes.push(mesh)
       }
       meshesRef.current = meshes
-      if (import.meta.env.DEV) Object.assign(window, { __townScene: { root, architecture, plan, prepared,
+      if (import.meta.env.DEV) Object.assign(window, { __townScene: { root, architecture, plan, prepared, landscape,
         inspect: () => buildings.map(({ plot, style, detail }) => ({ sourceModel: plot.model, sourceIndex: plot.sourceIndex,
           position: [plot.x, plot.z], rotation: plot.rotation, relocated: plot.relocated, theme: plot.theme,
           height: detail.footprint.max.y, footprint: detail.totalBounds.getSize(new THREE.Vector3()).toArray(),

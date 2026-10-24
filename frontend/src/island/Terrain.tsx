@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
 import { TILE, Tile, tileToWorld, type Island, type Lamp } from './scene/island'
 import { Water } from './Water'
 import { SurfaceBorders } from './SurfaceBorders'
+import { createTerrainMaterial } from './terrainMaterial'
+import { Fountain } from './Fountain'
 
 /**
  * Tile palette, warmed for the late-afternoon light.
@@ -15,12 +16,12 @@ import { SurfaceBorders } from './SurfaceBorders'
 const TILE_COLOR: Record<number, string> = {
   // Olive rather than a true green: under a strong orange key a cool green
   // turns acid, and the reference's ground is closer to dry grass than lawn.
-  [Tile.Grass]: '#7fab45',
-  [Tile.Sand]: '#e8b878',
+  [Tile.Grass]: '#8fa958',
+  [Tile.Sand]: '#ead2a0',
   // Streets are warm stone, not asphalt. Dark roads cut the island into
   // pieces from above; pale ones read as paths between places.
-  [Tile.Road]: '#c3855a',
-  [Tile.Plaza]: '#d9a06a',
+  [Tile.Road]: '#c3ad8d',
+  [Tile.Plaza]: '#dfc6a2',
   [Tile.Dock]: '#9c6b45',
 }
 
@@ -53,8 +54,12 @@ export function Terrain({ island, shadows }: { island: Island; shadows: boolean 
     [island],
   )
 
-  const geometry = useMemo(() => new THREE.BoxGeometry(TILE, 1, TILE), [])
-  const material = useMemo(() => new THREE.MeshLambertMaterial({ vertexColors: false }), [])
+  const geometry = useMemo(() => {
+    const value = new THREE.BoxGeometry(TILE, 1, TILE)
+    value.setAttribute('surfaceKind', new THREE.InstancedBufferAttribute(Float32Array.from(landTiles, tile => tile.kind), 1))
+    return value
+  }, [landTiles])
+  const material = useMemo(() => createTerrainMaterial(), [])
 
   useEffect(
     () => () => {
@@ -103,15 +108,13 @@ export function Terrain({ island, shadows }: { island: Island; shadows: boolean 
         args={[geometry, material, Math.max(landTiles.length, 1)]}
         frustumCulled={false}
       />
-      <Fountain />
+      <Fountain shadows={shadows} />
       <SurfaceBorders island={island} shadows={shadows} />
-      <PlazaBenches island={island} shadows={shadows} />
       <Lamps lamps={island.lamps} />
       <Water island={island} />
     </group>
   )
 }
-
 /**
  * Street lamps, instanced.
  *
@@ -151,118 +154,6 @@ function Lamps({ lamps }: { lamps: Lamp[] }) {
         <sphereGeometry args={[0.22, 10, 8]} />
         <meshBasicMaterial color="#ffe6b0" />
       </instancedMesh>
-    </group>
-  )
-}
-
-/**
- * Benches facing the fountain. Geometry, because the kit ships no seating.
- *
- * The plaza is where residents gather and where the camera already rests, so it
- * is worth the few extra boxes. Positions are chosen from the plaza tiles the
- * generator left empty rather than authored by hand: the seeded plot layout is
- * covered by a baseline fixture and must not be edited to make room for these.
- */
-function PlazaBenches({ island, shadows }: { island: Island; shadows: boolean }) {
-  const benches = useMemo(() => {
-    const taken = island.plots.map((plot) => ({ x: plot.x, z: plot.z }))
-    const candidates = Array.from(island.tiles).flatMap((kind, index) => {
-      if (kind !== Tile.Plaza) return []
-      const { x, z } = tileToWorld(index)
-      const radius = Math.hypot(x, z)
-      // Clear of the fountain itself, inside the ring the parasols occupy.
-      if (radius < TILE * 0.9 || radius > TILE * 1.7) return []
-      if (taken.some((plot) => Math.hypot(plot.x - x, plot.z - z) < 1.3)) return []
-      return [{ x, z, angle: Math.atan2(x, z) }]
-    })
-    // Spread the chosen seats around the fountain instead of clumping on one side.
-    candidates.sort((a, b) => a.angle - b.angle)
-    const wanted = Math.min(4, candidates.length)
-    return Array.from({ length: wanted }, (_, i) =>
-      candidates[Math.floor((i * candidates.length) / wanted)]!)
-  }, [island])
-
-  const parts = useMemo(() => {
-    const out: THREE.Matrix4[] = []
-    const colors: string[] = []
-    for (const bench of benches) {
-      // Seats face the fountain, so the backrest sits on the outward side.
-      const base = new THREE.Matrix4()
-        .makeRotationY(Math.atan2(-bench.x, -bench.z))
-        .setPosition(bench.x, 0, bench.z)
-      const box = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) => {
-        out.push(base.clone().multiply(new THREE.Matrix4().makeScale(w, h, d).setPosition(x, y, z)))
-        colors.push(color)
-      }
-      box(0, 0.42, 0, 1.5, 0.12, 0.44, '#c08a52')       // seat
-      box(0, 0.68, -0.21, 1.5, 0.40, 0.10, '#c08a52')   // backrest
-      box(-0.62, 0.21, 0, 0.12, 0.42, 0.40, '#6d5340')  // legs
-      box(0.62, 0.21, 0, 0.12, 0.42, 0.40, '#6d5340')
-    }
-    return { out, colors }
-  }, [benches])
-
-  const ref = useRef<THREE.InstancedMesh>(null)
-  useEffect(() => {
-    const mesh = ref.current
-    if (!mesh) return
-    const color = new THREE.Color()
-    parts.out.forEach((matrix, index) => {
-      mesh.setMatrixAt(index, matrix)
-      mesh.setColorAt(index, color.set(parts.colors[index]!))
-    })
-    mesh.instanceMatrix.needsUpdate = true
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-    mesh.computeBoundingSphere()
-  }, [parts])
-
-  useEffect(() => {
-    const mesh = ref.current
-    if (!mesh) return
-    mesh.castShadow = shadows
-    mesh.receiveShadow = shadows
-  }, [shadows])
-
-  if (!parts.out.length) return null
-
-  return (
-    <instancedMesh ref={ref} name="Plaza benches" args={[undefined, undefined, parts.out.length]}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshLambertMaterial />
-    </instancedMesh>
-  )
-}
-
-/** The centrepiece of the plaza. Geometry, because no kit ships one. */
-function Fountain() {
-  const waterRef = useRef<THREE.Mesh>(null)
-
-  useFrame(({ clock }) => {
-    const water = waterRef.current
-    if (!water) return
-    // A slow breathing scale reads as moving water without a shader.
-    const t = clock.elapsedTime
-    water.scale.setScalar(1 + Math.sin(t * 1.6) * 0.015)
-  })
-
-  return (
-    <group position={[0, 0, 0]}>
-      <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[1.5, 1.65, 0.45, 20]} />
-        <meshLambertMaterial color="#b98152" />
-      </mesh>
-      <mesh ref={waterRef} position={[0, 0.46, 0]}>
-        <cylinderGeometry args={[1.28, 1.28, 0.08, 20]} />
-        <meshLambertMaterial color="#6fc3d6" emissive="#2d7f93" emissiveIntensity={0.35} />
-      </mesh>
-      <mesh position={[0, 0.78, 0]} castShadow>
-        <cylinderGeometry args={[0.16, 0.26, 0.9, 10]} />
-        <meshLambertMaterial color="#cf9a68" />
-      </mesh>
-      <mesh position={[0, 1.3, 0]} castShadow>
-        <cylinderGeometry args={[0.62, 0.22, 0.2, 14]} />
-        <meshLambertMaterial color="#cf9a68" />
-      </mesh>
     </group>
   )
 }

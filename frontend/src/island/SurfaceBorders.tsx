@@ -31,8 +31,12 @@ export function SurfaceBorders({ island, shadows }: { island: Island; shadows: b
     </instancedMesh>
     {/* Paving follows the fountain, leaving the existing zero-height navigation intact. */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.016, 0]} receiveShadow={shadows}>
-      <ringGeometry args={[2.08, 2.34, 64]} />
-      <meshLambertMaterial color="#e2c89e" />
+      <ringGeometry args={[1.70, 2.55, 64]} />
+      <meshLambertMaterial color="#f0dcc0" />
+    </mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, 0]} receiveShadow={shadows}>
+      <ringGeometry args={[2.56, 2.70, 64]} />
+      <meshLambertMaterial color="#718d88" />
     </mesh>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.017, 0]} receiveShadow={shadows}>
       <ringGeometry args={[3.55 * ISLAND_SPACING, 3.55 * ISLAND_SPACING + 0.09, 64]} />
