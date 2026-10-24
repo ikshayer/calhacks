@@ -1,6 +1,7 @@
 import type { AudienceMember, ReactionKind, RoundEvent } from '@/data/types'
 import { createRng, type Rng } from '../../lib/rng.ts'
 import { TILE, tileToWorld, type Island } from './island.ts'
+import { continuousGroundSpan, groundHeight } from './ground.ts'
 
 /**
  * What a villager is doing. Drives both the animation clip and the floating
@@ -75,6 +76,7 @@ export class IslandSim {
   readonly groupIds: string[]
 
   readonly x: Float32Array
+  readonly y: Float32Array
   readonly z: Float32Array
   readonly angle: Float32Array
   readonly activity: Uint8Array
@@ -94,6 +96,9 @@ export class IslandSim {
   private readonly toNode: Int32Array
   /** Distance along the current segment, 0..1. */
   private readonly progress: Float32Array
+  private readonly firstLeg: Float32Array
+  private readonly secondLeg: Float32Array
+  private readonly island: Island
   /** Signed offset from the street centreline, so villagers keep to a lane. */
   private readonly lane: Float32Array
   private readonly speed: Float32Array
@@ -114,6 +119,7 @@ export class IslandSim {
   ) {
     const cohort = members.filter((m) => m.onIsland)
     this.count = cohort.length
+    this.island = island
     this.rng = createRng(seed)
 
     // Walkable tiles become graph nodes; residents move between tile centres.
@@ -130,12 +136,15 @@ export class IslandSim {
     this.memberIds = new Int32Array(this.count)
     this.groupIds = new Array<string>(this.count)
     this.x = new Float32Array(this.count)
+    this.y = new Float32Array(this.count)
     this.z = new Float32Array(this.count)
     this.angle = new Float32Array(this.count)
     this.activity = new Uint8Array(this.count)
     this.fromNode = new Int32Array(this.count)
     this.toNode = new Int32Array(this.count)
     this.progress = new Float32Array(this.count)
+    this.firstLeg = new Float32Array(this.count)
+    this.secondLeg = new Float32Array(this.count)
     this.lane = new Float32Array(this.count)
     this.speed = new Float32Array(this.count)
     this.timer = new Float32Array(this.count)
@@ -159,6 +168,7 @@ export class IslandSim {
       this.lane[index] = this.rng.range(-1, 1) * (TILE * 0.26)
       this.speed[index] = this.rng.range(walkSpeed.min, walkSpeed.max)
       this.activity[index] = Activity.Walking
+      this.measureSegment(index)
       this.writePosition(index)
       this.angle[index] = this.headingOf(index)
     })
@@ -166,6 +176,12 @@ export class IslandSim {
 
   /** Intended speed avoids cadence spikes when the lane changes at a junction. */
   locomotionSpeed(index: number): number { return this.speed[index] ?? 0 }
+
+  /** Shared by terrain-following FX; bodies stay upright while their feet follow grade. */
+  groundHeight(x: number, z: number): number { return groundHeight(this.island, x, z) }
+  continuousGroundSpan(x: number, z: number, toX: number, toZ: number): boolean {
+    return continuousGroundSpan(this.island, x, z, toX, toZ)
+  }
 
   indexOfMember(memberId: number): number | undefined {
     return this.indexByMember.get(memberId)
@@ -268,13 +284,7 @@ export class IslandSim {
   }
 
   private stepWalk(index: number, dt: number): void {
-    const from = this.fromNode[index] as number
-    const to = this.toNode[index] as number
-    const length =
-      Math.hypot(
-        (this.nodeX[to] as number) - (this.nodeX[from] as number),
-        (this.nodeZ[to] as number) - (this.nodeZ[from] as number),
-      ) || 1
+    const length = (this.firstLeg[index]! + this.secondLeg[index]!) || 1
     this.progress[index] = (this.progress[index] as number) + ((this.speed[index] as number) * dt) / length
 
     if ((this.progress[index] as number) >= 1) {
@@ -282,6 +292,7 @@ export class IslandSim {
       const arrived = this.toNode[index] as number
       this.fromNode[index] = arrived
       this.toNode[index] = this.chooseNext(index, arrived)
+      this.measureSegment(index)
       this.progress[index] = 0
       if (this.rng.chance(PAUSE_CHANCE)) {
         this.activity[index] = Activity.Resting
@@ -302,12 +313,30 @@ export class IslandSim {
     const dx = (this.nodeX[to] as number) - fx
     const dz = (this.nodeZ[to] as number) - fz
     const length = Math.hypot(dx, dz) || 1
-    const t = this.progress[index] as number
+    const distance = this.progress[index]! * (this.firstLeg[index]! + this.secondLeg[index]!)
+    const t = distance <= this.firstLeg[index]!
+      ? distance / (this.firstLeg[index]! || 1) * 0.5
+      : 0.5 + (distance - this.firstLeg[index]!) / (this.secondLeg[index]! || 1) * 0.5
     const lane = this.lane[index] as number
 
     // Perpendicular to the direction of travel, so lanes sit across the street.
     this.x[index] = fx + dx * t + (-dz / length) * lane
     this.z[index] = fz + dz * t + (dx / length) * lane
+    this.y[index] = this.groundHeight(this.x[index]!, this.z[index]!)
+  }
+
+  /** Each adjacent tile pair has a possible slope break at its shared boundary. */
+  private measureSegment(index: number): void {
+    const from = this.fromNode[index]!, to = this.toNode[index]!
+    const dx = this.nodeX[to]! - this.nodeX[from]!, dz = this.nodeZ[to]! - this.nodeZ[from]!
+    const length = Math.hypot(dx, dz) || 1
+    const x = this.nodeX[from]! - dz / length * this.lane[index]!
+    const z = this.nodeZ[from]! + dx / length * this.lane[index]!
+    const start = this.groundHeight(x, z)
+    const mid = this.groundHeight(x + dx / 2, z + dz / 2)
+    const end = this.groundHeight(x + dx, z + dz)
+    this.firstLeg[index] = Math.hypot(length / 2, mid - start)
+    this.secondLeg[index] = Math.hypot(length / 2, end - mid)
   }
 
   private headingOf(index: number): number {

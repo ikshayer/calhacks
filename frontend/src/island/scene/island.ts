@@ -37,6 +37,8 @@ export interface Plot {
   model: string
   x: number
   z: number
+  /** Base of the placement on the authored surface; absent on the flat baseline. */
+  y?: number
   rotation: number
   scale: number
   /**
@@ -53,6 +55,7 @@ export interface Plot {
 export interface Lamp {
   x: number
   z: number
+  y?: number
 }
 
 export interface Island {
@@ -65,6 +68,10 @@ export interface Island {
   plots: Plot[]
   /** Street lamps, placed at junctions. Drawn as geometry, not models. */
   lamps: Lamp[]
+  /** NW, NE, SW, SE top corners for every tile, in world units. */
+  surfaces?: Float32Array
+  /** Additional paved harbor approaches on existing land, never over water. */
+  connectors?: number[]
 }
 
 const tileToReference = (index: number) => {

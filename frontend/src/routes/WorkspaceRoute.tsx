@@ -5,7 +5,8 @@ import {
   selectActiveRun,
   useAppStore,
 } from '@/store/useAppStore'
-import { assignHomeTiles, buildIsland } from '@/island/scene/island'
+import { assignHomeTiles } from '@/island/scene/island'
+import { buildElevatedIsland } from '@/island/scene/ground'
 import { IslandSim } from '@/island/scene/IslandSim'
 import { IslandCanvas } from '@/island/IslandCanvas'
 import { useCascadePlayback } from '@/island/useCascadePlayback'
@@ -50,7 +51,7 @@ export function WorkspaceRoute() {
   // The island is generated once and never regenerated: its shape is the set
   // the town is built on, and moving the coastline mid-session would relocate
   // every resident.
-  const island = useMemo(() => buildIsland(hashSeed('giving-garden-island')), [])
+  const island = useMemo(() => buildElevatedIsland(hashSeed('giving-garden-island')), [])
 
   const homesByGroup = useMemo(() => {
     const groups = profile?.groups ?? []

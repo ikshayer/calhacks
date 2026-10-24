@@ -3,6 +3,7 @@ import { GRID, TILE, Tile, type Island } from './scene/island.ts'
 import { islandTileAt } from './townArchitecture.ts'
 import { createRng, hashSeed } from '../lib/rng.ts'
 import type { LeafCard } from './leafCards.ts'
+import { groundHeight } from './scene/ground.ts'
 
 const SUBDIVISIONS = 12
 const SAMPLE_GRID = GRID * SUBDIVISIONS
@@ -11,7 +12,7 @@ const MIN_TUFTS = 28
 const STEP = TILE / SUBDIVISIONS
 const DIRECTIONS = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const
 
-interface GrassSample { key: number; x: number; z: number; tile: number }
+interface GrassSample { key: number; x: number; y: number; z: number; tile: number }
 interface GrassPatch { x: number; z: number; tiles: number[]; tufts: { x: number; z: number }[] }
 
 /** Dense, connected beds cross grass tile joins and taper into the surrounding lawn. */
@@ -32,12 +33,15 @@ export function planGrassLeaves(island: Island, blocked: readonly THREE.Box3[]) 
       const gz = Math.floor(tile / GRID) * SUBDIVISIONS + sz
       const x = (gx + 0.5 - SAMPLE_GRID / 2) * STEP + rng.range(-0.035, 0.035)
       const z = (gz + 0.5 - SAMPLE_GRID / 2) * STEP + rng.range(-0.035, 0.035)
-      bounds.min.set(x - 0.34, 0, z - 0.34)
-      bounds.max.set(x + 0.34, 0.48, z + 0.34)
+      // Reservations are horizontal: lifted flowers/props must still exclude a bed below them.
+      bounds.min.set(x - 0.34, -100, z - 0.34)
+      bounds.max.set(x + 0.34, 100, z + 0.34)
       if (blocked.some(box => box.intersectsBox(bounds))) continue
       if ([bounds.min.x, bounds.max.x].some(px => [bounds.min.z, bounds.max.z].some(pz => islandTileAt(island, px, pz) !== Tile.Grass))) continue
+      const y = groundHeight(island, x, z)
+      if ([bounds.min.x, bounds.max.x].some(px => [bounds.min.z, bounds.max.z].some(pz => Math.abs(groundHeight(island, px, pz) - y) > 0.04))) continue
       const key = gz * SAMPLE_GRID + gx
-      samples.set(key, { key, x, z, tile })
+      samples.set(key, { key, x, y, z, tile })
     }
   })
 
@@ -46,7 +50,7 @@ export function planGrassLeaves(island: Island, blocked: readonly THREE.Box3[]) 
     const gz = Math.floor(sample.key / SAMPLE_GRID) + dz
     const neighbor = gx >= 0 && gx < SAMPLE_GRID && gz >= 0 && gz < SAMPLE_GRID
       ? samples.get(gz * SAMPLE_GRID + gx) : undefined
-    return neighbor ? [neighbor] : []
+    return neighbor && Math.abs(neighbor.y - sample.y) < 0.04 ? [neighbor] : []
   })
 
   // Grow one bed per connected, unobstructed lawn. A bed needs a real
@@ -113,7 +117,7 @@ export function planGrassLeaves(island: Island, blocked: readonly THREE.Box3[]) 
         const length = rng.range(0.30, 0.46) * (edge ? 0.72 : 1)
         const matrix = new THREE.Matrix4().makeBasis(right, growth, face)
           .scale(new THREE.Vector3(length * rng.range(0.42, 0.58), length, 1))
-          .setPosition(sample.x + Math.cos(angle) * 0.035, 0.004, sample.z + Math.sin(angle) * 0.035)
+          .setPosition(sample.x + Math.cos(angle) * 0.035, sample.y + 0.004, sample.z + Math.sin(angle) * 0.035)
         cards.push({ matrix, color: patchColor.clone().multiplyScalar(rng.range(0.94, 1.10)), detail: leaf >= 6 ? 1 : 0 })
       }
     }

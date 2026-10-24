@@ -22,6 +22,164 @@ import { planLandscape, walkCorridors, WALK_CLEARANCE } from '../src/island/land
 import { createFountainGeometry, FOUNTAIN_RADIUS, FOUNTAIN_POOL_Y } from '../src/island/fountainGeometry.ts'
 import { createLeafCardBatch, leafSurfaces, sampleLeafCards } from '../src/island/leafCards.ts'
 import { planGrassLeaves } from '../src/island/grassLeaves.ts'
+import { buildElevatedIsland, groundHeight, groundTile, surfaceHeight, continuousEdge, validateGroundGraph, TERRACE_HEIGHT } from '../src/island/scene/ground.ts'
+import { createTerrainGeometry, createRetainingGeometry } from '../src/island/terrainGeometry.ts'
+import { entrancePaving } from '../src/island/townArchitecture.ts'
+import { createGroundRings, updateGroundRing } from '../src/island/fx/groundRings.ts'
+
+test('inland terrace preserves source coast/plots and joins every harbor with real land approaches', () => {
+  const seed = hashSeed('giving-garden-island'), flat = buildIsland(seed), elevated = buildElevatedIsland(seed)
+  assert.deepEqual(elevated.tiles, flat.tiles)
+  assert.deepEqual(elevated.plots.map(({ y: _y, ...plot }) => plot), flat.plots)
+  assert.deepEqual(elevated.lamps.map(({ y: _y, ...lamp }) => lamp), flat.lamps)
+  assert.deepEqual(buildDistanceField(elevated), buildDistanceField(flat))
+  assert.equal(Math.max(...elevated.surfaces), Math.fround(TERRACE_HEIGHT))
+  assert.equal(elevated.connectors.length, 6)
+  assert.ok(flat.walkable.every(tile => elevated.walkable.includes(tile)))
+  assert.equal(elevated.walkable.length, 122)
+  assert.doesNotThrow(() => validateGroundGraph(elevated))
+  const homes = assignHomeTiles(elevated, ['a','b','c'], [40,35,25])
+  assert.deepEqual(homes, assignHomeTiles(buildElevatedIsland(seed), ['a','b','c'], [40,35,25]))
+  assert.equal(new Set([...homes.values()].flat()).size, elevated.walkable.length)
+  elevated.tiles.forEach((kind, tile) => {
+    if ([Tile.Water, Tile.Sand, Tile.Dock, Tile.Plaza].includes(kind)) {
+      assert.deepEqual([...elevated.surfaces.slice(tile * 4, tile * 4 + 4)], [0,0,0,0])
+    }
+  })
+  for (const tile of elevated.connectors) assert.notEqual(elevated.tiles[tile], Tile.Water)
+  elevated.walkable.forEach((tile, slot) => {
+    for (const next of elevated.links[slot]) {
+      const other = elevated.walkable[next]
+      assert.ok(continuousEdge(elevated, tile, other))
+      const a = tileToWorld(tile), b = tileToWorld(other)
+      const dx = Math.sign(b.x - a.x), dz = Math.sign(b.z - a.z)
+      for (const lane of [-WALK_CLEARANCE, 0, WALK_CLEARANCE]) {
+        const x = (a.x + b.x) / 2 - dz * lane, z = (a.z + b.z) / 2 + dx * lane
+        assert.ok(Math.abs(surfaceHeight(elevated, tile, x, z) - surfaceHeight(elevated, other, x, z)) < 1e-6)
+      }
+    }
+  })
+  const broken = { ...elevated, links: elevated.links.map(links => [...links]) }
+  broken.links[0] = []
+  assert.throws(() => validateGroundGraph(broken), /Stranded|Invalid/)
+  const tooSteep = { ...elevated, surfaces: elevated.surfaces.slice() }
+  tooSteep.surfaces[elevated.walkable[0] * 4 + 1] += TILE
+  assert.throws(() => validateGroundGraph(tooSteep), /grade limit/)
+})
+
+test('rendered top triangles match the height sampler across terrace ramps and retaining faces clear lanes', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const geometry = createTerrainGeometry(island), retaining = createRetainingGeometry(island)
+  const position = geometry.attributes.position, color = geometry.attributes.color
+  assert.equal(position.count, island.tiles.filter(kind => kind !== Tile.Water).length * 30)
+  assert.equal(color.count, position.count)
+  const tileIndices = Array.from(island.tiles).flatMap((kind, tile) => kind === Tile.Water ? [] : [tile])
+  for (const [slot, tile] of tileIndices.entries()) for (const triangle of [0, 3]) {
+    const vertices = [0,1,2].map(i => new THREE.Vector3().fromBufferAttribute(position, slot * 30 + triangle + i))
+    for (const weights of [[0.2,0.3,0.5], [0.7,0.1,0.2]]) {
+      const p = vertices.reduce((sum, vertex, i) => sum.addScaledVector(vertex, weights[i]), new THREE.Vector3())
+      assert.ok(Math.abs(p.y - surfaceHeight(island, tile, p.x, p.z)) < 1e-5)
+    }
+  }
+  const corridors = walkCorridors(island)
+  const wallPosition = retaining.attributes.position
+  assert.ok(wallPosition.count > 0)
+  for (let i = 0; i < wallPosition.count; i++) {
+    const point = new THREE.Vector3().fromBufferAttribute(wallPosition, i)
+    assert.ok(!corridors.some(bounds => bounds.containsPoint(point)), `retaining face clips a full lane at ${point.toArray()}`)
+  }
+  for (let at = 0; at < wallPosition.count; at += 12) {
+    const a = new THREE.Vector3().fromBufferAttribute(wallPosition, at)
+    const b = new THREE.Vector3().fromBufferAttribute(wallPosition, at + 1)
+    const coordinate = Math.abs(a.x - b.x) < 1e-6 ? a.x : a.z
+    const nearestSide = (Math.round(coordinate / TILE + GRID / 2) - GRID / 2) * TILE
+    assert.ok(Math.abs(Math.abs(coordinate - nearestSide) - 0.012) < 2e-6, 'wall finish must not coincide with terrain sides')
+  }
+  geometry.dispose(); retaining.dispose()
+})
+
+test('elevated final town, approaches, landscape and dense grass meet ground and keep repaired routes clear', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island')), assets = deliveredTownBounds()
+  const town = planTown(island.plots, island, assets), landscape = planLandscape(island, town, assets)
+  const corridors = walkCorridors(island)
+  for (const plot of landscape.plots) {
+    assert.ok(Math.abs((plot.y ?? 0) - groundHeight(island, plot.x, plot.z)) < 1e-6)
+    const bounds = plot.style ? architectureFor(plot, town.styles.get(plot.style), island).totalBounds
+      : new THREE.Box3().union(assets.get(plot.model).reduce((result, part) => result.union(
+        new THREE.Box3().setFromBufferAttribute(part.geometry.attributes.position).applyMatrix4(placedStaticMatrix(plot, part.matrix))), new THREE.Box3()))
+    assert.ok(!corridors.some(corridor => corridor.intersectsBox(bounds)), `${plot.model} overlaps a lane`)
+    if (plot.style) {
+      const detail = architectureFor(plot, town.styles.get(plot.style), island)
+      const base = new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, plot.y, plot.z)
+      const footprint = detail.footprint
+      const stepsX = Math.ceil((footprint.max.x - footprint.min.x) / 0.25)
+      const stepsZ = Math.ceil((footprint.max.z - footprint.min.z) / 0.25)
+      for (let ix = 0; ix <= stepsX; ix++) for (let iz = 0; iz <= stepsZ; iz++) {
+        const point = new THREE.Vector3(THREE.MathUtils.lerp(footprint.min.x, footprint.max.x, ix / stepsX), 0,
+          THREE.MathUtils.lerp(footprint.min.z, footprint.max.z, iz / stepsZ)).applyMatrix4(base)
+        assert.ok(Math.abs(groundHeight(island, point.x, point.z) - plot.y) < 1e-6, `${plot.model} footprint spans different ground heights`)
+      }
+      const paving = entrancePaving(plot, town.styles.get(plot.style), island)
+      assert.ok(paving.length > 0)
+      for (const part of paving) {
+        const e = part.matrix.elements
+        assert.ok(Math.abs(e[13] - groundHeight(island, e[12], e[14]) - 0.018) < 1e-6)
+        for (const x of [-0.5, 0, 0.5]) for (const z of [-0.5, 0, 0.5]) {
+          const point = new THREE.Vector3(x, 0, z).applyMatrix4(part.matrix)
+          assert.ok(Math.abs(point.y - groundHeight(island, point.x, point.z) - 0.018) < 1e-5,
+            `${plot.model} ${plot.sourceIndex} paving slab crosses a grade break: ${point.toArray()} ground=${groundHeight(island, point.x, point.z)}`)
+        }
+      }
+    }
+  }
+  for (const obstacle of landscape.obstacles) assert.ok(!corridors.some(corridor => corridor.intersectsBox(obstacle.bounds)))
+  const blocked = [...corridors, ...landscape.buildingBounds, ...landscape.approaches, ...landscape.obstacles.map(o => o.bounds)]
+  const grass = planGrassLeaves(island, blocked)
+  assert.ok(grass.patches.length >= 10)
+  assert.ok(grass.cards.length > 10000)
+  for (const card of grass.cards) {
+    const e = card.matrix.elements
+    assert.ok(Math.abs(e[13] - groundHeight(island, e[12], e[14]) - 0.004) < 1e-6)
+  }
+})
+
+test('residents keep 3D walk speed on ramp grades and ground rings follow every sampled vertex', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const tile = groundTile(-5 * TILE, -8 * TILE), from = island.walkable.indexOf(tile)
+  const to = island.walkable.indexOf(tile + 1)
+  const sim = new IslandSim([{ id: 91, groupId: 'a', onIsland: true }], island,
+    new Map([['a', [from, to]]]), 77, { min: 0.6, max: 0.6 })
+  // A chosen segment exercises both lanes without waiting for a random walk.
+  sim.fromNode[0] = from; sim.toNode[0] = to; sim.progress[0] = 0.2; sim.lane[0] = TILE * 0.26
+  sim.measureSegment(0); sim.writePosition(0)
+  const before = new THREE.Vector3(sim.x[0], sim.y[0], sim.z[0])
+  sim.update(0.05)
+  assert.ok(Math.abs(before.distanceTo(new THREE.Vector3(sim.x[0], sim.y[0], sim.z[0])) - 0.03) < 2e-6)
+  assert.ok(Math.abs(sim.y[0] - sim.groundHeight(sim.x[0], sim.z[0])) < 1e-6)
+  const { geometry, source } = createGroundRings(1, 1, 32)
+  updateGroundRing(geometry, source, 0, sim, 0, 1.07, 0.06)
+  const p = geometry.attributes.position
+  for (let i = 0; i < p.count; i++) assert.ok(Math.abs(p.getY(i) - sim.groundHeight(p.getX(i), p.getZ(i)) - 0.06) < 1e-6)
+  for (let i = 0; i < p.count; i++) assert.ok(sim.continuousGroundSpan(sim.x[0], sim.z[0], p.getX(i), p.getZ(i)),
+    'ring vertices must stay on a continuous surface rather than stretch through retaining walls')
+  const maxRadius = Math.max(...Array.from({ length: p.count }, (_, i) => Math.hypot(p.getX(i) - sim.x[0], p.getZ(i) - sim.z[0])))
+  assert.ok(maxRadius < 1.0, 'the outer-lane ring must shrink before its circle reaches the ramp side cliff')
+  geometry.dispose()
+  sim.applyRound({ exposed: [91], acted: [], ignored: [], shares: [] })
+  const stopped = [sim.x[0], sim.y[0], sim.z[0]]; sim.update(0.1)
+  assert.deepEqual([sim.x[0], sim.y[0], sim.z[0]], stopped)
+  const crowd = new IslandSim(Array.from({ length: 48 }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 123, { min: 0.5, max: 0.75 })
+  for (let frame = 0; frame < 2400; frame++) {
+    crowd.update(0.05)
+    for (let i = 0; i < crowd.count; i++) {
+      const tile = groundTile(crowd.x[i], crowd.z[i])
+      assert.ok(tile >= 0)
+      assert.notEqual(island.tiles[tile], Tile.Water)
+      assert.ok(Math.abs(crowd.y[i] - groundHeight(island, crowd.x[i], crowd.z[i])) < 1e-6)
+    }
+  }
+})
 
 test('grass beds span adjoining tiles, stay connected and keep paths, doors, buildings and furniture clear', () => {
   const island = buildIsland(hashSeed('giving-garden-island'))

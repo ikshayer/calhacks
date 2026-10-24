@@ -12,19 +12,9 @@ export interface LandscapePart {
 }
 export interface LandscapeObstacle { feature: string; bounds: THREE.Box3 }
 
-// Cover every possible signed lane, the resident's body, and junction lane changes.
-export const WALK_CLEARANCE = TILE * 0.26 + 0.48
-
-export function walkCorridors(island: Island): THREE.Box3[] {
-  return island.walkable.flatMap((tile, slot) => {
-    const from = tileToWorld(tile)
-    const neighbors = island.links[slot]!.filter(other => other > slot)
-    const targets = [from, ...neighbors.map(other => tileToWorld(island.walkable[other]!))]
-    return targets.map(to => new THREE.Box3(
-      new THREE.Vector3(Math.min(from.x, to.x) - WALK_CLEARANCE, -1, Math.min(from.z, to.z) - WALK_CLEARANCE),
-      new THREE.Vector3(Math.max(from.x, to.x) + WALK_CLEARANCE, 30, Math.max(from.z, to.z) + WALK_CLEARANCE)))
-  })
-}
+export { WALK_CLEARANCE, walkCorridors } from './walkCorridors.ts'
+import { walkCorridors } from './walkCorridors.ts'
+import { groundHeight } from './scene/ground.ts'
 
 /** A render-only composition: no changes to source plots, walk links, or any simulation RNG. */
 export function planLandscape(island: Island, town: ReturnType<typeof planTown>, assets: Map<string, StaticPart[]>) {
@@ -40,9 +30,9 @@ export function planLandscape(island: Island, town: ReturnType<typeof planTown>,
   const approaches = town.plots.filter(plot => plot.style).map(plot => {
     const style = town.styles.get(plot.style!)!
     const door = architectureFor(plot, style).door
-    const end = style.scope === 'land' ? TILE * 1.5 : TILE
+    const end = plot.approach ?? (style.scope === 'land' ? TILE * 1.5 : TILE)
     return new THREE.Box3(new THREE.Vector3(door.x - 0.9, -1, door.z), new THREE.Vector3(door.x + 0.9, 10, end))
-      .applyMatrix4(new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, 0, plot.z))
+      .applyMatrix4(new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, plot.y ?? 0, plot.z))
   })
   const plots: RenderPlot[] = [...buildings]
   const box = (x: number, z: number, w: number, d: number) => new THREE.Box3(
@@ -54,11 +44,13 @@ export function planLandscape(island: Island, town: ReturnType<typeof planTown>,
     // Sample the entire footprint, including tile boundaries, so no planting floats over a cove.
     const stepsX = Math.max(1, Math.ceil((bounds.max.x - bounds.min.x) / 0.5))
     const stepsZ = Math.max(1, Math.ceil((bounds.max.z - bounds.min.z) / 0.5))
+    const h = groundHeight(island, (bounds.min.x + bounds.max.x) / 2, (bounds.min.z + bounds.max.z) / 2)
     for (let ix = 0; ix <= stepsX; ix++) {
       const x = THREE.MathUtils.lerp(bounds.min.x, bounds.max.x, ix / stepsX)
       for (let iz = 0; iz <= stepsZ; iz++) {
         const z = THREE.MathUtils.lerp(bounds.min.z, bounds.max.z, iz / stepsZ)
         if (islandTileAt(island, x, z) === Tile.Water) return false
+        if (Math.abs(groundHeight(island, x, z) - h) > 0.04) return false
       }
     }
     return true
@@ -66,12 +58,12 @@ export function planLandscape(island: Island, town: ReturnType<typeof planTown>,
   const add = (shape: LandscapePart['shape'], feature: string, x: number, y: number, z: number,
     w: number, h: number, d: number, color: string, angle = 0) => {
     const matrix = new THREE.Matrix4().makeRotationY(angle)
-      .multiply(new THREE.Matrix4().makeScale(w, h, d)).setPosition(x, y, z)
+      .multiply(new THREE.Matrix4().makeScale(w, h, d)).setPosition(x, y + groundHeight(island, x, z), z)
     parts.push({ shape, matrix, color, feature })
   }
   const reserve = (feature: string, bounds: THREE.Box3) => obstacles.push({ feature, bounds })
   const addPlot = (model: string, x: number, z: number, scale: number, rotation = 0) => {
-    const plot = { model, x, z, scale, rotation, sourceIndex: -plots.length - 1, style: null, theme: 'home' as const, relocated: true }
+    const plot = { model, x, y: groundHeight(island, x, z), z, scale, rotation, sourceIndex: -plots.length - 1, style: null, theme: 'home' as const, relocated: true }
     const bounds = staticBounds(assets.get(model)!).applyMatrix4(placedStaticMatrix(plot, new THREE.Matrix4()))
     bounds.min.y = -0.1; bounds.max.y = 20
     if (!clear(bounds, model.includes('/tree-'))) return false
@@ -95,9 +87,9 @@ export function planLandscape(island: Island, town: ReturnType<typeof planTown>,
     return true
   }
   const bench = (x: number, z: number, angle: number, feature: string) => {
-    const bounds = box(0, 0, 1.95, 0.80).applyMatrix4(new THREE.Matrix4().makeRotationY(angle).setPosition(x, 0, z))
+    const bounds = box(0, 0, 1.95, 0.80).applyMatrix4(new THREE.Matrix4().makeRotationY(angle).setPosition(x, groundHeight(island, x, z), z))
     if (!clear(bounds)) return false
-    const base = new THREE.Matrix4().makeRotationY(angle).setPosition(x, 0, z)
+    const base = new THREE.Matrix4().makeRotationY(angle).setPosition(x, groundHeight(island, x, z), z)
     const part = (px: number, y: number, pz: number, w: number, h: number, d: number, color: string) => {
       parts.push({ shape: 'box', feature, color, matrix: base.clone().multiply(new THREE.Matrix4().makeScale(w, h, d).setPosition(px, y, pz)) })
     }

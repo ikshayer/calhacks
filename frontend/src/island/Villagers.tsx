@@ -55,7 +55,7 @@ function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex
     const rigs = Array.from({ length: sim.count }, (_, index) => {
       const template = templates.get(models[index]!) ?? fallback
       const rig = createResident(template, residentPhase(sim.memberOfIndex(index), appearanceContext))
-      rig.root.position.set(sim.x[index]!, 0, sim.z[index]!)
+      rig.root.position.set(sim.x[index]!, sim.y[index]!, sim.z[index]!)
       rig.root.rotation.y = sim.angle[index]!
       rig.controller.sample(0.001, sim.activity[index]!, sim.locomotionSpeed(index))
       rig.controller.advance()
@@ -85,13 +85,13 @@ function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex
     for (let i = 0; i < rigs.length; i++) rigs[i]!.controller.sample(dt, sim.activity[i]!, sim.locomotionSpeed(i))
     if (dt > 0 && rigs.length) sim.update(dt)
     for (let i = 0; i < rigs.length; i++) {
-      rigs[i]!.root.position.set(sim.x[i]!, 0, sim.z[i]!)
+      rigs[i]!.root.position.set(sim.x[i]!, sim.y[i]!, sim.z[i]!)
       rigs[i]!.root.rotation.y = sim.angle[i]!
     }
-    budget.step(rigs, camera, dt, sim.x, sim.z, selectedIndex)
+    budget.step(rigs, camera, dt, sim.x, sim.z, selectedIndex, sim.y)
     if (pickRef.current) {
       for (let i = 0; i < sim.count; i++) {
-        matrix.makeTranslation(sim.x[i]!, RESIDENT_HEIGHT / 2, sim.z[i]!)
+        matrix.makeTranslation(sim.x[i]!, sim.y[i]! + RESIDENT_HEIGHT / 2, sim.z[i]!)
         pickRef.current.setMatrixAt(i, matrix)
       }
       pickRef.current.instanceMatrix.needsUpdate = true

@@ -170,7 +170,7 @@ export function AmbientChatter({ sim, paused }: { sim: IslandSim; paused: boolea
       }
       sprite.position.set(
         sim.x[bubble.villager] as number,
-        RESIDENT_ANCHORS.chatter,
+        sim.y[bubble.villager]! + RESIDENT_ANCHORS.chatter,
         sim.z[bubble.villager] as number,
       )
       // Fade out over the last half second rather than vanishing mid-sentence.
