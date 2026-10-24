@@ -20,6 +20,48 @@ import { planTown, architectureFor, islandTileAt } from '../src/island/townArchi
 import { islandModelKeys } from '../src/island/scene/island.ts'
 import { planLandscape, walkCorridors, WALK_CLEARANCE } from '../src/island/landscapePlanning.ts'
 import { createFountainGeometry, FOUNTAIN_RADIUS, FOUNTAIN_POOL_Y } from '../src/island/fountainGeometry.ts'
+import { createLeafCardBatch, leafSurfaces, sampleLeafCards } from '../src/island/leafCards.ts'
+
+test('leaf cards attach reproducibly to transformed green surfaces and respect blocked routes', () => {
+  const geometry = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2)
+  const before = [...geometry.attributes.position.array]
+  const matrix = new THREE.Matrix4().makeRotationY(0.6).scale(new THREE.Vector3(2, 1, 3)).setPosition(7, 2, -4)
+  const green = new THREE.Color('#4d965d')
+  const surfaces = leafSurfaces(geometry, matrix, () => green)
+  assert.ok(Math.abs(surfaces.reduce((sum, surface) => sum + surface.area, 0) - 24) < 1e-6)
+  const cards = sampleLeafCards(surfaces, 'test-tree', 'tree')
+  const repeat = sampleLeafCards(surfaces, 'test-tree', 'tree')
+  assert.ok(cards.length > 100)
+  assert.deepEqual(cards, repeat)
+  for (const card of cards) {
+    assert.ok(card.matrix.determinant() > 0)
+    assert.ok(card.matrix.elements.every(Number.isFinite))
+    assert.ok(Math.abs(card.matrix.elements[13] - 1.994) < 1e-5, 'leaf stems must start at the sampled surface')
+  }
+  const blocked = new THREE.Box3(new THREE.Vector3(-100, -100, -100), new THREE.Vector3(100, 100, 100))
+  assert.equal(sampleLeafCards(surfaces, 'test-tree', 'tree', [blocked]).length, 0)
+  assert.equal(leafSurfaces(geometry, matrix, () => green, 1.5).length, 0)
+  assert.equal(leafSurfaces(geometry, matrix, () => new THREE.Color('#a96d3e')).length, 0)
+  assert.deepEqual([...geometry.attributes.position.array], before)
+  geometry.dispose()
+})
+
+test('leaf cutouts are one opaque instanced batch with transparent margins and complete cleanup', () => {
+  const geometry = new THREE.SphereGeometry(0.5, 8, 6).translate(0, 1, 0)
+  const cards = sampleLeafCards(leafSurfaces(geometry, new THREE.Matrix4(), () => new THREE.Color('#548653')), 'test-bush', 'bush')
+  const batch = createLeafCardBatch(cards)
+  assert.equal(batch.mesh.count, cards.length)
+  assert.equal(batch.material.transparent, false)
+  assert.ok(batch.material.alphaTest > 0)
+  assert.equal(batch.material.side, THREE.DoubleSide)
+  assert.equal(batch.texture.image.data[3], 0)
+  assert.ok(batch.texture.image.data.some((value, index) => index % 4 === 3 && value === 255))
+  let released = 0
+  for (const resource of [batch.mesh, batch.geometry, batch.material, batch.texture]) resource.addEventListener('dispose', () => released++)
+  batch.dispose()
+  assert.equal(released, 4)
+  geometry.dispose()
+})
 
 test('static town batches preserve visible nested transforms and material groups without owning raw resources', () => {
   const parent = new THREE.Group(); parent.position.x = 100

@@ -6,6 +6,8 @@ import { islandModelKeys, type Island, type Plot } from './scene/island'
 import { collectStaticParts, placedStaticMatrix, prepareBuilding, type PixelSampler, type StaticPart } from './staticTown'
 import { architectureFor, planTown } from './townArchitecture'
 import { planLandscape } from './landscapePlanning'
+import { createFoliageMaterial, type FoliageMode } from './foliageMaterial'
+import { createLeafCardBatch, isFoliageColor, leafSurfaces, sampleLeafCards, type LeafCard } from './leafCards'
 
 const TOWN_MODEL_PATHS = islandModelKeys().map((key) => `/models/${key}.glb`)
 
@@ -69,6 +71,17 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
     const ownedGeometry: THREE.BufferGeometry[] = []
     const ownedMaterials: THREE.Material[] = []
     const ownedTextures: THREE.Texture[] = []
+    const foliageCopies = new Map<THREE.Material, Map<FoliageMode, THREE.Material>>()
+    const foliageMaterial = (source: THREE.Material, mode: FoliageMode) => {
+      let copies = foliageCopies.get(source)
+      if (!copies) { copies = new Map(); foliageCopies.set(source, copies) }
+      let copy = copies.get(mode)
+      if (!copy) {
+        copy = createFoliageMaterial(source, mode)
+        copies.set(mode, copy); ownedMaterials.push(copy)
+      }
+      return copy
+    }
     const architecture = new THREE.Group()
     architecture.name = 'Town architecture'
     root.add(architecture)
@@ -86,6 +99,9 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
       const assets = new Map(keys.map((key, index) => [key, collectStaticParts(gltfs[index]!.scene)]))
       const plan = planTown(placements, island, assets)
       const landscape = planLandscape(island, plan, assets)
+      const leafCards: LeafCard[] = []
+      const gardenBlocked = [...landscape.corridors, ...landscape.approaches]
+      const treeBlocked = [...gardenBlocked, ...landscape.buildingBounds]
       const partsByStyle = new Map<string, StaticPart[]>()
       for (const style of plan.styles.values()) {
         const parts = assets.get(style.model)!
@@ -103,7 +119,10 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
       for (const [key, instances] of grouped) {
         const parts = partsByStyle.get(key) ?? assets.get(key)!
         for (const part of parts) {
-          const mesh = new THREE.InstancedMesh(part.geometry, part.material, instances.length)
+          const mode = key.includes('/tree-') ? 'canopy' : key.includes('/building') ? 'garden' : null
+          const material = !mode ? part.material : Array.isArray(part.material)
+            ? part.material.map(source => foliageMaterial(source, mode)) : foliageMaterial(part.material, mode)
+          const mesh = new THREE.InstancedMesh(part.geometry, material, instances.length)
           mesh.name = `Town ${key} ${part.name}`
           instances.forEach((plot, index) => {
             mesh.setMatrixAt(index, placedStaticMatrix(plot, part.matrix))
@@ -115,6 +134,20 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
           if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
           mesh.castShadow = shadowsRef.current; mesh.receiveShadow = shadowsRef.current
           mesh.computeBoundingSphere(); root.add(mesh); meshes.push(mesh)
+          if (mode) {
+            const sample = paletteSampler([part])
+            for (const plot of instances) {
+              const tint = new THREE.Color(plot.tint ?? '#ffffff')
+              if (plot.style) tint.lerp(new THREE.Color(plot.x < 0 ? '#edf0d6' : '#dae8e5'), 0.34)
+              const surfaces = leafSurfaces(part.geometry, placedStaticMatrix(plot, part.matrix), (u, v) => {
+                const rgb = sample(u, v)
+                const color = new THREE.Color().setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace).multiply(tint)
+                return isFoliageColor(color) ? color : null
+              }, mode === 'garden' ? 1.5 : Infinity)
+              leafCards.push(...sampleLeafCards(surfaces, `${plot.sourceIndex}:${part.name}`, mode === 'canopy' ? 'tree' : 'bush',
+                mode === 'canopy' ? treeBlocked : gardenBlocked))
+            }
+          }
         }
       }
       const buildings = plan.plots.filter((plot) => plot.style).map((plot) => ({ plot,
@@ -137,7 +170,9 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
         if (!instances.length) continue
         const geometry = shape === 'round' ? new THREE.SphereGeometry(0.5, 10, 6)
             : new THREE.CylinderGeometry(0.5, 0.42, 1, 12)
-        const material = new THREE.MeshLambertMaterial()
+        const baseMaterial = new THREE.MeshLambertMaterial()
+        const material = shape === 'round' ? createFoliageMaterial(baseMaterial, 'canopy') : baseMaterial
+        if (shape === 'round') baseMaterial.dispose()
         ownedGeometry.push(geometry); ownedMaterials.push(material)
         const mesh = new THREE.InstancedMesh(geometry, material, instances.length)
         mesh.name = `Landscape ${shape}`
@@ -146,6 +181,19 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
         mesh.castShadow = shadowsRef.current; mesh.receiveShadow = shadowsRef.current
         mesh.computeBoundingSphere(); architecture.add(mesh); meshes.push(mesh)
+        if (shape === 'round') for (const [index, part] of instances.entries()) {
+          const color = new THREE.Color(part.color)
+          if (!isFoliageColor(color)) continue
+          const surfaces = leafSurfaces(geometry, part.matrix, () => color)
+          leafCards.push(...sampleLeafCards(surfaces, `${part.feature}:${index}:${part.matrix.elements[12]}:${part.matrix.elements[14]}`,
+            'bush', gardenBlocked))
+        }
+      }
+      if (leafCards.length) {
+        const cards = createLeafCardBatch(leafCards)
+        ownedGeometry.push(cards.geometry); ownedMaterials.push(cards.material); ownedTextures.push(cards.texture)
+        cards.mesh.receiveShadow = shadowsRef.current
+        architecture.add(cards.mesh); meshes.push(cards.mesh)
       }
       for (const [theme, label] of [['cafe','CAFE'],['bakery','BAKERY'],['market','MARKET'],['harbour','HARBOUR']] as const) {
         const signs = buildings.flatMap((building) => building.detail.signs).filter((sign) => sign.theme === theme)
@@ -166,7 +214,7 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
           height: detail.footprint.max.y, footprint: detail.totalBounds.getSize(new THREE.Vector3()).toArray(),
           footprintBounds: { min: detail.totalBounds.min.toArray(), max: detail.totalBounds.max.toArray() },
           door: detail.door, horizontal: style.fit.horizontal, courseExtra: style.fit.courseExtra })),
-        batches: meshes.length, trimParts: boxes.length } })
+        batches: meshes.length, trimParts: boxes.length, leafCards: leafCards.length } })
       return dispose
     } catch (error) {
       // A1 requires a missing-asset fallback rather than a blank simulation. The
