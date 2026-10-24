@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 import { clsx } from 'clsx'
+import { useReducedMotion } from 'motion/react'
+import CountUp from '@/components/reactbits/CountUp'
 
 /**
  * The small set of controls this app needs, in its own voice.
@@ -92,6 +94,13 @@ export function Section({
 /**
  * A number with its label. Figures are tabular so a column of these stays
  * aligned as the cascade updates them.
+ *
+ * Numeric values count from wherever they currently are to the new value. The
+ * vendored CountUp already restarts from its live value whenever `to` changes,
+ * so with `trigger="load"` it needs no wrapper to behave as a ticker; the
+ * 0.5s duration settles inside the shortest round dwell (650ms at 4x). Its own
+ * reduced-motion check is a matchMedia read inside the effect, so the explicit
+ * branch here keeps the rendered number a plain text node in that case.
  */
 export function Stat({
   label,
@@ -104,6 +113,7 @@ export function Stat({
   tone?: 'default' | 'sun' | 'leaf' | 'bloom' | 'water'
   hint?: string
 }) {
+  const reduceMotion = useReducedMotion()
   const toneClass = {
     default: 'text-paper',
     sun: 'text-sun',
@@ -114,7 +124,13 @@ export function Stat({
 
   return (
     <div title={hint}>
-      <div className={clsx('display tnum text-[22px] leading-none', toneClass)}>{value}</div>
+      <div className={clsx('display tnum text-[22px] leading-none', toneClass)}>
+        {typeof value === 'number' && !reduceMotion ? (
+          <CountUp to={value} trigger="load" duration={0.5} />
+        ) : (
+          value
+        )}
+      </div>
       <div className="mt-1 text-[11.5px] leading-tight text-muted">{label}</div>
     </div>
   )

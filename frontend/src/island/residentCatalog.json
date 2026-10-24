@@ -1,0 +1,22 @@
+[
+  {"id":"resident","name":"Original","description":"Original resident","batch":0},
+  {"id":"nia","name":"Nia","description":"Purple dress","batch":0},
+  {"id":"theo","name":"Theo","description":"Round glasses","batch":0},
+  {"id":"rowan","name":"Rowan","description":"Silver hair","batch":0},
+  {"id":"maya","name":"Maya","description":"Copper braids and coral dress","batch":1},
+  {"id":"jules","name":"Jules","description":"Textured hair and cobalt shirt","batch":1},
+  {"id":"iris","name":"Iris","description":"Lavender hair and mint dress","batch":1},
+  {"id":"omar","name":"Omar","description":"Cropped hair and rectangular glasses","batch":1},
+  {"id":"pip","name":"Pip","description":"Mint spikes and apricot shirt","batch":1},
+  {"id":"vera","name":"Vera","description":"Auburn hair, sunglasses, and rose dress","batch":1},
+  {"id":"luna","name":"Luna","description":"Indigo tied hair and honey dress","batch":2},
+  {"id":"felix","name":"Felix","description":"Sandy hair and sage shirt","batch":2},
+  {"id":"zuri","name":"Zuri","description":"Long textured hair and sunflower dress","batch":2},
+  {"id":"hugo","name":"Hugo","description":"Chestnut hair, moustache, and periwinkle shirt","batch":2},
+  {"id":"cleo","name":"Cleo","description":"Dark bob, bold glasses, and tangerine dress","batch":2},
+  {"id":"eden","name":"Eden","description":"Lilac bob and icy blue dress","batch":2},
+  {"id":"kai","name":"Kai","description":"Close-cut hair and seafoam shirt","batch":2},
+  {"id":"sage","name":"Sage","description":"Silver hair, glasses, and plum shirt","batch":2},
+  {"id":"arlo","name":"Arlo","description":"Auburn bun, moustache, and forest shirt","batch":2},
+  {"id":"bea","name":"Bea","description":"Pink tied-up hair and berry dress","batch":2}
+]

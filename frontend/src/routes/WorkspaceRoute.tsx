@@ -13,6 +13,7 @@ import { hashSeed } from '@/lib/rng'
 import { Sidebar } from '@/sidebar/Sidebar'
 import { PlaybackBar } from '@/sidebar/PlaybackBar'
 import { VillagerCard } from '@/island/VillagerCard'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 /**
  * The workspace: the island on the left, the instrument panel on the right.
@@ -36,6 +37,9 @@ export function WorkspaceRoute() {
     profile?.groups.find((group) => group.id === highlightedGroupId)?.color ?? '#f2b53c'
 
   const [shadows, setShadows] = useState(true)
+  // The town degrades to an empty island rather than failing the whole scene, so
+  // the loss has to be stated somewhere the user will actually see it.
+  const [townError, setTownError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadAudience()
@@ -60,6 +64,8 @@ export function WorkspaceRoute() {
       island,
       homesByGroup,
       hashSeed(`town-${audience.version}`),
+      import.meta.env.DEV && new URLSearchParams(location.search).get('residents') === 'kenney'
+        ? undefined : { min: 0.50, max: 0.75 },
     )
   }, [audience, island, homesByGroup])
 
@@ -86,19 +92,48 @@ export function WorkspaceRoute() {
             Laying out streets and the social graph between {AUDIENCE_SIZE.total} residents.
           </IslandFallback>
         ) : (
-          <IslandCanvas
-            sim={sim}
-            island={island}
-            members={audience.members}
-            selectedIndex={selectedIndex}
-            onSelect={(index) =>
-              selectMember(index === null ? null : sim.memberOfIndex(index))
-            }
-            highlightGroupId={highlightedGroupId}
-            highlightColor={highlightColor}
-            shadows={shadows}
-            paused={false}
-          />
+          <ErrorBoundary
+            fallback={(error, retry) => (
+              <IslandFallback
+                title="The island could not be drawn"
+                action={
+                  <button
+                    onClick={retry}
+                    className="mt-4 rounded-md bg-raised px-3 py-1.5 text-[13px] text-paper transition-colors hover:text-sun"
+                  >
+                    Try again
+                  </button>
+                }
+              >
+                {error.message} The report and run controls are still usable.
+              </IslandFallback>
+            )}
+          >
+            <IslandCanvas
+              sim={sim}
+              island={island}
+              members={audience.members}
+              appearanceContext={`${profile?.id ?? 'audience'}:${audience.version}`}
+              selectedIndex={selectedIndex}
+              onSelect={(index) =>
+                selectMember(index === null ? null : sim.memberOfIndex(index))
+              }
+              highlightGroupId={highlightedGroupId}
+              highlightColor={highlightColor}
+              shadows={shadows}
+              paused={false}
+              onTownError={(error) =>
+                setTownError(error instanceof Error ? error.message : String(error))
+              }
+            />
+          </ErrorBoundary>
+        )}
+
+        {townError && (
+          <div className="over-canvas absolute inset-x-3 top-3 rounded-lg px-3.5 py-2.5 lg:inset-x-auto lg:left-3 lg:max-w-[46ch]">
+            <p className="text-[12.5px] font-medium text-sun">Showing the island without buildings</p>
+            <p className="mt-1 text-[11.5px] leading-snug text-muted">{townError}</p>
+          </div>
         )}
 
         {sim && run && <PlaybackBar run={run} />}
@@ -122,12 +157,21 @@ export function WorkspaceRoute() {
   )
 }
 
-function IslandFallback({ title, children }: { title: string; children: React.ReactNode }) {
+function IslandFallback({
+  title,
+  children,
+  action,
+}: {
+  title: string
+  children: React.ReactNode
+  action?: React.ReactNode
+}) {
   return (
     <div className="grid h-full place-items-center bg-[#16211c] px-6 text-center">
       <div className="max-w-[34ch]">
         <p className="display text-lg text-paper">{title}</p>
         <p className="mt-2 text-[13px] leading-relaxed text-muted">{children}</p>
+        {action}
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useAppStore, selectActiveRun } from '@/store/useAppStore'
 import { Meter, Section } from '@/components/ui'
 
@@ -18,6 +19,7 @@ export function GroupsPanel() {
   const round = useAppStore((state) => state.playback.round)
   const selectMember = useAppStore((state) => state.selectMember)
   const highlightGroup = useAppStore((state) => state.highlightGroup)
+  const reduceMotion = useReducedMotion()
 
   const rows = useMemo(() => {
     const groups = profile?.groups ?? []
@@ -64,7 +66,9 @@ export function GroupsPanel() {
     <Section title="Who responded" aside={<span className="text-[11.5px] text-faint">by actions</span>}>
       <ul className="space-y-2.5">
         {ranked.map((row) => (
-          <li key={row.id}>
+          // `layout` makes rows slide past each other as the ranking changes
+          // rather than teleporting; keys are the stable group ids.
+          <motion.li key={row.id} layout={!reduceMotion} transition={{ duration: 0.35, ease: 'easeOut' }}>
             <button
               onMouseEnter={() => highlightGroup(row.id)}
               onMouseLeave={() => highlightGroup(null)}
@@ -98,7 +102,7 @@ export function GroupsPanel() {
                 </span>
               </span>
             </button>
-          </li>
+          </motion.li>
         ))}
       </ul>
       <p className="mt-3 text-[11px] leading-relaxed text-faint">

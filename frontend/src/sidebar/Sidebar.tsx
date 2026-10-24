@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GradualBlur from '@/components/reactbits/GradualBlur'
 import { useAppStore, selectActiveRun, selectActiveVideo } from '@/store/useAppStore'
 import { useAuth } from '@/auth/AuthProvider'
 import { UploadPanel } from './UploadPanel'
@@ -89,25 +90,37 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="scroll-slim min-h-0 flex-1 overflow-y-auto">
-        {tab === 'run' && (
-          <>
-            <UploadPanel />
-            <RunPanel />
-            <MetricsPanel />
-            <GroupsPanel />
-            <MiniGraph />
-            <ViewOptions
-              shadows={shadows}
-              onShadowsChange={onShadowsChange}
-              sourceLabel={source.label}
-              playing={playing}
-            />
-          </>
-        )}
-        {tab === 'report' && <ReportPanel />}
-        {tab === 'chat' && <ChatPanel />}
-        {tab === 'compare' && <ComparePanel />}
+      {/* The fade is positioned against this wrapper, not the scroller: an
+          absolute child of the scroller would scroll away with the content. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="scroll-slim min-h-0 flex-1 overflow-y-auto">
+          {tab === 'run' && (
+            <>
+              <UploadPanel />
+              <RunPanel />
+              <MetricsPanel />
+              <GroupsPanel />
+              <MiniGraph />
+              <ViewOptions
+                shadows={shadows}
+                onShadowsChange={onShadowsChange}
+                sourceLabel={source.label}
+                playing={playing}
+              />
+            </>
+          )}
+          {tab === 'report' && <ReportPanel />}
+          {tab === 'chat' && <ChatPanel />}
+          {tab === 'compare' && <ComparePanel />}
+        </div>
+        <GradualBlur
+          position="bottom"
+          target="parent"
+          height="4rem"
+          strength={1}
+          tint="var(--color-panel)"
+          zIndex={10}
+        />
       </div>
 
       <AssumptionsStrip run={run} />

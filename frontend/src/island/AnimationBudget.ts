@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { VillagerRig } from './villagerModels'
+export interface BudgetRig { owed: number; readonly urgent?: boolean; advance(dt: number): void }
 
 /**
  * Distance bands, in world units, and how often a villager inside each one
@@ -38,17 +38,19 @@ export class AnimationBudget {
   private readonly frustum = new THREE.Frustum()
   private readonly projection = new THREE.Matrix4()
   private readonly probe = new THREE.Sphere(new THREE.Vector3(), 1.6)
+  private readonly direction = new THREE.Vector3()
 
   /** Villagers posed on the most recent frame. Surfaced for the perf overlay. */
   lastUpdated = 0
 
   step(
-    rigs: readonly VillagerRig[],
+    rigs: readonly BudgetRig[],
     camera: THREE.Camera,
     dt: number,
     /** Positions, read straight from the simulation's arrays. */
     x: Float32Array,
     z: Float32Array,
+    selectedIndex: number | null = null,
   ): void {
     this.frame++
     this.lastUpdated = 0
@@ -59,30 +61,36 @@ export class AnimationBudget {
     const camX = camera.position.x
     const camZ = camera.position.z
     const camY = camera.position.y
+    camera.getWorldDirection(this.direction)
+    const toGround = this.direction.y < -0.01 ? -camY / this.direction.y : 0
+    const focusX = camX + this.direction.x * toGround
+    const focusZ = camZ + this.direction.z * toGround
 
     for (let i = 0; i < rigs.length; i++) {
-      const rig = rigs[i] as VillagerRig
+      const rig = rigs[i]!
       rig.owed += dt
 
       const px = x[i] as number
       const pz = z[i] as number
-      this.probe.center.set(px, 0.8, pz)
+      this.probe.center.set(px, 1.2, pz)
 
       let stride: number
       if (!this.frustum.intersectsSphere(this.probe)) {
         stride = OFFSCREEN_STRIDE
       } else {
         const distance = Math.sqrt(
-          (px - camX) * (px - camX) + (pz - camZ) * (pz - camZ) + camY * camY,
+          (px - focusX) * (px - focusX) + (pz - focusZ) * (pz - focusZ),
         )
         stride = (BANDS.find((band) => distance <= band.within) ?? BANDS[2]).stride
       }
 
       // Stagger by index so a stride of 3 spreads over three frames rather than
       // posing every villager on the same one.
-      if ((this.frame + i) % stride !== 0) continue
+      if (i !== selectedIndex && !rig.urgent && (this.frame + i) % stride !== 0) continue
 
-      rig.mixer.update(rig.owed)
+      if (dt <= 0) continue
+
+      rig.advance(rig.owed)
       rig.owed = 0
       this.lastUpdated++
     }

@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-24",
+  "blender": "5.2.0 LTS",
+  "residents": [
+    "resident",
+    "nia",
+    "theo",
+    "rowan"
+  ],
+  "nativeWalk": {
+    "frames": [
+      0,
+      24
+    ],
+    "fps": 24,
+    "cycleSeconds": 1,
+    "strideLength": 0.44,
+    "seamError": 0,
+    "rootDrift": 0,
+    "maxPlantedDrift": 0.000004293758673577889,
+    "footClearance": 0.04480759799480438,
+    "maxKneeOrHandStepRadians": 0.22376015782356262,
+    "authoredWalkPreserved": true,
+    "neutralIdleAfterWalk": true,
+    "weightTransferRepairPreserved": true
+  },
+  "exports": {
+    "poseChecks": 48,
+    "surfaceTolerance": 0.00001,
+    "seamError": 0,
+    "rootDrift": 0,
+    "maxPlantedDrift": 0.000003938533497688348,
+    "geometryDifferenceFromPreviousExports": 0,
+    "materialDefinitionsUnchanged": true,
+    "existingClipDifferenceFromPreviousExports": 0
+  },
+  "preview": {
+    "views": [
+      1,
+      4,
+      48
+    ],
+    "rendering": [
+      "original",
+      "optimized"
+    ],
+    "movement": [
+      "in-place",
+      "travel"
+    ],
+    "speeds": [
+      0.5,
+      1,
+      1.5
+    ],
+    "pauseResume": true,
+    "repeatedIdleWalkTransitions": true
+  },
+  "benchmark": {
+    "gpu": "AMD Radeon 890M",
+    "viewport": "970x609 CSS pixels",
+    "dpr": 1.5,
+    "residents": 48,
+    "designs": "all four, mixed evenly",
+    "clip": "test_walk",
+    "shadows": true,
+    "rendering": "optimized",
+    "speed": 1,
+    "warmupSeconds": 2,
+    "measurementSeconds": 10,
+    "draws": 158,
+    "skeletons": 48,
+    "runs": [
+      {
+        "session": "initial",
+        "movement": "travel",
+        "fps": 119.27357001585429,
+        "p95FrameMs": 8.9,
+        "frames": 1194
+      },
+      {
+        "session": "initial",
+        "movement": "in-place",
+        "fps": 119.46142474736426,
+        "p95FrameMs": 8.9,
+        "frames": 1196
+      },
+      {
+        "session": "final exports",
+        "movement": "travel",
+        "fps": 102.40169437331006,
+        "p95FrameMs": 10.5,
+        "frames": 1025
+      },
+      {
+        "session": "final exports",
+        "movement": "in-place",
+        "fps": 102.30281232828813,
+        "p95FrameMs": 10.5,
+        "frames": 1024
+      }
+    ]
+  },
+  "checks": {
+    "residentTests": "7 passed",
+    "typeScript": "passed",
+    "lint": "passed; 8 pre-existing unrelated warnings",
+    "productionBuild": "passed; existing bundle-size warning"
+  }
+}

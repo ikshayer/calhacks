@@ -1,157 +1,119 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { lazy, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
-import type { GLTF } from 'three-stdlib'
-import { Activity, clipForActivity, type IslandSim } from './scene/IslandSim'
+import type { IslandSim } from './scene/IslandSim'
 import { AnimationBudget } from './AnimationBudget'
-import {
-  CHARACTER_PATHS,
-  createRig,
-  disposeRig,
-  playClip,
-  sharedCharacterMaterial,
-  type VillagerRig,
-} from './villagerModels'
+import { createResident, residentTemplates, setResidentShadows, type ResidentTemplate } from './residentTemplates'
+import { residentPhase, RESIDENT_ANCHORS, RESIDENT_HEIGHT } from './residentAppearance'
 import { ReactionBadges } from './fx/ReactionBadges'
 import { ShareTrails } from './fx/ShareTrails'
 import { SelectionRing } from './fx/SelectionRing'
 
-/** Kenney Mini Characters are authored about 1.8 units tall; this sizes them to the island. */
-const VILLAGER_SCALE = 2.1
+const KenneyVillagers = lazy(() => import('./KenneyVillagers').then((module) => ({ default: module.KenneyVillagers })))
 
 interface VillagersProps {
   sim: IslandSim
-  /** Model file stem per villager index, e.g. `character-female-a`. */
   models: string[]
+  legacyModels: string[]
+  appearanceContext: string
   selectedIndex: number | null
   onSelect(index: number | null): void
-  /** Shadows are the first thing to drop when frames get expensive. */
   shadows: boolean
   paused: boolean
 }
 
-export function Villagers({
-  sim,
-  models,
-  selectedIndex,
-  onSelect,
-  shadows,
-  paused,
-}: VillagersProps) {
+export function Villagers(props: VillagersProps) {
+  const legacy = import.meta.env.DEV && new URLSearchParams(location.search).get('residents') === 'kenney'
+  return legacy ? <KenneyVillagers {...props} models={props.legacyModels} /> : <Residents {...props} />
+}
+
+function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex, onSelect, shadows, paused }: VillagersProps) {
   const containerRef = useRef<THREE.Group>(null)
   const pickRef = useRef<THREE.InstancedMesh>(null)
+  const rigsRef = useRef<ReturnType<typeof createResident>[]>([])
+  const shadowsRef = useRef(shadows)
+  useEffect(() => { shadowsRef.current = shadows }, [shadows])
+  const [templates, setTemplates] = useState<Map<string, ResidentTemplate> | null>(null)
   const budget = useMemo(() => new AnimationBudget(), [])
-  const rigsRef = useRef<VillagerRig[]>([])
   const camera = useThree((state) => state.camera)
-
-  const gltfs = useGLTF(CHARACTER_PATHS) as unknown as GLTF[]
-  const material = useMemo(() => sharedCharacterMaterial(gltfs[0] as GLTF), [gltfs])
-
-  // One rig per villager. Rebuilt only when the cohort itself changes.
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const byPath = new Map(CHARACTER_PATHS.map((path, index) => [path, gltfs[index] as GLTF]))
-    const rigs: VillagerRig[] = []
-
-    for (let i = 0; i < sim.count; i++) {
-      const stem = models[i] ?? 'character-female-a'
-      const gltf = byPath.get(`/models/characters/${stem}.glb`) ?? (gltfs[0] as GLTF)
-      const rig = createRig(gltf, material, shadows)
-      rig.root.scale.setScalar(VILLAGER_SCALE)
-      rig.root.position.set(sim.x[i] as number, 0, sim.z[i] as number)
-      container.add(rig.root)
-      rigs.push(rig)
-    }
-
-    rigsRef.current = rigs
-    return () => {
-      for (const rig of rigs) {
-        container.remove(rig.root)
-        disposeRig(rig)
-      }
-      rigsRef.current = []
-    }
-  }, [sim, models, gltfs, material, shadows])
-
-  // Shadow casting is toggled on the live meshes rather than by rebuilding every rig.
-  useEffect(() => {
-    for (const rig of rigsRef.current) {
-      rig.root.traverse((node) => {
-        if (node instanceof THREE.Mesh) node.castShadow = shadows
-      })
-    }
-  }, [shadows])
-
-  const pickGeometry = useMemo(() => new THREE.CylinderGeometry(0.5, 0.5, 1.9, 6), [])
-  // Invisible but still raycast: `visible = false` would be skipped by the raycaster.
-  const pickMaterial = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-      }),
-    [],
-  )
-  useEffect(() => {
-    const geometry = pickGeometry
-    const mat = pickMaterial
-    return () => {
-      geometry.dispose()
-      mat.dispose()
-    }
-  }, [pickGeometry, pickMaterial])
-
   const matrix = useMemo(() => new THREE.Matrix4(), [])
 
-  useFrame((_, delta) => {
-    // Long frames (a tab regaining focus) must not teleport everyone.
-    const dt = Math.min(delta, 0.1)
-    if (!paused) sim.update(dt)
+  useEffect(() => {
+    const lease = residentTemplates.acquire()
+    let mounted = true
+    void lease.ready.then((value) => { if (mounted) setTemplates(value) }, (error: unknown) => {
+      console.warn('Resident loading failed; using legacy renderer', error)
+      if (mounted) setTemplates(new Map())
+    })
+    return () => { mounted = false; lease.release() }
+  }, [])
 
-    const rigs = rigsRef.current
-    for (let i = 0; i < rigs.length; i++) {
-      const rig = rigs[i] as VillagerRig
-      rig.root.position.set(sim.x[i] as number, 0, sim.z[i] as number)
-      rig.root.rotation.y = sim.angle[i] as number
-      playClip(rig, clipForActivity(sim.activity[i] as Activity))
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || !templates?.size) return
+    const fallback = templates.get('resident') ?? templates.values().next().value!
+    const rigs = Array.from({ length: sim.count }, (_, index) => {
+      const template = templates.get(models[index]!) ?? fallback
+      const rig = createResident(template, residentPhase(sim.memberOfIndex(index), appearanceContext))
+      rig.root.position.set(sim.x[index]!, 0, sim.z[index]!)
+      rig.root.rotation.y = sim.angle[index]!
+      rig.controller.sample(0.001, sim.activity[index]!, sim.locomotionSpeed(index))
+      rig.controller.advance()
+      setResidentShadows(rig.root, shadowsRef.current)
+      container.add(rig.root)
+      return rig
+    })
+    rigsRef.current = rigs
+    if (import.meta.env.DEV) {
+      Object.assign(window, { __residentScene: { sim, camera, rigs, models, budget,
+        inspect: () => rigs.map((rig, index) => ({ memberId: sim.memberOfIndex(index), model: models[index],
+          uuid: rig.root.uuid, ...rig.controller.snapshot() })) } })
     }
+    return () => {
+      for (const rig of rigs) { container.remove(rig.root); rig.dispose() }
+      rigsRef.current = []
+      if (import.meta.env.DEV) delete (window as unknown as Record<string, unknown>).__residentScene
+    }
+  }, [sim, models, templates, appearanceContext, camera, budget])
 
-    budget.step(rigs, camera, paused ? 0 : dt, sim.x, sim.z)
+  useEffect(() => { for (const rig of rigsRef.current) setResidentShadows(rig.root, shadows) }, [shadows])
 
-    const pick = pickRef.current
-    if (pick) {
+  useFrame((_, delta) => {
+    const dt = paused ? 0 : Math.min(delta, 0.1)
+    const rigs = rigsRef.current
+    // Sample the state that governed this interval, before simulation transitions.
+    for (let i = 0; i < rigs.length; i++) rigs[i]!.controller.sample(dt, sim.activity[i]!, sim.locomotionSpeed(i))
+    if (dt > 0 && rigs.length) sim.update(dt)
+    for (let i = 0; i < rigs.length; i++) {
+      rigs[i]!.root.position.set(sim.x[i]!, 0, sim.z[i]!)
+      rigs[i]!.root.rotation.y = sim.angle[i]!
+    }
+    budget.step(rigs, camera, dt, sim.x, sim.z, selectedIndex)
+    if (pickRef.current) {
       for (let i = 0; i < sim.count; i++) {
-        matrix.makeTranslation(sim.x[i] as number, 0.95, sim.z[i] as number)
-        pick.setMatrixAt(i, matrix)
+        matrix.makeTranslation(sim.x[i]!, RESIDENT_HEIGHT / 2, sim.z[i]!)
+        pickRef.current.setMatrixAt(i, matrix)
       }
-      pick.instanceMatrix.needsUpdate = true
+      pickRef.current.instanceMatrix.needsUpdate = true
+      // Instance positions move; stale bounding spheres must never hide pick targets.
+      pickRef.current.computeBoundingSphere()
     }
   })
 
+  if (templates && !templates.size) return <KenneyVillagers sim={sim} models={legacyModels}
+    selectedIndex={selectedIndex} onSelect={onSelect} shadows={shadows} paused={paused} />
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
-    const index = event.instanceId
-    if (index === undefined) return
-    onSelect(index === selectedIndex ? null : index)
+    if (event.instanceId !== undefined) onSelect(event.instanceId === selectedIndex ? null : event.instanceId)
   }
-
-  return (
-    <group>
-      <group ref={containerRef} />
-      <instancedMesh
-        ref={pickRef}
-        args={[pickGeometry, pickMaterial, Math.max(sim.count, 1)]}
-        onClick={handleClick}
-      />
-      <ReactionBadges sim={sim} />
-      <ShareTrails sim={sim} />
-      {selectedIndex !== null && <SelectionRing sim={sim} index={selectedIndex} />}
-    </group>
-  )
+  return <group>
+    <group ref={containerRef} />
+    <instancedMesh ref={pickRef} args={[undefined, undefined, Math.max(sim.count, 1)]} onClick={handleClick}>
+      <cylinderGeometry args={[RESIDENT_ANCHORS.pickRadius, RESIDENT_ANCHORS.pickRadius, RESIDENT_HEIGHT, 8]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </instancedMesh>
+    <ReactionBadges sim={sim} />
+    <ShareTrails sim={sim} />
+    {selectedIndex !== null && <SelectionRing sim={sim} index={selectedIndex} />}
+  </group>
 }
-
-useGLTF.preload(CHARACTER_PATHS)

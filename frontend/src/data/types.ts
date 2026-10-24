@@ -51,7 +51,7 @@ export interface CompanyProfile {
 
 /** A synthetic audience member. Archetypes, not real people. */
 export interface AudienceMember {
-  /** Dense index into the audience array — also the villager index on the island. */
+  /** Stable audience member id. Use IslandSim lookups for the sampled villager index. */
   id: number
   name: string
   groupId: GroupId
@@ -59,7 +59,7 @@ export interface AudienceMember {
   persona: string
   hotButtons: string[]
   ignores: string[]
-  /** Which Kenney character GLB renders this member. */
+  /** Visual asset hint; recognized Mii ids are honored, legacy stems use a render adapter. */
   model: string
   /** Optional Kenney accessory GLB (glasses, cane, hearing aid, …). */
   accessory?: string

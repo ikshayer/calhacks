@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from 'motion/react'
 import { useAppStore, selectActiveRun, selectActiveVideo } from '@/store/useAppStore'
 import { formatTime } from '@/data/mock/report'
 import { EmptyState, Pill, Section } from '@/components/ui'
@@ -7,6 +8,14 @@ const SEVERITY: Record<TimestampedNote['severity'], { label: string; tone: 'leaf
   strength: { label: 'working', tone: 'leaf' },
   risk: { label: 'risk', tone: 'bloom' },
   fix: { label: 'fix', tone: 'sun' },
+}
+
+// Short and shallow: this is a dense reading surface, so the entrance only
+// needs to show that notes arrive in order, not to perform.
+const NOTES_LIST = { hidden: {}, shown: { transition: { staggerChildren: 0.06 } } }
+const NOTE_ITEM = {
+  hidden: { opacity: 0, y: 6 },
+  shown: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' as const } },
 }
 
 /**
@@ -19,6 +28,7 @@ const SEVERITY: Record<TimestampedNote['severity'], { label: string; tone: 'leaf
 export function ReportPanel() {
   const run = useAppStore(selectActiveRun)
   const video = useAppStore(selectActiveVideo)
+  const reduceMotion = useReducedMotion()
 
   if (!run) {
     return (
@@ -68,11 +78,16 @@ export function ReportPanel() {
       </Section>
 
       <Section title="Notes on the cut">
-        <ul className="space-y-3">
+        <motion.ul
+          className="space-y-3"
+          variants={NOTES_LIST}
+          initial={reduceMotion ? false : 'hidden'}
+          animate="shown"
+        >
           {report.notes.map((note, index) => {
             const severity = SEVERITY[note.severity]
             return (
-              <li key={`${note.at}-${index}`}>
+              <motion.li key={`${note.at}-${index}`} variants={reduceMotion ? undefined : NOTE_ITEM}>
                 <button
                   onClick={() => scrubTo(note.at)}
                   disabled={!video?.objectUrl}
@@ -89,10 +104,10 @@ export function ReportPanel() {
                   </p>
                   <p className="mt-1 text-[12px] leading-relaxed text-muted">{note.detail}</p>
                 </button>
-              </li>
+              </motion.li>
             )
           })}
-        </ul>
+        </motion.ul>
         {video?.objectUrl && (
           <p className="mt-3 text-[11px] text-faint">Tap a timestamp to jump the video there.</p>
         )}

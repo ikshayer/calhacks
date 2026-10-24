@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { cloneResident, disposeResidentSkeletons } from './residentRendering'
 import type { GLTF } from 'three-stdlib'
 import { CHARACTER_MODELS } from '@/data/mock/personas'
 
@@ -25,6 +25,7 @@ export interface VillagerRig {
   playing: string
   /** Time owed to the mixer because the animation budget skipped it. */
   owed: number
+  advance(dt: number): void
   /** The head bone, for parenting accessories. */
   head?: THREE.Object3D
 }
@@ -70,7 +71,7 @@ export function createRig(
   material: THREE.Material,
   castShadow: boolean,
 ): VillagerRig {
-  const root = cloneSkeleton(gltf.scene) as THREE.Group
+  const root = cloneResident(gltf.scene) as THREE.Group
 
   let head: THREE.Object3D | undefined
   root.traverse((node) => {
@@ -101,7 +102,7 @@ export function createRig(
   const idle = actions.get('idle')
   if (idle) idle.setEffectiveWeight(1)
 
-  return { root, mixer, actions, playing: 'idle', owed: 0, head }
+  return { root, mixer, actions, playing: 'idle', owed: 0, head, advance: (dt) => { mixer.update(dt) } }
 }
 
 /** Crossfades a rig to `next`, leaving it alone if it is already playing. */
@@ -120,7 +121,5 @@ export function playClip(rig: VillagerRig, next: string, fade = 0.18): void {
 export function disposeRig(rig: VillagerRig): void {
   rig.mixer.stopAllAction()
   rig.mixer.uncacheRoot(rig.root)
-  rig.root.traverse((node) => {
-    if (node instanceof THREE.Mesh) node.geometry.dispose()
-  })
+  disposeResidentSkeletons(rig.root)
 }

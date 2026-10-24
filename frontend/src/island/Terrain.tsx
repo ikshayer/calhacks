@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
 import { TILE, Tile, tileToWorld, type Island, type Lamp } from './scene/island'
 import { Water } from './Water'
+import { SurfaceBorders } from './SurfaceBorders'
+import { createTerrainMaterial } from './terrainMaterial'
+import { Fountain } from './Fountain'
 
 /**
  * Tile palette, warmed for the late-afternoon light.
@@ -14,12 +16,12 @@ import { Water } from './Water'
 const TILE_COLOR: Record<number, string> = {
   // Olive rather than a true green: under a strong orange key a cool green
   // turns acid, and the reference's ground is closer to dry grass than lawn.
-  [Tile.Grass]: '#7fab45',
-  [Tile.Sand]: '#e8b878',
+  [Tile.Grass]: '#8fa958',
+  [Tile.Sand]: '#ead2a0',
   // Streets are warm stone, not asphalt. Dark roads cut the island into
   // pieces from above; pale ones read as paths between places.
-  [Tile.Road]: '#c3855a',
-  [Tile.Plaza]: '#d9a06a',
+  [Tile.Road]: '#c3ad8d',
+  [Tile.Plaza]: '#dfc6a2',
   [Tile.Dock]: '#9c6b45',
 }
 
@@ -52,8 +54,12 @@ export function Terrain({ island, shadows }: { island: Island; shadows: boolean 
     [island],
   )
 
-  const geometry = useMemo(() => new THREE.BoxGeometry(TILE, 1, TILE), [])
-  const material = useMemo(() => new THREE.MeshLambertMaterial({ vertexColors: false }), [])
+  const geometry = useMemo(() => {
+    const value = new THREE.BoxGeometry(TILE, 1, TILE)
+    value.setAttribute('surfaceKind', new THREE.InstancedBufferAttribute(Float32Array.from(landTiles, tile => tile.kind), 1))
+    return value
+  }, [landTiles])
+  const material = useMemo(() => createTerrainMaterial(), [])
 
   useEffect(
     () => () => {
@@ -102,13 +108,13 @@ export function Terrain({ island, shadows }: { island: Island; shadows: boolean 
         args={[geometry, material, Math.max(landTiles.length, 1)]}
         frustumCulled={false}
       />
-      <Fountain />
+      <Fountain shadows={shadows} />
+      <SurfaceBorders island={island} shadows={shadows} />
       <Lamps lamps={island.lamps} />
       <Water island={island} />
     </group>
   )
 }
-
 /**
  * Street lamps, instanced.
  *
@@ -148,40 +154,6 @@ function Lamps({ lamps }: { lamps: Lamp[] }) {
         <sphereGeometry args={[0.22, 10, 8]} />
         <meshBasicMaterial color="#ffe6b0" />
       </instancedMesh>
-    </group>
-  )
-}
-
-/** The centrepiece of the plaza. Geometry, because no kit ships one. */
-function Fountain() {
-  const waterRef = useRef<THREE.Mesh>(null)
-
-  useFrame(({ clock }) => {
-    const water = waterRef.current
-    if (!water) return
-    // A slow breathing scale reads as moving water without a shader.
-    const t = clock.elapsedTime
-    water.scale.setScalar(1 + Math.sin(t * 1.6) * 0.015)
-  })
-
-  return (
-    <group position={[0, 0, 0]}>
-      <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[1.5, 1.65, 0.45, 20]} />
-        <meshLambertMaterial color="#b98152" />
-      </mesh>
-      <mesh ref={waterRef} position={[0, 0.46, 0]}>
-        <cylinderGeometry args={[1.28, 1.28, 0.08, 20]} />
-        <meshLambertMaterial color="#6fc3d6" emissive="#2d7f93" emissiveIntensity={0.35} />
-      </mesh>
-      <mesh position={[0, 0.78, 0]} castShadow>
-        <cylinderGeometry args={[0.16, 0.26, 0.9, 10]} />
-        <meshLambertMaterial color="#cf9a68" />
-      </mesh>
-      <mesh position={[0, 1.3, 0]} castShadow>
-        <cylinderGeometry args={[0.62, 0.22, 0.2, 14]} />
-        <meshLambertMaterial color="#cf9a68" />
-      </mesh>
     </group>
   )
 }
