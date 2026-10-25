@@ -6,7 +6,7 @@ import { setStage } from '../stage.ts';
 import type { DbConnection } from '../module_bindings/index.ts';
 import type { Comparison, Job, Means, Video } from '../module_bindings/types.ts';
 
-const SYSTEM = `You explain, in plain language, how a revised Instagram reel compared with the original in a simulated audience.
+export const COMPARISON_SYSTEM = `You explain, in plain language, how a revised Instagram reel compared with the original in a simulated audience.
 
 Rules:
 - Write 2 to 4 sentences of plain prose. No headings, lists or markdown.
@@ -41,7 +41,7 @@ function videoText(name: string, video: Video): string {
   ].join('\n');
 }
 
-function comparisonText(c: Comparison, base: Video, revised: Video, groupLabels: Map<string, string>): string {
+export function comparisonText(c: Comparison, base: Video, revised: Video, groupLabels: Map<string, string>): string {
   const d = c.metricDeltas;
   return [
     videoText('Original', base),
@@ -56,11 +56,16 @@ function comparisonText(c: Comparison, base: Video, revised: Video, groupLabels:
   ].join('\n');
 }
 
-export async function explainComparison(conn: DbConnection, job: Job): Promise<void> {
-  const apiKey = config.anthropicApiKey;
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set on the worker, so comparison summaries cannot be written.');
+export interface ComparisonRequest {
+  id: bigint;
+  /** Everything that determines the answer, in cache-key order. */
+  cacheParts: unknown[];
+  /** The exact Anthropic request this job sends, so an eval can measure the shipped prompt. */
+  params: Anthropic.MessageCreateParamsNonStreaming;
+}
 
-  const started = performance.now();
+/** Validates the comparison and renders its prompt from the worker's subscription cache. */
+export function composeComparisonRequest(conn: DbConnection, job: Job): ComparisonRequest {
   const id = BigInt(job.targetId);
   const comparison = conn.db.comparison.id.find(id);
   if (!comparison) throw new Error(`explain_comparison: unknown comparison ${job.targetId}`);
@@ -77,7 +82,25 @@ export async function explainComparison(conn: DbConnection, job: Job): Promise<v
   const groupLabels = new Map(profile.groups.map((g) => [g.id, g.label]));
 
   const userText = comparisonText(comparison, baseVideo, revisedVideo, groupLabels);
-  const cacheParts = [models.comparison.id, SYSTEM, userText];
+  return {
+    id,
+    cacheParts: [models.comparison.id, COMPARISON_SYSTEM, userText],
+    params: {
+      model: models.comparison.id,
+      max_tokens: models.comparison.maxTokens,
+      system: COMPARISON_SYSTEM,
+      messages: [{ role: 'user', content: userText }],
+      output_config: { effort: models.comparison.effort },
+    },
+  };
+}
+
+export async function explainComparison(conn: DbConnection, job: Job): Promise<void> {
+  const apiKey = config.anthropicApiKey;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set on the worker, so comparison summaries cannot be written.');
+
+  const started = performance.now();
+  const { id, cacheParts, params } = composeComparisonRequest(conn, job);
   const hit = await lookup('comparison', cacheParts, nonEmptyText);
   if (hit) {
     await setStage(conn, job, 'Explaining the comparison (cached)');
@@ -90,13 +113,7 @@ export async function explainComparison(conn: DbConnection, job: Job): Promise<v
   const client = new Anthropic({ apiKey });
   let response: Anthropic.Message;
   try {
-    response = await client.messages.create({
-      model: models.comparison.id,
-      max_tokens: models.comparison.maxTokens,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: userText }],
-      output_config: { effort: models.comparison.effort },
-    });
+    response = await client.messages.create(params);
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
       throw new Error(`Anthropic rejected the API key (${error.status}): ${error.message}`);

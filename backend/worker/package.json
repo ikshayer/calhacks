@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit -p .",
     "video:generate": "tsx --env-file=../../.env scripts/generateVideoCode.ts",
     "test:chat": "node scripts/chat.test.mjs",
-    "test:uploads": "node scripts/upload-routing.test.mjs"
+    "test:uploads": "node scripts/upload-routing.test.mjs",
+    "test:assistant-eval": "node --env-file=../../.env scripts/assistant-eval.test.mjs",
+    "eval:assistant": "node --env-file=../../.env scripts/assistant-eval/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
