@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/useAppStore'
 import { readDuration } from '@/data/videoPoster'
 import { Button, Textarea } from '@/components/ui'
+import { useLoadingTransition } from '@/components/loading-transition-context'
 
 const AB_VIDEOS = ['original.mp4', 'reworked.mp4'] as const
 
@@ -22,28 +23,27 @@ async function loadVideo(name: string) {
  * The goal is shown beside the results; the simulation itself reads only the video content.
  */
 export function AbTestCard() {
-  const startAbTest = useAppStore((state) => state.startAbTest)
+  const { beginLoading } = useLoadingTransition()
+  const prepareAbTest = useAppStore((state) => state.prepareAbTest)
+  const busy = useAppStore((state) => state.abPreparation?.status === 'preparing')
   const live = useAppStore((state) => state.source.kind === 'spacetime')
   const navigate = useNavigate()
   const [goal, setGoal] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const submitting = useRef(false)
-
   const run = async () => {
-    if (submitting.current) return
-    submitting.current = true
-    setError(null)
-    setBusy(true)
-    try {
+    if (busy) return
+    const transition = beginLoading()
+    const preparing = prepareAbTest(async () => {
       const [a, b] = await Promise.all(AB_VIDEOS.map(loadVideo))
-      await startAbTest({ goal, a, b })
-      navigate('/workspace')
-    } catch (cause: unknown) {
+      return { goal, a, b }
+    }).catch((cause: unknown) => {
       console.error('Could not start the A/B test', cause)
-      setError(cause instanceof Error ? cause.message : 'The A/B test could not be started.')
-      submitting.current = false
-      setBusy(false)
+    })
+    try {
+      await transition.covered
+      navigate('/workspace')
+      await preparing
+    } finally {
+      transition.finish()
     }
   }
 
@@ -75,11 +75,6 @@ export function AbTestCard() {
             </p>
           )}
         </div>
-        {error && (
-          <p role="alert" className="text-[12.5px] leading-snug text-ui-danger">
-            {error}
-          </p>
-        )}
       </div>
 
       <p className="mt-4 text-[11.5px] text-ui-faint">

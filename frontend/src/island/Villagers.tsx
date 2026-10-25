@@ -20,13 +20,14 @@ interface VillagersProps {
   onSelect(index: number | null): void
   shadows: boolean
   paused: boolean
+  onReady?(): void
 }
 
 export function Villagers(props: VillagersProps) {
   return <Residents {...props} />
 }
 
-function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex, onSelect, shadows, paused }: VillagersProps) {
+function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex, onSelect, shadows, paused, onReady }: VillagersProps) {
   const containerRef = useRef<THREE.Group>(null)
   const pickRef = useRef<THREE.InstancedMesh>(null)
   const rigsRef = useRef<ReturnType<typeof createResident>[]>([])
@@ -73,6 +74,10 @@ function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex
   }, [sim, models, templates, appearanceContext])
 
   useEffect(() => { for (const rig of rigsRef.current) setResidentShadows(rig.root, shadows) }, [shadows])
+
+  useEffect(() => {
+    if (templates !== null) onReady?.()
+  }, [templates, onReady])
 
   useFrame((_, delta) => {
     const dt = paused ? 0 : Math.min(delta, 0.1)

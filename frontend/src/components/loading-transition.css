@@ -1,0 +1,82 @@
+.loading-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  isolation: isolate;
+  overflow: hidden;
+  cursor: progress;
+}
+
+.loading-curtain__panels { position: absolute; inset: 0; }
+
+.loading-curtain__panel {
+  position: absolute;
+  top: -12vw;
+  width: calc(100% / 12 + 2px);
+  height: calc(100% + 24vw);
+  border-radius: 999px;
+  background: #50c5c7;
+  will-change: transform;
+}
+
+.loading-curtain--covering .loading-curtain__panel {
+  animation: loading-curtain-enter 650ms cubic-bezier(.76, 0, .24, 1) both;
+}
+
+.loading-curtain--revealing .loading-curtain__panel {
+  animation: loading-curtain-leave 650ms cubic-bezier(.76, 0, .24, 1) both;
+}
+
+.loading-curtain__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 22px;
+  color: #143f42;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.loading-curtain__label > .display {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 500;
+  letter-spacing: -.035em;
+}
+
+.loading-curtain--holding .loading-curtain__label { opacity: 1; }
+.loading-curtain__dots { display: flex; gap: 8px; }
+.loading-curtain__dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: loading-curtain-pulse 1.2s ease-in-out infinite;
+}
+.loading-curtain__dots i:nth-child(2) { animation-delay: 150ms; }
+.loading-curtain__dots i:nth-child(3) { animation-delay: 300ms; }
+
+@keyframes loading-curtain-enter {
+  from { transform: translateY(-110%); }
+  to { transform: translateY(0); }
+}
+@keyframes loading-curtain-leave {
+  from { transform: translateY(0); }
+  to { transform: translateY(110%); }
+}
+@keyframes loading-curtain-pulse {
+  0%, 100% { opacity: .3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-curtain__panel {
+    border-radius: 0;
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+  .loading-curtain__label { transition: none; }
+  .loading-curtain__dots i { animation: none; }
+}

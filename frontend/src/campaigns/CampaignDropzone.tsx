@@ -4,6 +4,7 @@ import { readDuration } from '@/data/videoPoster'
 import type { CampaignId } from '@/data/types'
 import { Button } from '@/components/ui'
 import { DEMO_VIDEOS } from '@/data/spacetime/SpacetimeDataSource'
+import { useLoadingTransition } from '@/components/loading-transition-context'
 
 /** "Harvest day cut 2.mp4" becomes "Harvest day cut 2"; the user can rename later. */
 function titleFromFile(name: string): string {
@@ -21,6 +22,7 @@ function titleFromFile(name: string): string {
  * and the message should still be on screen when they do.
  */
 export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): void }) {
+  const { beginLoading } = useLoadingTransition()
   const createCampaign = useAppStore((state) => state.createCampaign)
   const prepareVideoResult = useAppStore((state) => state.prepareVideoResult)
   const live = useAppStore((state) => state.source.kind === 'spacetime')
@@ -42,11 +44,13 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
   const runExclusive = async (work: () => Promise<CampaignId>) => {
     if (locked.current) return
     locked.current = true
+    const transition = beginLoading()
     setBusy(true)
     setError(null)
     setRetryCampaignId(null)
     try {
       const id = await work()
+      await transition.covered
       const current = useAppStore.getState()
       if (mounted.current && current.activeCampaignId === id && !current.idea) onCreated(id)
     } catch (cause: unknown) {
@@ -56,6 +60,7 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
         if (cause instanceof VideoResultError) setRetryCampaignId(cause.campaignId)
       }
     } finally {
+      transition.finish()
       locked.current = false
       if (mounted.current) setBusy(false)
     }

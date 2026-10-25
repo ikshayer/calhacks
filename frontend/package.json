@@ -12,6 +12,7 @@
     "test:chat": "node scripts/chat-sessions.test.mjs",
     "test:overview": "node scripts/overview-stats.test.mjs",
     "test:video-results": "node scripts/video-results.test.mjs",
+    "test:loading": "node scripts/loading-state.test.mjs",
     "test:ideas": "node scripts/idea-eval/test.mjs",
     "eval:ideas": "node scripts/idea-eval/run.mjs",
     "eval:ideas:report": "node scripts/idea-eval/report.mjs",

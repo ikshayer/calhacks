@@ -12,7 +12,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react'
  * a single malformed asset should cost the scene and nothing else.
  */
 export class ErrorBoundary extends Component<
-  { children: ReactNode; fallback: (error: Error, retry: () => void) => ReactNode },
+  { children: ReactNode; fallback: (error: Error, retry: () => void) => ReactNode; onError?: (error: Error) => void },
   { error: Error | null }
 > {
   state: { error: Error | null } = { error: null }
@@ -25,6 +25,7 @@ export class ErrorBoundary extends Component<
     // The component stack is the only thing that identifies which part of the
     // scene threw, and React does not include it in the error itself.
     console.error('The island scene failed to render.', error, info.componentStack)
+    this.props.onError?.(error)
   }
 
   render() {

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   AUDIENCE_SIZE,
   selectActiveRun,
@@ -13,6 +14,8 @@ import { hashSeed } from '@/lib/rng'
 import { verdictOf, type IdeaVerdict } from '@/data/ideaVerdict'
 import { Sidebar } from '@/sidebar/Sidebar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { LoadingGate } from '@/components/LoadingTransition'
+import { simulationResultsLoading } from '@/data/loadingState'
 
 /**
  * The workspace: the island on the left, the instrument panel on the right.
@@ -28,6 +31,10 @@ export function WorkspaceRoute() {
   const audienceError = useAppStore((state) => state.audienceError)
   const loadAudience = useAppStore((state) => state.loadAudience)
   const run = useAppStore(selectActiveRun)
+  const runs = useAppStore((state) => state.runs)
+  const ab = useAppStore((state) => state.ab)
+  const abPreparation = useAppStore((state) => state.abPreparation)
+  const preparation = useAppStore((state) => state.activeCampaignId ? state.videoPreparations[state.activeCampaignId] : undefined)
   const selectedMemberId = useAppStore((state) => state.selectedMemberId)
   const selectMember = useAppStore((state) => state.selectMember)
   const playing = useAppStore((state) => state.playback.playing)
@@ -77,6 +84,12 @@ export function WorkspaceRoute() {
     )
   }, [audience, island, homesByGroup])
 
+  const [readyScene, setReadyScene] = useState<IslandSim | null>(null)
+  const sceneReady = useCallback(() => setReadyScene(sim), [sim])
+  const comparedRuns = ab ? [runs[ab.a.runId], runs[ab.b.runId]] : []
+  const resultsLoading = simulationResultsLoading({ run, idea, preparing: preparation?.status === 'preparing', comparedRuns, comparisonPreparation: abPreparation })
+  const loading = !audienceError && abPreparation?.status !== 'failed' && (!sim || readyScene !== sim || resultsLoading)
+
   const currentRun = !idea && run?.status === 'complete' && run.report && !run.error && run.options.audienceKey === audience?.key ? run : undefined
   useCascadePlayback(sim, currentRun?.rounds ?? [], currentRun?.id ?? null)
 
@@ -99,8 +112,15 @@ export function WorkspaceRoute() {
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
+      <LoadingGate active={loading} />
       <main className="relative min-h-[52vh] flex-1 lg:min-h-0">
-        {audienceError ? (
+        {abPreparation?.status === 'failed' ? (
+          <IslandFallback title="The comparison could not be started" action={
+            <Link to="/campaigns" className="mt-4 inline-block rounded-md bg-raised px-3 py-1.5 text-[13px] text-paper hover:text-sun">
+              Back to campaigns
+            </Link>
+          }><span role="alert">{abPreparation.error}</span></IslandFallback>
+        ) : audienceError ? (
           <IslandFallback title="The audience could not be built" action={
             <button onClick={() => void loadAudience()} className="mt-4 rounded-md bg-raised px-3 py-1.5 text-[13px] text-paper hover:text-sun">
               Try again
@@ -112,6 +132,7 @@ export function WorkspaceRoute() {
           </IslandFallback>
         ) : (
           <ErrorBoundary
+            onError={sceneReady}
             fallback={(error, retry) => (
               <IslandFallback
                 title="The island could not be drawn"
@@ -146,6 +167,7 @@ export function WorkspaceRoute() {
               onTownError={(error) =>
                 setTownError(error instanceof Error ? error.message : String(error))
               }
+              onReady={sceneReady}
             />
           </ErrorBoundary>
         )}

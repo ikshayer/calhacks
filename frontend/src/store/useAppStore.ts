@@ -128,6 +128,8 @@ interface AppState {
 
   /** The A/B test in progress or finished, if any. */
   ab: AbPair | null
+  /** Includes file loading and analysis before either comparison run exists. */
+  abPreparation: { status: 'preparing' | 'failed'; error?: string } | null
 
   selectedMemberId: number | null
   /** Group whose villagers are ringed on the island, while a sidebar row is pointed at. */
@@ -159,6 +161,8 @@ interface AppState {
   clearIdeaTest(): void
   /** Analyses both videos in parallel, then starts one run for each. Resolves once both runs are started. */
   startAbTest(input: AbTestInput): Promise<void>
+  /** Enter the workspace immediately while comparison inputs and runs are prepared. */
+  prepareAbTest(loadInput: () => Promise<AbTestInput>): Promise<void>
   showAbSide(side: 'a' | 'b'): void
   clearAb(): void
   setActiveRun(runId: RunId): void
@@ -291,13 +295,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   idea: null,
   ab: null,
+  abPreparation: null,
 
   selectedMemberId: null,
   highlightedGroupId: null,
   playback: { round: 0, playing: true, speed: 1 },
 
   setProfile(profile) {
-    set({ profile, audience: null, audienceError: null, selectedMemberId: null, highlightedGroupId: null })
+    set({ profile, audience: null, audienceError: null, selectedMemberId: null, highlightedGroupId: null, abPreparation: null })
   },
 
   async loadAudience() {
@@ -333,6 +338,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       idea: { input, status: 'running', stage: 'Starting' },
       ab: null,
+      abPreparation: null,
       activeRunId: null,
       compareRunId: null,
       selectedMemberId: null,
@@ -360,6 +366,23 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setActiveVideo(videoId) {
     set({ activeVideoId: videoId })
+  },
+
+  async prepareAbTest(loadInput) {
+    if (get().abPreparation?.status === 'preparing') return
+    const preparation = { status: 'preparing' as const }
+    set({ abPreparation: preparation })
+    try {
+      const input = await loadInput()
+      if (get().abPreparation !== preparation) return
+      await get().startAbTest(input)
+      if (get().abPreparation === preparation) set({ abPreparation: null })
+    } catch (cause: unknown) {
+      if (get().abPreparation === preparation) {
+        set({ abPreparation: { status: 'failed', error: cause instanceof Error ? cause.message : 'The A/B test could not be started.' } })
+      }
+      throw cause
+    }
   },
 
   async startAbTest({ goal, a, b }) {
@@ -453,6 +476,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...(state.activeCampaignId === view.campaignId && state.idea === view.idea ? {
         activeCampaignId: id, activeVideoId: analysis.id, activeRunId: null,
         compareRunId: null, ab: null, selectedMemberId: null, idea: null,
+        ...(prepare ? { abPreparation: null } : {}),
         playback: { ...state.playback, round: 0, playing: false },
       } : {}),
     }))
@@ -525,6 +549,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeRunId,
         compareRunId: null,
         ab: null,
+        abPreparation: null,
         idea: null,
         selectedMemberId: null,
         // Jump to the end of a finished run, as `setActiveRun` does, so opening

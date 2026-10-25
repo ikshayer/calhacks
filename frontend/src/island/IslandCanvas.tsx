@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
@@ -37,6 +37,8 @@ export interface IslandCanvasProps {
   paused: boolean
   /** The town degrades to an empty island rather than failing the scene; this reports that. */
   onTownError?(error: unknown): void
+  /** The town assets and resident models have mounted and can be revealed. */
+  onReady?(): void
 }
 
 /**
@@ -75,6 +77,14 @@ const SKY_TOP = '#f6a765'
 // edge faintly visible where it meets the sky.
 const FOG = { color: SKY_TOP, near: 108 * ISLAND_SPACING, far: 164 * ISLAND_SPACING }
 
+function SceneReady({ onReady }: { onReady(): void }) {
+  useEffect(() => {
+    const frame = requestAnimationFrame(onReady)
+    return () => cancelAnimationFrame(frame)
+  }, [onReady])
+  return null
+}
+
 export function IslandCanvas({
   sim,
   island,
@@ -89,7 +99,19 @@ export function IslandCanvas({
   shadows,
   paused,
   onTownError,
+  onReady,
 }: IslandCanvasProps) {
+  const readiness = useRef({ sim, scene: false, residents: false, reported: false })
+  const markReady = useCallback((part: 'scene' | 'residents') => {
+    if (readiness.current.sim !== sim) readiness.current = { sim, scene: false, residents: false, reported: false }
+    readiness.current[part] = true
+    if (readiness.current.scene && readiness.current.residents && !readiness.current.reported) {
+      readiness.current.reported = true
+      onReady?.()
+    }
+  }, [sim, onReady])
+  const sceneReady = useCallback(() => markReady('scene'), [markReady])
+  const residentsReady = useCallback(() => markReady('residents'), [markReady])
   // Model stems indexed by villager, not by member id — only the cohort has bodies.
   const legacyModels = useMemo(() => {
     const byId = new Map(members.map((member) => [member.id, member.model]))
@@ -161,6 +183,7 @@ export function IslandCanvas({
           onSelect={onSelect}
           shadows={shadows}
           paused={paused}
+          onReady={residentsReady}
         />
         <AmbientChatter sim={sim} paused={paused} />
         {highlightGroupId && (
@@ -173,6 +196,7 @@ export function IslandCanvas({
             <VerdictRings sim={sim} memberIds={verdicts.not} color={VERDICT_STYLE.not.color} />
           </>
         )}
+        <SceneReady onReady={sceneReady} />
       </Suspense>
 
       {/*

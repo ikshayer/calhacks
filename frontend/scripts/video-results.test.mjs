@@ -33,6 +33,58 @@ const metrics = { uniqueExposed: 12, watch: 8, likes: 5, comments: 2, shares: 3,
 const report = { summary: 'Finished report', notes: [], hooks: [], references: [], assumptions: [] }
 const round = (n) => ({ type: 'round', round: n, exposed: [n], acted: [], shares: [], ignored: [] })
 
+test('comparison preparation starts before files exist and stays pending through analysis', async (t) => {
+  const { source, calls } = fixture(t)
+  const files = gate(), analysis = gate()
+  const analyseVideo = source.analyseVideo
+  source.analyseVideo = async (...args) => { await analysis.promise; return analyseVideo(...args) }
+  const preparing = useAppStore.getState().prepareAbTest(() => files.promise)
+  assert.equal(useAppStore.getState().abPreparation.status, 'preparing')
+  assert.equal(useAppStore.getState().activeCampaignId, null)
+  assert.equal(calls.starts, 0)
+
+  files.resolve({ goal: '', a: { name: 'original.mp4', durationSec: 18 }, b: { name: 'reworked.mp4', durationSec: 20 } })
+  await flush()
+  assert.equal(useAppStore.getState().abPreparation.status, 'preparing')
+  assert.equal(calls.starts, 0)
+
+  analysis.resolve()
+  await preparing
+  assert.equal(useAppStore.getState().abPreparation, null)
+  assert.ok(useAppStore.getState().ab)
+  assert.equal(calls.starts, 2)
+})
+
+test('comparison file or analysis failures leave a recoverable workspace and can be retried', async (t) => {
+  const { source, calls } = fixture(t)
+  await assert.rejects(useAppStore.getState().prepareAbTest(async () => {
+    throw new Error('Demo video unavailable')
+  }), /Demo video unavailable/)
+  assert.deepEqual(useAppStore.getState().abPreparation, { status: 'failed', error: 'Demo video unavailable' })
+  assert.equal(calls.starts, 0)
+
+  const analyseVideo = source.analyseVideo
+  source.analyseVideo = async () => { throw new Error('Analysis unavailable') }
+  const input = { goal: '', a: { name: 'original.mp4', durationSec: 18 }, b: { name: 'reworked.mp4', durationSec: 20 } }
+  await assert.rejects(useAppStore.getState().prepareAbTest(async () => input), /Analysis unavailable/)
+  assert.equal(useAppStore.getState().abPreparation.status, 'failed')
+
+  source.analyseVideo = analyseVideo
+  await useAppStore.getState().prepareAbTest(async () => input)
+  assert.equal(useAppStore.getState().abPreparation, null)
+  assert.equal(calls.starts, 2)
+})
+
+test('repeated comparison clicks share the pending preparation', async (t) => {
+  const { calls } = fixture(t)
+  const files = gate()
+  const preparing = useAppStore.getState().prepareAbTest(() => files.promise)
+  await useAppStore.getState().prepareAbTest(async () => { assert.fail('Must not load videos twice') })
+  files.resolve({ goal: '', a: { name: 'original.mp4', durationSec: 18 }, b: { name: 'reworked.mp4', durationSec: 20 } })
+  await preparing
+  assert.equal(calls.starts, 2)
+})
+
 test('comparison sends 10% exposure for Original and 40% for Reworked and marks them as different settings', async (t) => {
   const { source, calls } = fixture(t, true)
   const starting = source.startRun

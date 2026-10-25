@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/useAppStore'
 import { Button, Field, Input, Textarea } from '@/components/ui'
+import { useLoadingTransition } from '@/components/loading-transition-context'
 
 const MAX_OPTIONS = 3
 
@@ -19,6 +20,8 @@ interface OptionRow {
  * front with the driver's own wording rather than failing after the click.
  */
 export function IdeaTestCard() {
+  const { beginLoading } = useLoadingTransition()
+  const submitting = useRef(false)
   const startIdeaTest = useAppStore((state) => state.startIdeaTest)
   const mock = useAppStore((state) => state.source.kind === 'mock')
   const navigate = useNavigate()
@@ -31,6 +34,7 @@ export function IdeaTestCard() {
     setOptions((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
 
   const run = () => {
+    if (submitting.current) return
     setError(null)
     const budgetUsd = budget.trim() === '' ? undefined : Number(budget)
     if (budgetUsd !== undefined && !(Number.isFinite(budgetUsd) && budgetUsd >= 0)) {
@@ -44,9 +48,20 @@ export function IdeaTestCard() {
       setError('Each campaign cost must be a number of dollars.')
       return
     }
-    // Progress and the result show on the island and sidebar, not in this card.
-    void startIdeaTest({ prompt: prompt.trim(), budgetUsd, options: parsed })
-    navigate('/workspace')
+    submitting.current = true
+    const transition = beginLoading()
+    void (async () => {
+      try {
+        const preparing = startIdeaTest({ prompt: prompt.trim(), budgetUsd, options: parsed })
+        // Swap screens only after every panel has covered the campaign form.
+        await transition.covered
+        navigate('/workspace')
+        await preparing
+      } finally {
+        submitting.current = false
+        transition.finish()
+      }
+    })()
   }
 
   return (
