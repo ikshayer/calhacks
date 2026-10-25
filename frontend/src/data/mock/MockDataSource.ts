@@ -232,6 +232,10 @@ export class MockDataSource implements SimDataSource {
     return answerFromRun(message, stored.video.signals, stored.cascade.metrics, stored.audience, stored.groupLabels)
   }
 
+  async chatIdea(): Promise<string> {
+    throw new Error('Idea-report chat needs the live backend (VITE_DATA_SOURCE=spacetime) and its worker. This demo source does not store idea reports or provide live AI.')
+  }
+
   /** The mock writes every explanation at scoring time. */
   async explainMember(runId: RunId, memberId: number): Promise<string> {
     const decision = this.runs.get(runId)?.decisions.find((d) => d.memberId === memberId)

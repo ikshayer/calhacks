@@ -210,6 +210,18 @@ export const IdeaAnalysis = __t.object("IdeaAnalysis", {
 });
 export type IdeaAnalysis = __Infer<typeof IdeaAnalysis>;
 
+export const IdeaChatMessage = __t.object("IdeaChatMessage", {
+  id: __t.u64(),
+  ideaId: __t.u64(),
+  owner: __t.identity(),
+  sequence: __t.u32(),
+  role: __t.string(),
+  content: __t.string(),
+  status: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type IdeaChatMessage = __Infer<typeof IdeaChatMessage>;
+
 export const IdeaMetrics = __t.object("IdeaMetrics", {
   scored: __t.u32(),
   inTarget: __t.u32(),
@@ -263,6 +275,7 @@ export const IdeaTest = __t.object("IdeaTest", {
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
   plainJson: __t.string(),
+  audienceVersion: __t.option(__t.u32()),
 });
 export type IdeaTest = __Infer<typeof IdeaTest>;
 

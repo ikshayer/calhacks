@@ -349,6 +349,9 @@ export interface IdeaTestInput {
   options: IdeaOption[]
 }
 
+/** Separate namespaces prevent idea 1 from sharing a conversation with video run 1. */
+export type ChatTarget = { kind: 'run'; id: string } | { kind: 'idea'; id: string }
+
 export interface IdeaResident {
   memberId: number
   name: string

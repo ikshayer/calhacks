@@ -20,7 +20,7 @@ export async function testIdea(conn: DbConnection, job: Job): Promise<void> {
   const profile = conn.db.companyProfile.id.find(row.profileId);
   if (!profile) throw new Error(`test_idea: idea test ${id} references unknown profile ${row.profileId}`);
   const members = [...conn.db.audienceMember.iter()]
-    .filter((m) => m.profileId === row.profileId && m.audienceVersion === profile.audienceVersion)
+    .filter((m) => m.profileId === row.profileId && m.audienceVersion === (row.audienceVersion ?? profile.audienceVersion))
     .sort((a, b) => a.memberId - b.memberId);
   const { result } = await runIdeaPipeline({ ...row, profile, members }, {
     cache: { lookup, store },

@@ -421,6 +421,18 @@ const chatMessage = table({ name: 'chat_message', public: true }, {
   createdAt: t.timestamp(),
 });
 
+/** Idea conversations are separate from video runs, including their numeric IDs. */
+const ideaChatMessage = table({ name: 'idea_chat_message', public: true }, {
+  id: t.u64().primaryKey().autoInc(),
+  ideaId: t.u64().index('btree'),
+  owner: t.identity(),
+  sequence: t.u32(),
+  role: t.string(),
+  content: t.string(),
+  status: t.string(),
+  createdAt: t.timestamp(),
+});
+
 // --- Original-vs-revision comparison ----------------------------------------
 
 /** Mean calibrated per-exposure probabilities over matched members. */
@@ -507,6 +519,8 @@ const ideaTest = table({ name: 'idea_test', public: true }, {
    * objections[] }, each with a `because`. Written by the analyst; numbers shown beside it come from metrics.
    */
   plainJson: t.string().default(''),
+  /** Appended with a default so existing idea rows migrate without a guessed audience version. */
+  audienceVersion: t.option(t.u32()).default(undefined),
 });
 
 const spacetimedb = schema({
@@ -525,6 +539,7 @@ const spacetimedb = schema({
   referenceReel,
   report,
   chatMessage,
+  ideaChatMessage,
   ideaTest,
 });
 export default spacetimedb;

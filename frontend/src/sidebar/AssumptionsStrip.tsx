@@ -15,6 +15,11 @@ export function AssumptionsStrip({ run }: { run?: RunState }) {
   const [open, setOpen] = useState(false)
   const source = useAppStore((state) => state.source)
   const audience = useAppStore((state) => state.audience)
+  const idea = useAppStore((state) => state.idea)
+  const assumptions = idea
+    ? ['Idea predictions use synthetic residents and uncalibrated model estimates, not consumer research or a sales forecast.',
+      ...(idea.result?.analysis?.assumptions ?? []), ...(idea.result?.analysis?.limitations ?? [])]
+    : STANDING_ASSUMPTIONS
 
   const coverage = run?.metrics?.coverage
   const missing = run?.metrics?.missing ?? 0
@@ -48,7 +53,7 @@ export function AssumptionsStrip({ run }: { run?: RunState }) {
 
       {open && (
         <ul className="space-y-2 px-4 pb-3.5 pt-0.5">
-          {STANDING_ASSUMPTIONS.map((assumption) => (
+          {assumptions.map((assumption) => (
             <li key={assumption} className="flex gap-2 text-[11px] leading-relaxed text-ui-faint">
               <span aria-hidden className="text-ui-border">
                 —
