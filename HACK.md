@@ -8,7 +8,6 @@
 - Submission deadline: Sun 2026-10-25 09:30 PT (hard deadline; treat as the real one)
 - Judging: expo table, demo cutoff Sun 10:30 PT; finalists may pitch on stage. Demo runs on one laptop at a noisy table.
 - Judging criteria: Application, Functionality/Quality, Creativity, Technical Complexity
-- Rules to respect: no implementation before the event (ideation only; the reference brief was ideas only, no prior code); disclose libraries/APIs/AI tools; every teammate on Devpost; repo link + project image required (precedent, confirm at kickoff)
 - Tracks we target (requirements confirmed by the team):
   - Spacetime: use SpacetimeDB as the database (live cascade via subscriptions)
   - Fetch.ai: build an agent on Agentverse that can be found from ASI:One
