@@ -14,9 +14,13 @@ interface OptionRow {
  * Test an idea before there is any footage: the simulated town is asked
  * directly and the answer cites the residents behind it. The disclosure line is
  * always on screen, because nothing here is consumer research.
+ *
+ * The mock driver cannot answer (its `testIdea` throws), so Run is disabled up
+ * front with the driver's own wording rather than failing after the click.
  */
 export function IdeaTestCard() {
   const startIdeaTest = useAppStore((state) => state.startIdeaTest)
+  const mock = useAppStore((state) => state.source.kind === 'mock')
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState('')
   const [budget, setBudget] = useState('')
@@ -46,15 +50,16 @@ export function IdeaTestCard() {
   }
 
   return (
-    <section className="rounded-lg border border-line bg-panel p-5">
-      <h2 className="display text-[18px] leading-tight text-paper">No video yet? Test an idea.</h2>
-      <p className="mt-1 text-[12.5px] text-muted">
+    <section className="rounded-xl bg-card p-6 ring-1 ring-black/10">
+      <h2 className="display text-[20px] leading-tight text-graphite">No video yet? Test an idea.</h2>
+      <p className="mt-1.5 text-[15px] leading-relaxed text-subtle">
         Ask the simulated town whether an idea would land, before you shoot anything.
       </p>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-5 space-y-4">
         <Textarea
           rows={3}
+          className="px-4 py-3 text-[15px]"
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder="I'm thinking about launching a boba shop, would people ages 18–21 come?"
@@ -72,7 +77,7 @@ export function IdeaTestCard() {
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[13px] font-medium text-paper">Campaigns to compare (optional)</p>
+          <p className="mb-1.5 text-[14px] font-medium text-graphite">Campaigns to compare (optional)</p>
           <div className="space-y-2">
             {options.map((row, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -115,18 +120,28 @@ export function IdeaTestCard() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button type="button" onClick={run} disabled={prompt.trim() === ''}>
+          <Button
+            type="button"
+            onClick={run}
+            disabled={mock || prompt.trim() === ''}
+            className="h-12 px-6 text-[15px] active:translate-y-px"
+          >
             Run
           </Button>
+          {mock && (
+            <p className="text-[13.5px] text-subtle">
+              Idea tests need the live backend (VITE_DATA_SOURCE=spacetime).
+            </p>
+          )}
         </div>
         {error && (
-          <p role="alert" className="text-[12.5px] text-bloom">
+          <p role="alert" className="text-[13.5px] text-ui-danger">
             {error}
           </p>
         )}
       </div>
 
-      <p className="mt-4 text-[11.5px] text-faint">
+      <p className="mt-5 text-[13.5px] text-subtle">
         Simulated residents of a fictional town — not consumer research, not a sales forecast.
       </p>
     </section>

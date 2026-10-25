@@ -36,10 +36,27 @@ export interface CompanyProfile {
   name: string
   /** One sentence: what the product is and who it is for. */
   pitch: string
+  /**
+   * Who the user says they are trying to reach, in their own words.
+   *
+   * Asked directly during onboarding instead of making them tune group shares
+   * before they have seen anything run. `deriveGroups` reads it to pick the
+   * audience segments, and the live worker has it as grounding.
+   */
+  audienceDescription?: string
   website?: string
   instagram?: string
+  /**
+   * No longer collected during onboarding, but still written to the backend:
+   * the worker puts it in the Claude grounding prompt (worker/src/grounding.ts).
+   */
   location?: string
   objective: Objective
+  /**
+   * Also no longer asked for; defaults to empty. The worker still renders it
+   * into the grounding prompt, so it stays on the profile rather than being
+   * dropped, and a backend or a later settings screen can fill it.
+   */
   tone: string[]
   inspirationAccounts: string[]
   groups: AudienceGroup[]

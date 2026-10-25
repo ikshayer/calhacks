@@ -3,27 +3,31 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useAppStore } from '@/store/useAppStore'
 import type { CompanyProfile } from '@/data/types'
-import { emptyProfile, normaliseShares } from '@/onboarding/suggestAudience'
-import { Button } from '@/components/ui'
-import DotGrid from '@/components/reactbits/DotGrid'
-import { themeHex } from '@/lib/themeHex'
-import { CompanyStep } from '@/onboarding/steps/CompanyStep'
+import { deriveGroups, emptyProfile, normaliseShares } from '@/onboarding/suggestAudience'
+import { PaperShell } from '@/components/PaperShell'
+import { StepRail } from '@/onboarding/StepRail'
+import { NextPanel } from '@/onboarding/NextPanel'
+import { NameStep } from '@/onboarding/steps/NameStep'
+import { DescriptionStep } from '@/onboarding/steps/DescriptionStep'
 import { AudienceStep } from '@/onboarding/steps/AudienceStep'
-import { ObjectiveStep } from '@/onboarding/steps/ObjectiveStep'
+import { DetailsStep } from '@/onboarding/steps/DetailsStep'
 
-const STEPS = [
-  { id: 'company', title: 'Your organisation', blurb: 'One sentence is enough to start.' },
-  { id: 'audience', title: 'Who you are reaching', blurb: 'Confirm or change the suggested groups.' },
-  { id: 'objective', title: 'What you are optimising', blurb: 'And how you want to sound.' },
-] as const
+const STEPS = ['Name', 'What you do', 'Audience', 'Details'] as const
+const LAST = STEPS.length - 1
+
+/** One easing for every transition on the paper screens. */
+const EASE = [0.22, 1, 0.36, 1] as const
 
 /**
  * Onboarding.
  *
- * Builds the company profile the whole simulation depends on: the audience
- * groups, their assumed shares, and the tone. It is a wizard rather than one
- * long form because step two asks the user to confirm assumptions, and that
- * decision deserves its own screen rather than being buried in a field.
+ * Four questions, one per screen. The previous version put five fields on the
+ * first screen and a percentage-slider editor on the second, which asked
+ * people to describe our data model before they had seen the product do
+ * anything. Here each screen asks one thing in plain words, and the audience
+ * segments are inferred from the answer rather than demanded up front.
+ *
+ * Only the first three are required. The fourth is optional and says so.
  */
 export function OnboardingRoute() {
   const navigate = useNavigate()
@@ -33,129 +37,125 @@ export function OnboardingRoute() {
   const [draft, setDraft] = useState<CompanyProfile>(() => existing ?? emptyProfile())
   const [step, setStep] = useState(0)
   const reduceMotion = Boolean(useReducedMotion())
-  const [dots] = useState(() => ({
-    base: themeHex('--color-line', '#2e3b34'),
-    active: themeHex('--color-sun', '#f2b53c'),
-  }))
 
   const patch = (changes: Partial<CompanyProfile>) =>
     setDraft((current) => ({ ...current, ...changes }))
 
   const canAdvance =
     step === 0
-      ? draft.name.trim().length > 1 && draft.pitch.trim().length > 10
+      ? draft.name.trim().length > 1
       : step === 1
-        ? draft.useAudienceGroups === false || draft.groups.length > 0
-        : true
+        ? draft.pitch.trim().length > 10
+        : step === 2
+          ? (draft.audienceDescription ?? '').trim().length > 10
+          : true
 
   const finish = () => {
+    const audienceDescription = (draft.audienceDescription ?? '').trim()
+    const pitch = draft.pitch.trim()
+    const derived = deriveGroups(audienceDescription, pitch)
+
     setProfile({
       ...draft,
       name: draft.name.trim(),
-      pitch: draft.pitch.trim(),
-      groups: normaliseShares(draft.groups),
-      // Bumped so a run can declare which audience definition it used.
+      pitch,
+      audienceDescription,
+      // Groups are always stored, so switching segmentation back on in the
+      // workspace has something to restore. What `derived === null` changes is
+      // whether the simulation uses them: nothing in the description matched a
+      // known segment, so every resident is judged on their own persona rather
+      // than on segments we would have had to invent.
+      groups: normaliseShares(derived ?? draft.groups),
+      useAudienceGroups: derived !== null,
       audienceVersion: (existing?.audienceVersion ?? 0) + 1,
     })
     navigate('/campaigns', { replace: true })
   }
 
-  const current = STEPS[step] ?? STEPS[0]
+  const advance = () => (step === LAST ? finish() : setStep(step + 1))
 
-  const stepContent = (
+  const content = (
     <>
-      {step === 0 && <CompanyStep draft={draft} patch={patch} />}
-      {step === 1 && <AudienceStep draft={draft} patch={patch} />}
-      {step === 2 && <ObjectiveStep draft={draft} patch={patch} />}
+      {step === 0 && <NameStep draft={draft} patch={patch} total={STEPS.length} />}
+      {step === 1 && <DescriptionStep draft={draft} patch={patch} total={STEPS.length} />}
+      {step === 2 && <AudienceStep draft={draft} patch={patch} total={STEPS.length} />}
+      {step === 3 && <DetailsStep draft={draft} patch={patch} total={STEPS.length} />}
     </>
   )
 
   return (
-    <div className="relative h-full overflow-hidden">
-      {/*
-        Only there so the space beside the column and under short steps does not
-        read as empty. It ignores the pointer on purpose (a form should not
-        react to being typed near), and `paused` is what honours reduced motion,
-        because the grid's own loop is not covered by the CSS rule.
-      */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <DotGrid
-          dotSize={3}
-          gap={26}
-          baseColor={dots.base}
-          activeColor={dots.active}
-          opacity={0.28}
-          fade={0.9}
-          glow={0}
-          mouseInteraction={false}
-          clickShock={false}
-          paused={reduceMotion}
-        />
-      </div>
+    <PaperShell>
+      <StepRail labels={STEPS} current={step} onJump={setStep} />
 
-      <main className="relative mx-auto flex h-full w-full max-w-[680px] flex-col px-6 py-8">
-        <nav aria-label="Progress" className="flex items-center gap-2">
-          {STEPS.map((entry, index) => (
-            <div key={entry.id} className="flex flex-1 items-center gap-2">
-              {/* The fill scales rather than swaps colour so finishing a step reads as progress. */}
-              <span className="h-[3px] flex-1 overflow-hidden rounded-full bg-line">
-                <span
-                  className={`block h-full origin-left rounded-full bg-sun transition-transform duration-500 ease-out ${
-                    index <= step ? 'scale-x-100' : 'scale-x-0'
-                  }`}
-                />
-              </span>
-            </div>
-          ))}
-        </nav>
-
-        <header className="mt-7">
-          <p className="text-[12.5px] text-faint">
-            Step {step + 1} of {STEPS.length}
-          </p>
-          <h1 className="display mt-1 text-[27px] leading-tight">{current.title}</h1>
-          <p className="mt-1.5 text-[13.5px] text-muted">{current.blurb}</p>
-        </header>
-
-        <div className="scroll-slim mt-7 min-h-0 flex-1 overflow-y-auto pr-1">
+      <div
+        // Enter submits the step, which is what a one-field screen implies.
+        // Textareas keep Enter for newlines and take the modifier instead.
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return
+          const multiline = event.target instanceof HTMLTextAreaElement
+          if (multiline && !(event.metaKey || event.ctrlKey)) return
+          if (!canAdvance) return
+          event.preventDefault()
+          advance()
+        }}
+        // Centred in the remaining height rather than pinned under the rail:
+        // one question on a wide screen otherwise sits in the top third with a
+        // field of empty paper beneath it.
+        className="grid gap-10 lg:min-h-[58vh] lg:grid-cols-12 lg:gap-14 lg:content-center"
+      >
+        <div className="lg:col-span-7">
           {reduceMotion ? (
-            stepContent
+            content
           ) : (
-            // "wait" so the old step is gone before the new one mounts; they never share the scroll area.
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.16, ease: 'easeOut' }}
+                initial={{ opacity: 0, x: 32 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -32 }}
+                transition={{ duration: 0.35, ease: EASE }}
               >
-                {stepContent}
+                {content}
               </motion.div>
             </AnimatePresence>
           )}
+
+          <div className="mt-10 flex items-center gap-4">
+            {/* Not merely hidden on the first step: an invisible button still
+                holds its space, which pushed the primary action away from the
+                margin and read as a misalignment. */}
+            {step > 0 && (
+              <button
+                onClick={() => setStep(step - 1)}
+                className="h-12 rounded-md px-4 text-[15px] font-medium text-subtle transition-colors hover:text-graphite"
+              >
+                Back
+              </button>
+            )}
+
+            <button
+              onClick={advance}
+              disabled={!canAdvance}
+              className="h-12 rounded-md bg-primary px-6 text-[15px] font-medium text-white transition-all hover:bg-primary/90 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {step === LAST ? 'Finish' : 'Continue'}
+            </button>
+
+            {step === LAST && (
+              <button
+                onClick={finish}
+                className="text-[15px] text-subtle underline-offset-4 transition-colors hover:text-graphite hover:underline"
+              >
+                Skip for now
+              </button>
+            )}
+          </div>
         </div>
 
-        <footer className="mt-6 flex items-center justify-between gap-3 border-t border-line pt-5">
-          <Button
-            variant="ghost"
-            onClick={() => setStep((value) => Math.max(0, value - 1))}
-            disabled={step === 0}
-          >
-            Back
-          </Button>
-
-          {step < STEPS.length - 1 ? (
-            <Button onClick={() => setStep((value) => value + 1)} disabled={!canAdvance}>
-              Continue
-            </Button>
-          ) : (
-            <Button onClick={finish} disabled={!canAdvance}>
-              Continue
-            </Button>
-          )}
-        </footer>
-      </main>
-    </div>
+        <div className="lg:col-span-5">
+          <NextPanel />
+        </div>
+      </div>
+    </PaperShell>
   )
 }

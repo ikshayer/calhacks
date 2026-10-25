@@ -21,7 +21,7 @@ export function CampaignHistory({ onOpen }: { onOpen(id: CampaignId): void }) {
 
   return (
     <section aria-labelledby="history-heading">
-      <h2 id="history-heading" className="display text-[17px] text-paper">
+      <h2 id="history-heading" className="display text-[20px] text-graphite">
         Previous analyses
       </h2>
       <div className="mt-3">

@@ -23,8 +23,83 @@
   --color-leaf: #7fb069;
   --color-water: #6aa9c9;
 
+  /*
+    Role tokens for the shared controls in components/ui.tsx.
+
+    Those controls appear in two places that look nothing alike: the dark
+    instrument panel beside the island, and the light paper screens before the
+    simulation starts. Naming the roles rather than the colours is what lets one
+    Button serve both — `.paper` below redefines these and nothing else changes.
+    The values here are the dark theme, identical to the tokens above, so the
+    workspace renders exactly as it did before this layer existed.
+  */
+  --color-ui-surface: #121a16;
+  --color-ui-raised: #243029;
+  --color-ui-border: #2e3b34;
+  --color-ui-edge: #6b7872;
+  --color-ui-text: #e8ebe4;
+  --color-ui-muted: #93a09a;
+  --color-ui-faint: #6b7872;
+  --color-ui-accent: #f2b53c;
+  --color-ui-on-accent: #121a16;
+  --color-ui-danger: #e2735f;
+
+  /*
+    The paper palette, carried over from the CareWindow project so the two
+    products read as siblings. Burgundy is the only action colour; horizon
+    orange is decorative and fails contrast as small text, so it is never used
+    for one. These are fixed light values — only the `--color-ui-*` roles above
+    switch between themes.
+  */
+  --color-canvas: #f4f3f2;
+  --color-card: #ffffff;
+  --color-rule: #dcdee0;
+  --color-graphite: #231f20;
+  --color-subtle: #5c656c;
+  --color-primary: #650030;
+  --color-horizon: #ff4f17;
+
   --font-display: 'Fraunces', Georgia, serif;
   --font-ui: 'Archivo', system-ui, sans-serif;
+  --font-paper: 'Source Serif 4', Georgia, serif;
+}
+
+/*
+  Sign-in, onboarding and the campaign hub.
+
+  Everything inside this scope reads the same role tokens the workspace does,
+  pointed at the paper palette. A screen opts in by rendering inside
+  `<PaperShell>`; the workspace never does, so it is untouched.
+*/
+.paper {
+  --color-ui-surface: #ffffff;
+  --color-ui-raised: #ebe9e8;
+  --color-ui-border: #dcdee0;
+  --color-ui-edge: #c4c9cd;
+  --color-ui-text: #231f20;
+  --color-ui-muted: #5c656c;
+  --color-ui-faint: #8a9299;
+  --color-ui-accent: #650030;
+  --color-ui-on-accent: #ffffff;
+  --color-ui-danger: #c4321e;
+}
+
+/* The focus ring and selection are set globally in marigold; on paper they
+   belong to the action colour instead. */
+.paper :focus-visible {
+  outline-color: var(--color-primary);
+}
+
+.paper ::selection {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* Fraunces is the workspace's voice. The paper screens speak in Source Serif. */
+.paper .display {
+  font-family: var(--font-paper);
+  font-variation-settings: normal;
+  letter-spacing: -0.014em;
 }
 
 * {
