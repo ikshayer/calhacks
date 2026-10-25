@@ -10,3 +10,4 @@ cache/
 __pycache__/
 /.playwright-mcp/
 /artifacts/
+uploads/

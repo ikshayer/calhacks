@@ -33,9 +33,16 @@ export const config = {
   /** Required only when an analyse_video job runs. */
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   reelsPerAccount: Number(process.env.REELS_PER_ACCOUNT ?? 10),
+  /** CACHE_DISABLED=1 recomputes everything (analysis, scores, reports, explanations). */
+  cacheDisabled: process.env.CACHE_DISABLED === '1',
   /**
    * Folder that `demo:<file>` sourceUrls resolve against. Defaults to the
    * frontend's public/demo, so the browser plays the same file the worker analyses.
    */
   demoVideosDir: process.env.DEMO_VIDEOS_DIR || fileURLToPath(new URL('../../../frontend/public/demo/', import.meta.url)),
+  /** Where uploaded videos are stored; `upload:<file>` sourceUrls resolve against it. */
+  uploadsDir: process.env.UPLOADS_DIR || fileURLToPath(new URL('../uploads/', import.meta.url)),
+  /** Local HTTP server that receives video uploads from the browser. */
+  uploadPort: Number(process.env.UPLOAD_PORT ?? 8787),
+  uploadAllowedOrigin: process.env.UPLOAD_ALLOWED_ORIGIN ?? 'http://localhost:5173',
 };

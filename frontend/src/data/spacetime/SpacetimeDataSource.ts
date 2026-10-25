@@ -37,6 +37,9 @@ export const DEMO_VIDEOS = [
   { file: 'revised.mp4', label: 'Revision', durationSec: 18 },
 ] as const
 
+/** The worker's local upload endpoint, used when the store passes no VITE_UPLOAD_URL. */
+const DEFAULT_UPLOAD_URL = 'http://127.0.0.1:8787'
+
 /** How long to wait for the worker before giving up on a step, in milliseconds. */
 const WAIT = { analysis: 120_000, report: 120_000, reply: 60_000, explanation: 60_000, comparison: 60_000 }
 
@@ -76,10 +79,13 @@ export class SpacetimeDataSource implements SimDataSource {
   /** The onboarding profile id is a constant, so it is scoped to this browser's identity on the shared database. */
   private remoteProfileId = ''
 
-  constructor(host: string, database: string, size: AudienceSize) {
+  private readonly uploadUrl: string
+
+  constructor(host: string, database: string, size: AudienceSize, uploadUrl = DEFAULT_UPLOAD_URL) {
     this.host = host
     this.database = database
     this.size = size
+    this.uploadUrl = uploadUrl.replace(/\/+$/, '')
     this.label = `Live backend (SpacetimeDB ${database})`
   }
 
@@ -140,11 +146,17 @@ export class SpacetimeDataSource implements SimDataSource {
 
   async analyseVideo(campaignId: string, input: VideoInput, label: string): Promise<VideoAnalysis> {
     const conn = await this.connect()
+    let name: string
+    let sourceUrl: string
     if (input.file) {
-      throw new Error('The live backend only analyses the pre-loaded demo videos. Use "Original demo" or "Revision demo".')
+      name = input.file.name
+      sourceUrl = await this.uploadFile(input.file)
+    } else {
+      const demo = DEMO_VIDEOS.find((d) => d.file === input.name)
+      if (!demo) throw new Error(`"${input.name}" is not one of the demo videos.`)
+      name = demo.file
+      sourceUrl = `demo:${demo.file}`
     }
-    const demo = DEMO_VIDEOS.find((d) => d.file === input.name)
-    if (!demo) throw new Error(`"${input.name}" is not one of the demo videos.`)
 
     const clientKey = crypto.randomUUID()
     await conn.reducers.createVideo({
@@ -152,9 +164,9 @@ export class SpacetimeDataSource implements SimDataSource {
       profileId: this.profileId(),
       campaignId,
       label,
-      name: demo.file,
+      name,
       durationSec: input.durationSec,
-      sourceUrl: `demo:${demo.file}`,
+      sourceUrl,
     })
     const row = await this.waitFor(WAIT.analysis, 'the video analysis', () => {
       const v = [...conn.db.video.iter()].find((row) => row.clientKey === clientKey)
@@ -162,7 +174,7 @@ export class SpacetimeDataSource implements SimDataSource {
       if (v.status === 'failed') throw new Error(`Video analysis failed: ${v.error ?? 'unknown error'}`)
       return v
     })
-    return toVideo(row)
+    return toVideo(row, this.uploadUrl)
   }
 
   async reviseSignals(videoId: string, signals: ContentSignals): Promise<VideoAnalysis> {
@@ -170,7 +182,7 @@ export class SpacetimeDataSource implements SimDataSource {
     const row = conn.db.video.id.find(BigInt(videoId))
     if (!row) throw new Error(`reviseSignals: unknown video ${videoId}`)
     await conn.reducers.reviseSignals({ videoId: row.id, signals, summary: row.summary })
-    return toVideo({ ...row, signals, status: 'ready' })
+    return toVideo({ ...row, signals, status: 'ready' }, this.uploadUrl)
   }
 
   async startRun(campaignId: string, videoId: string, label: string, options: RunOptions): Promise<RunId> {
@@ -320,6 +332,28 @@ export class SpacetimeDataSource implements SimDataSource {
   // Connection and waiting
   // -------------------------------------------------------------------------
 
+  /** Sends the file to the worker on this machine and returns the `upload:<name>` source it stored it under. */
+  private async uploadFile(file: File): Promise<string> {
+    let response: Response
+    try {
+      response = await fetch(`${this.uploadUrl}/upload`, {
+        method: 'POST',
+        // Headers must be ASCII; the worker decodes this, so "café 🌱.mp4" survives.
+        headers: { 'X-File-Name': encodeURIComponent(file.name) },
+        body: file,
+      })
+    } catch (cause: unknown) {
+      throw new Error(
+        `Could not reach the upload server at ${this.uploadUrl}. Is the worker running? (${errorText(cause, 'network error')})`,
+      )
+    }
+    const text = await response.text()
+    if (!response.ok) throw new Error(`Upload failed (${response.status}): ${uploadError(text)}`)
+    const body: unknown = JSON.parse(text)
+    if (typeof body === 'object' && body !== null && 'source' in body && typeof body.source === 'string') return body.source
+    throw new Error(`The upload server returned an unexpected reply: ${text.slice(0, 200)}`)
+  }
+
   private profileId(): string {
     if (!this.remoteProfileId) throw new Error('The audience has not been saved to the backend yet.')
     return this.remoteProfileId
@@ -406,7 +440,25 @@ export class SpacetimeDataSource implements SimDataSource {
 // Row mapping
 // ---------------------------------------------------------------------------
 
-function toVideo(row: VideoRow): VideoAnalysis {
+/** The server's `{error}` text if the body is that JSON, otherwise the body itself. */
+function uploadError(text: string): string {
+  try {
+    const body: unknown = JSON.parse(text)
+    if (typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string') return body.error
+  } catch {
+    // Not JSON: the raw text below is the best description available.
+  }
+  return text || 'no details from the server'
+}
+
+function videoUrl(row: VideoRow, uploadUrl: string): string {
+  const source = row.sourceUrl ?? `demo:${row.name}`
+  if (source.startsWith('upload:')) return `${uploadUrl}/uploads/${encodeURIComponent(source.slice('upload:'.length))}`
+  if (source.startsWith('demo:')) return `/demo/${source.slice('demo:'.length)}`
+  throw new Error(`Video ${row.id} has an unknown source "${source}".`)
+}
+
+function toVideo(row: VideoRow, uploadUrl: string): VideoAnalysis {
   if (!row.signals) throw new Error(`Video ${row.id} has no analysis yet.`)
   return {
     id: row.id.toString(),
@@ -416,7 +468,7 @@ function toVideo(row: VideoRow): VideoAnalysis {
     durationSec: row.signals.durationSec,
     signals: row.signals,
     summary: row.summary,
-    objectUrl: `/demo/${row.name}`,
+    objectUrl: videoUrl(row, uploadUrl),
   }
 }
 

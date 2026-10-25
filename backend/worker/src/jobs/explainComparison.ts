@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config.ts';
 import { models } from '../models.ts';
+import { lookup, nonEmptyText, store } from '../cache.ts';
 import { setStage } from '../stage.ts';
 import type { DbConnection } from '../module_bindings/index.ts';
 import type { Comparison, Job, Means, Video } from '../module_bindings/types.ts';
@@ -75,6 +76,16 @@ export async function explainComparison(conn: DbConnection, job: Job): Promise<v
   if (!profile) throw new Error(`explain_comparison: unknown profile "${baseRun.profileId}"`);
   const groupLabels = new Map(profile.groups.map((g) => [g.id, g.label]));
 
+  const userText = comparisonText(comparison, baseVideo, revisedVideo, groupLabels);
+  const cacheParts = [models.comparison.id, SYSTEM, userText];
+  const hit = await lookup('comparison', cacheParts, nonEmptyText);
+  if (hit) {
+    await setStage(conn, job, 'Explaining the comparison (cached)');
+    await conn.reducers.setComparisonSummary({ id, summary: hit });
+    console.log(`[compare ${id}] cached`);
+    return;
+  }
+
   await setStage(conn, job, 'Explaining the comparison');
   const client = new Anthropic({ apiKey });
   let response: Anthropic.Message;
@@ -83,7 +94,7 @@ export async function explainComparison(conn: DbConnection, job: Job): Promise<v
       model: models.comparison.id,
       max_tokens: models.comparison.maxTokens,
       system: SYSTEM,
-      messages: [{ role: 'user', content: comparisonText(comparison, baseVideo, revisedVideo, groupLabels) }],
+      messages: [{ role: 'user', content: userText }],
       output_config: { effort: models.comparison.effort },
     });
   } catch (error) {
@@ -101,6 +112,7 @@ export async function explainComparison(conn: DbConnection, job: Job): Promise<v
   if (summary.length === 0) throw new Error('Claude returned an empty summary.');
 
   await conn.reducers.setComparisonSummary({ id, summary });
+  await store('comparison', cacheParts, summary);
 
   const { input_tokens: inputTokens, output_tokens: outputTokens } = response.usage;
   const cost = inputTokens * models.comparison.usdPerInputToken + outputTokens * models.comparison.usdPerOutputToken;

@@ -174,9 +174,12 @@ export const createVideo = spacetimedb.reducer(
   },
   (ctx, args) => {
     if (ctx.db.video.clientKey.find(args.clientKey)) throw new SenderError('duplicate clientKey');
-    // The worker would read any local path or fetch any URL it is given, so clients
-    // may only name a pre-loaded demo video (HACK.md: no real upload storage).
-    if (!args.sourceUrl?.startsWith('demo:')) throw new SenderError('sourceUrl must name a demo video, e.g. "demo:original.mp4"');
+    // The worker would read any local path or fetch any URL it is given, so clients may
+    // only name a pre-loaded demo video or a file posted to the worker's upload endpoint.
+    const source = args.sourceUrl ?? '';
+    if (!source.startsWith('demo:') && !source.startsWith('upload:')) {
+      throw new SenderError('sourceUrl must be "demo:<file>" or "upload:<file>"');
+    }
     const profile = ctx.db.companyProfile.id.find(args.profileId);
     if (!profile) throw new SenderError('unknown profile');
     requireOwner(ctx, profile.owner);

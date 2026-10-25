@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { config } from '../config.ts';
 import { buildGrounding, groundingText, type Grounding } from '../grounding.ts';
 import { models } from '../models.ts';
+import { lookup, store } from '../cache.ts';
 import { setStage } from '../stage.ts';
 import type { DbConnection } from '../module_bindings/index.ts';
 import type { Job, ReferenceExample, RewrittenHook, TimestampedNote } from '../module_bindings/types.ts';
@@ -148,15 +149,8 @@ function assumptionsFor(g: Grounding): string[] {
   ];
 }
 
-export async function writeReport(conn: DbConnection, job: Job): Promise<void> {
-  const apiKey = config.anthropicApiKey;
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set on the worker, so reports cannot be written.');
-
-  const started = performance.now();
-  const runId = BigInt(job.targetId);
-  const g = buildGrounding(conn, runId);
-  await setStage(conn, job, 'Writing the report with Claude');
-
+/** One Claude call for the report draft. Returns the validated draft and the token usage. */
+async function draftWithClaude(apiKey: string, g: Grounding, userText: string): Promise<{ draft: ReportDraft; usage: Anthropic.Usage }> {
   const client = new Anthropic({ apiKey });
   let response: Anthropic.Message;
   try {
@@ -164,7 +158,7 @@ export async function writeReport(conn: DbConnection, job: Job): Promise<void> {
       model: models.report.id,
       max_tokens: models.report.maxTokens,
       system: INSTRUCTIONS,
-      messages: [{ role: 'user', content: `Grounding:\n\n${groundingText(g)}` }],
+      messages: [{ role: 'user', content: userText }],
       output_config: { effort: models.report.effort, format: { type: 'json_schema', schema: SCHEMA } },
     });
   } catch (error) {
@@ -185,7 +179,29 @@ export async function writeReport(conn: DbConnection, job: Job): Promise<void> {
   } catch (error) {
     throw new Error(`Claude's report was not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
-  const draft = validateReport(parsed, g.durationSec, g.references.length);
+  return { draft: validateReport(parsed, g.durationSec, g.references.length), usage: response.usage };
+}
+
+export async function writeReport(conn: DbConnection, job: Job): Promise<void> {
+  const apiKey = config.anthropicApiKey;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set on the worker, so reports cannot be written.');
+
+  const started = performance.now();
+  const runId = BigInt(job.targetId);
+  const g = buildGrounding(conn, runId);
+
+  // Same grounding (same video, audience, seed and scores) and same prompt give the same report.
+  const userText = `Grounding:\n\n${groundingText(g)}`;
+  const cacheParts = [models.report.id, INSTRUCTIONS, SCHEMA, userText];
+  let draft = await lookup('report', cacheParts, (value) => validateReport(value, g.durationSec, g.references.length));
+  let usage: Anthropic.Usage | undefined;
+  if (draft) {
+    await setStage(conn, job, 'Writing the report (cached)');
+  } else {
+    await setStage(conn, job, 'Writing the report with Claude');
+    ({ draft, usage } = await draftWithClaude(apiKey, g, userText));
+    await store('report', cacheParts, draft);
+  }
 
   const references = draft.references.map((r) => {
     const reel = g.references[r.reelIndex];
@@ -207,10 +223,12 @@ export async function writeReport(conn: DbConnection, job: Job): Promise<void> {
     ),
   );
 
-  const { input_tokens: inputTokens, output_tokens: outputTokens } = response.usage;
-  const cost = inputTokens * models.report.usdPerInputToken + outputTokens * models.report.usdPerOutputToken;
-  console.log(
-    `[report ${runId}] ${draft.notes.length} notes, ${draft.hooks.length} hooks, ${references.length} references, ` +
-      `${inputTokens} in / ${outputTokens} out tokens, ${((performance.now() - started) / 1000).toFixed(1)}s, $${cost.toFixed(4)}`,
-  );
+  const seconds = ((performance.now() - started) / 1000).toFixed(1);
+  const counts = `${draft.notes.length} notes, ${draft.hooks.length} hooks, ${references.length} references`;
+  if (!usage) {
+    console.log(`[report ${runId}] ${counts}, cached, ${seconds}s`);
+    return;
+  }
+  const cost = usage.input_tokens * models.report.usdPerInputToken + usage.output_tokens * models.report.usdPerOutputToken;
+  console.log(`[report ${runId}] ${counts}, ${usage.input_tokens} in / ${usage.output_tokens} out tokens, ${seconds}s, $${cost.toFixed(4)}`);
 }

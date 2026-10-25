@@ -24,6 +24,12 @@ export async function resolveSource(sourceUrl: string | undefined): Promise<Reso
     return resolveSource(join(config.demoVideosDir, name));
   }
 
+  if (sourceUrl.startsWith('upload:')) {
+    const name = sourceUrl.slice('upload:'.length);
+    if (!/^[\w.-]+$/.test(name) || name.startsWith('.')) throw new Error(`Invalid uploaded video name "${name}"`);
+    return resolveSource(join(config.uploadsDir, name));
+  }
+
   if (/^https?:\/\//i.test(sourceUrl)) {
     const res = await fetch(sourceUrl);
     if (!res.ok) throw new Error(`Could not download the video (${res.status}) from ${new URL(sourceUrl).host}`);

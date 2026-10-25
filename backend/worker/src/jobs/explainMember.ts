@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config.ts';
 import { buildGrounding } from '../grounding.ts';
 import { models } from '../models.ts';
+import { lookup, nonEmptyText, store } from '../cache.ts';
 import { setStage } from '../stage.ts';
 import type { DbConnection } from '../module_bindings/index.ts';
 import type { Job } from '../module_bindings/types.ts';
@@ -60,6 +61,15 @@ export async function explainMember(conn: DbConnection, job: Job): Promise<void>
     .filter((l) => l !== '')
     .join('\n');
 
+  const cacheParts = [models.explanation.id, SYSTEM, prompt];
+  const hit = await lookup('explanation', cacheParts, nonEmptyText);
+  if (hit) {
+    await setStage(conn, job, `Explaining ${member.name} (cached)`);
+    await conn.reducers.setExplanation({ runId, memberId, explanation: hit });
+    console.log(`[explain ${job.targetId}] cached`);
+    return;
+  }
+
   const client = new Anthropic({ apiKey });
   let response: Anthropic.Message;
   try {
@@ -85,6 +95,7 @@ export async function explainMember(conn: DbConnection, job: Job): Promise<void>
   if (explanation.length === 0) throw new Error('Claude returned an empty explanation.');
 
   await conn.reducers.setExplanation({ runId, memberId, explanation });
+  await store('explanation', cacheParts, explanation);
 
   const { input_tokens: inputTokens, output_tokens: outputTokens } = response.usage;
   const cost = inputTokens * models.explanation.usdPerInputToken + outputTokens * models.explanation.usdPerOutputToken;

@@ -10,6 +10,7 @@ import { scoreRun } from './jobs/scoreRun.ts';
 import { writeReport } from './jobs/writeReport.ts';
 import { DbConnection } from './module_bindings/index.ts';
 import { setStage } from './stage.ts';
+import { startUploadServer } from './upload.ts';
 import type { Job } from './module_bindings/types.ts';
 
 /**
@@ -99,6 +100,9 @@ async function loadToken(): Promise<string | undefined> {
 }
 
 const token = await loadToken();
+
+// Started once here, not in onConnect, so reconnects don't try to bind the port again.
+startUploadServer();
 
 DbConnection.builder()
   .withUri(config.spacetimeHost)

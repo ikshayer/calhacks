@@ -22,6 +22,7 @@ const SIGNAL_FIELDS: { key: keyof Omit<ContentSignals, 'topics' | 'durationSec'>
  */
 export function UploadPanel() {
   const video = useAppStore(selectActiveVideo)
+  const live = useAppStore((state) => state.source.kind === 'spacetime')
   const analyseUpload = useAppStore((state) => state.analyseUpload)
   const reviseSignals = useAppStore((state) => state.reviseSignals)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -118,10 +119,12 @@ export function UploadPanel() {
           }
         >
           <p className="display text-[14px] text-paper">
-            {busy ? 'Reading the file…' : 'Drop a video here'}
+            {busy ? (live ? 'Analysing… about 20–40 seconds' : 'Reading the file…') : 'Drop a video here'}
           </p>
           <p className="mx-auto mt-1.5 max-w-[30ch] text-[12px] leading-relaxed text-faint">
-            It stays in this browser. Nothing is uploaded, posted or shared.
+            {live
+              ? 'Sent only to the worker on this laptop for analysis. Never posted.'
+              : 'It stays in this browser. Nothing is uploaded, posted or shared.'}
           </p>
           <Button variant="secondary" className="mt-3.5" onClick={() => inputRef.current?.click()}>
             Choose a file

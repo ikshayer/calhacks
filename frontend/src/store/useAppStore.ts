@@ -111,7 +111,7 @@ function createSource(): SimDataSource {
   if (!host || !database) {
     throw new Error('VITE_DATA_SOURCE=spacetime needs VITE_SPACETIME_HOST and VITE_SPACETIME_DB in frontend/.env.local')
   }
-  return new SpacetimeDataSource(host, database, AUDIENCE_SIZE)
+  return new SpacetimeDataSource(host, database, AUDIENCE_SIZE, import.meta.env.VITE_UPLOAD_URL || undefined)
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
