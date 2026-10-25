@@ -1,8 +1,8 @@
 import { ISLAND_SPACING } from './island.ts'
 
-/** Recenter the asymmetric landmass while keeping resident-sized close zoom available. */
+/** Open on the town square from a low diagonal, with foreground homes and sea behind it. */
 export const ISLAND_VIEW = {
-  position: [7, 74.4, 93] as const,
+  position: [32, 17, 39] as const,
   target: [7, 0, 0] as const,
   fov: 38,
   minDistance: 18,

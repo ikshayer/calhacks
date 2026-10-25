@@ -95,6 +95,10 @@ Preparation belongs to the store action, so route remounts do not submit another
 run or cancel its subscription. A synchronous input guard also prevents repeated
 demo clicks from starting duplicate uploads while the demo file is fetched.
 
+Choosing one demo, uploading one video, or reopening one campaign exits any
+previous comparison. An explicit comparison analyses both videos first, then
+starts exactly one run per side; campaign creation does not add preliminary runs.
+
 Failures offer **Retry results**. A failed simulation can be retried explicitly;
 a successful simulation with a failed report retries only report generation.
 Reattaching the original file to a completed historical result restores video

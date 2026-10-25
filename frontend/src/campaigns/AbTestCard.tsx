@@ -2,16 +2,23 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/useAppStore'
 import { readDuration } from '@/data/videoPoster'
-import { DEMO_VIDEOS } from '@/data/spacetime/SpacetimeDataSource'
 import { Button, Textarea } from '@/components/ui'
 
-type Side = 'a' | 'b'
+const AB_VIDEOS = ['original.mp4', 'reworked.mp4'] as const
+
+async function loadVideo(name: string) {
+  const response = await fetch(`/demo/${name}`)
+  if (!response.ok) throw new Error(`${name} could not be loaded (HTTP ${response.status}). Please try again.`)
+  const blob = await response.blob()
+  const file = new File([blob], name, { type: blob.type || 'video/mp4' })
+  return { name, durationSec: await readDuration(file), file }
+}
 
 /**
  * Two videos, one goal, run side by side against the same audience.
  *
- * Both videos are analysed in parallel and each gets its own simulation run with the same
- * audience, seed and starting exposure, so a difference in the results comes from the videos.
+ * Both videos use the same audience and seed, with 10% starting exposure for Original
+ * and 40% for Reworked. Results reflect both the video and its starting distribution.
  * The goal is shown beside the results; the simulation itself reads only the video content.
  */
 export function AbTestCard() {
@@ -19,28 +26,23 @@ export function AbTestCard() {
   const live = useAppStore((state) => state.source.kind === 'spacetime')
   const navigate = useNavigate()
   const [goal, setGoal] = useState('')
-  const [files, setFiles] = useState<Record<Side, File | null>>({ a: null, b: null })
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-
-  const setFile = (side: Side, file: File | null) => setFiles((current) => ({ ...current, [side]: file }))
+  const submitting = useRef(false)
 
   const run = async () => {
-    const { a, b } = files
-    if (!a || !b) return
+    if (submitting.current) return
+    submitting.current = true
     setError(null)
     setBusy(true)
     try {
-      const [durationA, durationB] = await Promise.all([readDuration(a), readDuration(b)])
-      await startAbTest({
-        goal,
-        a: { name: a.name, durationSec: durationA, file: a },
-        b: { name: b.name, durationSec: durationB, file: b },
-      })
+      const [a, b] = await Promise.all(AB_VIDEOS.map(loadVideo))
+      await startAbTest({ goal, a, b })
       navigate('/workspace')
     } catch (cause: unknown) {
       console.error('Could not start the A/B test', cause)
       setError(cause instanceof Error ? cause.message : 'The A/B test could not be started.')
+      submitting.current = false
       setBusy(false)
     }
   }
@@ -49,27 +51,23 @@ export function AbTestCard() {
     <section className="rounded-xl bg-card p-6 ring-1 ring-black/10 shadow-[0_20px_48px_-28px_rgba(101,0,48,0.28)]">
       <h2 className="display text-[20px] leading-tight text-title">Compare two videos, side by side.</h2>
       <p className="mt-1 text-[12.5px] text-ui-muted">
-        Pick two cuts and say what you are trying to achieve. Both run through the same town at the same time, and you
-        see which one reaches more people and where.
+        Say what you are trying to achieve. Original starts with 10% of the town; Reworked starts with 40%.
+        Results reflect both the videos and their different starting distribution.
       </p>
 
       <div className="mt-4 space-y-3">
         <Textarea
           rows={2}
           value={goal}
+          disabled={busy}
           onChange={(event) => setGoal(event.target.value)}
           placeholder="I'm trying to attract volunteers to help with harvest and distribution at the farm."
           aria-label="What you are trying to achieve"
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Slot side="a" label="Video A" file={files.a} disabled={busy} onChange={(file) => setFile('a', file)} />
-          <Slot side="b" label="Video B" file={files.b} disabled={busy} onChange={(file) => setFile('b', file)} />
-        </div>
-
         <div className="flex items-center gap-3">
-          <Button type="button" onClick={() => void run()} disabled={busy || !files.a || !files.b}>
-            Run A/B test
+          <Button type="button" onClick={() => void run()} disabled={busy}>
+            Run comparison
           </Button>
           {busy && (
             <p className="text-[12.5px] text-ui-muted" aria-live="polite">
@@ -89,83 +87,5 @@ export function AbTestCard() {
         fictional town — not consumer research, not a sales forecast.
       </p>
     </section>
-  )
-}
-
-function Slot({
-  side,
-  label,
-  file,
-  disabled,
-  onChange,
-}: {
-  side: Side
-  label: string
-  file: File | null
-  disabled: boolean
-  onChange(file: File | null): void
-}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const accept = (picked: File) => {
-    if (!picked.type.startsWith('video/')) {
-      setError(`${picked.name} is not a video file.`)
-      return
-    }
-    setError(null)
-    onChange(picked)
-  }
-
-  // Demo videos become a File so they take the same upload path as a chosen one.
-  const pickDemo = async (demoFile: string) => {
-    setError(null)
-    try {
-      const response = await fetch(`/demo/${demoFile}`)
-      if (!response.ok) throw new Error(`The demo video could not be loaded (HTTP ${response.status}).`)
-      const blob = await response.blob()
-      onChange(new File([blob], demoFile, { type: blob.type || 'video/mp4' }))
-    } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'The demo video could not be loaded.')
-    }
-  }
-
-  return (
-    <div className="rounded-lg border border-dashed border-ui-border bg-ui-well px-4 py-4">
-      <p className="text-[13px] font-medium text-ui-text">{label}</p>
-      <input
-        ref={inputRef}
-        id={`ab-file-${side}`}
-        type="file"
-        accept="video/*"
-        className="hidden"
-        onChange={(event) => {
-          const picked = event.target.files?.[0]
-          if (picked) accept(picked)
-          event.target.value = ''
-        }}
-      />
-      <p className="mt-1 min-h-[1.25rem] truncate text-[12.5px] text-ui-muted">{file ? file.name : 'No video chosen yet'}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Button variant="secondary" type="button" disabled={disabled} onClick={() => inputRef.current?.click()}>
-          Choose a file
-        </Button>
-        {DEMO_VIDEOS.map((demo) => (
-          <Button key={demo.file} variant="secondary" type="button" disabled={disabled} onClick={() => void pickDemo(demo.file)}>
-            {demo.label}
-          </Button>
-        ))}
-        {file && (
-          <Button variant="ghost" type="button" disabled={disabled} onClick={() => onChange(null)}>
-            Clear
-          </Button>
-        )}
-      </div>
-      {error && (
-        <p role="alert" className="mt-2 text-[12px] leading-snug text-ui-danger">
-          {error}
-        </p>
-      )}
-    </div>
   )
 }

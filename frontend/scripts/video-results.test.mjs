@@ -23,6 +23,7 @@ registerHooks({
 })
 
 const { useAppStore, closeAllRunSubscriptions, VideoResultError } = await import('../src/store/useAppStore.ts')
+const { sameRunAudience } = await import('../src/data/runCompatibility.ts')
 const flush = () => new Promise((resolve) => setImmediate(resolve))
 const gate = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no }); return { promise, resolve, reject } }
 const profile = { id: 'profile', name: 'Business', audienceVersion: 1, groups: [] }
@@ -31,6 +32,69 @@ const signals = { hookStrength: .5, clarityOfAsk: .5, pacing: .5, warmth: .5, to
 const metrics = { uniqueExposed: 12, watch: 8, likes: 5, comments: 2, shares: 3, rounds: 2, coverage: 1, missing: 0, byGroup: [], spread: { p10: 12, p50: 18, p90: 25 } }
 const report = { summary: 'Finished report', notes: [], hooks: [], references: [], assumptions: [] }
 const round = (n) => ({ type: 'round', round: n, exposed: [n], acted: [], shares: [], ignored: [] })
+
+test('comparison sends 10% exposure for Original and 40% for Reworked and marks them as different settings', async (t) => {
+  const { source, calls } = fixture(t, true)
+  const starting = source.startRun
+  const submitted = new Map()
+  source.startRun = async (campaignId, videoId, label, options) => {
+    const id = await starting()
+    submitted.set(id, { videoId, options })
+    return id
+  }
+  await useAppStore.getState().startAbTest({
+    goal: 'Attract volunteers',
+    a: { name: 'original.mp4', durationSec: 18 },
+    b: { name: 'reworked.mp4', durationSec: 20 },
+  })
+  const state = useAppStore.getState()
+  assert.equal(calls.starts, 2, 'an explicit comparison starts exactly one run per video')
+  const a = submitted.get(state.ab.a.runId)
+  const b = submitted.get(state.ab.b.runId)
+  assert.equal(state.videos[a.videoId].name, 'original.mp4')
+  assert.equal(state.videos[b.videoId].name, 'reworked.mp4')
+  assert.equal(a.options.seedExposure, 0.1)
+  assert.equal(b.options.seedExposure, 0.4)
+  assert.equal(a.options.seed, b.options.seed)
+  assert.equal(a.options.audienceKey, b.options.audienceKey)
+  assert.equal(sameRunAudience(a.options, b.options), false)
+})
+
+test('a single demo after an A/B comparison starts one run and leaves comparison mode', async (t) => {
+  const { calls } = fixture(t, true)
+  await useAppStore.getState().startAbTest({
+    goal: 'Attract volunteers',
+    a: { name: 'original.mp4', durationSec: 18 },
+    b: { name: 'reworked.mp4', durationSec: 20 },
+  })
+  const pair = useAppStore.getState().ab
+  const starts = calls.starts
+  const id = await useAppStore.getState().createCampaign({ name: 'original.mp4', durationSec: 18 }, 'Original demo')
+  const state = useAppStore.getState()
+  assert.equal(calls.starts - starts, 1)
+  assert.equal(state.activeCampaignId, id)
+  assert.equal(state.ab, null)
+  assert.equal(state.compareRunId, null)
+  assert.ok(state.runs[pair.a.runId], 'previous results remain in history')
+  assert.ok(state.runs[pair.b.runId])
+})
+
+test('opening saved single-video results exits an earlier comparison without another run', async (t) => {
+  const { calls } = fixture(t, true)
+  const id = await useAppStore.getState().createCampaign({ name: 'original.mp4', durationSec: 18 }, 'Single demo')
+  await useAppStore.getState().startAbTest({
+    goal: '',
+    a: { name: 'original.mp4', durationSec: 18 },
+    b: { name: 'reworked.mp4', durationSec: 20 },
+  })
+  const starts = calls.starts
+  useAppStore.getState().openCampaign(id)
+  const state = useAppStore.getState()
+  assert.equal(state.activeCampaignId, id)
+  assert.equal(state.ab, null)
+  assert.equal(state.compareRunId, null)
+  assert.equal(calls.starts, starts)
+})
 
 function fixture(t, synchronous = false) {
   closeAllRunSubscriptions()

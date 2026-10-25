@@ -89,21 +89,14 @@ export function ComparePanel() {
           </select>
         </div>
 
+        {sameAudience && (
         <div
           className={
             'mt-4 rounded-lg border px-3.5 py-3 ' +
             (winner ? 'border-ui-accent/30 bg-ui-accent/[0.07]' : 'border-ui-border bg-ui-well')
           }
         >
-          {!sameAudience ? (
-            <>
-              <p className="display text-[14px] text-ui-text">Different simulation settings</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
-                These results cannot establish a winner. Run both versions against the same
-                Millbrook audience and exposure settings to compare them.
-              </p>
-            </>
-          ) : winner ? (
+          {winner ? (
             <>
               <p className="display text-[14px] text-ui-accent">{winner.label} does better</p>
               <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
@@ -123,6 +116,7 @@ export function ComparePanel() {
             </>
           )}
         </div>
+        )}
 
         {sameAudience && (
           // Runs are stored in creation order, so the earlier one is the original.
@@ -130,14 +124,6 @@ export function ComparePanel() {
             baseRunId={complete.indexOf(left) < complete.indexOf(right) ? left.id : right.id}
             revisedRunId={complete.indexOf(left) < complete.indexOf(right) ? right.id : left.id}
           />
-        )}
-
-        {!sameAudience && (
-          <p className="mt-3 rounded-lg border border-bloom/30 bg-bloom/[0.07] px-3 py-2.5 text-[11.5px] leading-relaxed text-ui-muted">
-            {!left.options.audienceKey || !right.options.audienceKey
-              ? 'A saved run belongs to the previous audience. Its original results remain available.'
-              : 'These runs used different audience or exposure settings.'}
-          </p>
         )}
       </Section>
 
@@ -152,6 +138,7 @@ export function ComparePanel() {
           </thead>
           <tbody className="tnum">
             <ComparisonRow label="Members reached" a={left.metrics.uniqueExposed} b={right.metrics.uniqueExposed} />
+            <ComparisonRow label="Starting exposure (%)" a={Math.round(left.options.seedExposure * 100)} b={Math.round(right.options.seedExposure * 100)} />
             <ComparisonRow label="Watched through" a={left.metrics.watch} b={right.metrics.watch} />
             <ComparisonRow label="Liked" a={left.metrics.likes} b={right.metrics.likes} />
             <ComparisonRow label="Replied" a={left.metrics.comments} b={right.metrics.comments} />
@@ -227,6 +214,7 @@ function AbBreakdown({ decisive }: { decisive: boolean }) {
   const a = runs[ab.a.runId]
   const b = runs[ab.b.runId]
   if (!a?.metrics || !b?.metrics || a.status !== 'complete' || b.status !== 'complete') return null
+  const sameSettings = sameRunAudience(a.options, b.options)
 
   const reached = (run: RunState) => new Set(run.rounds.flatMap((round) => round.exposed))
   const reachedA = reached(a)
@@ -245,7 +233,7 @@ function AbBreakdown({ decisive }: { decisive: boolean }) {
   const lead = (x: number, y: number) => (x === y ? '=' : x > y ? 'A' : 'B')
 
   return (
-    <Section title="Where each one wins">
+    <Section title={sameSettings ? 'Where each one wins' : 'Audience breakdown'}>
       {haveRounds && (
         <p className="text-[12.5px] leading-relaxed text-ui-muted">
           {onlyA} residents saw only Video A, {onlyB} saw only Video B, and {both} saw both.
@@ -278,7 +266,9 @@ function AbBreakdown({ decisive }: { decisive: boolean }) {
         </tbody>
       </table>
       <p className="mt-3 text-[11px] leading-relaxed text-ui-faint">
-        {decisive
+        {!sameSettings
+          ? 'The videos used different simulation settings. These gaps include the effect of starting distribution.'
+          : decisive
           ? 'The overall result is outside the trial spread; per-group gaps are smaller samples and less certain.'
           : 'The overall result is inside the trial spread, so treat these gaps as noise, not as wins.'}
       </p>

@@ -33,9 +33,8 @@ export const AUDIENCE_SIZE = TOWN_SIZE
 export const DEFAULT_RUN_OPTIONS: RunOptions = {
   seed: 1337,
   audienceVersion: 1,
-  // 10% of the 300-person town (30) see it first. With only the 50 residents, 10% was 5 people and
-  // 40% left nobody new to spread to, so the cascade stopped after two rounds.
-  seedExposure: 0.1,
+  // Standalone runs start with 30% of the town; A/B scenarios override this per side.
+  seedExposure: 0.3,
   maxRounds: 6,
 }
 
@@ -78,8 +77,8 @@ export interface AbSide {
 }
 
 /**
- * Two videos tested side by side. Both runs share the audience, seed and starting exposure
- * (startRun derives them from the profile), so any difference comes from the videos.
+ * Two videos tested side by side. Runs share an audience and seed; each side can
+ * have its own starting exposure, which is saved with that run's options.
  */
 export interface AbPair {
   /** What the user is trying to achieve, shown beside the results. The simulation does not read it. */
@@ -141,8 +140,8 @@ interface AppState {
   analyseUpload(input: VideoInput, label: string): Promise<string>
   setActiveVideo(videoId: string): void
 
-  /** Analyse, simulate once and wait for the complete video result. */
-  createCampaign(input: VideoInput, title: string): Promise<CampaignId>
+  /** Analyse and prepare one complete result, unless an explicit comparison defers the run. */
+  createCampaign(input: VideoInput, title: string, options?: { prepare?: boolean }): Promise<CampaignId>
   prepareVideoResult(campaignId: CampaignId): Promise<RunId>
   /** Make a campaign current and point the workspace at its latest run. */
   openCampaign(id: CampaignId): void
@@ -333,6 +332,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   async startIdeaTest(input) {
     set({
       idea: { input, status: 'running', stage: 'Starting' },
+      ab: null,
       activeRunId: null,
       compareRunId: null,
       selectedMemberId: null,
@@ -366,14 +366,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     // The audience is saved once, before the two analyses race each other to save it.
     await ensureAudience(get)
     const [campaignA, campaignB] = await Promise.all([
-      get().createCampaign(a, `Video A · ${a.name}`),
-      get().createCampaign(b, `Video B · ${b.name}`),
+      get().createCampaign(a, `Video A · ${a.name}`, { prepare: false }),
+      get().createCampaign(b, `Video B · ${b.name}`, { prepare: false }),
     ])
-    // startRun files the run under the active campaign, so each side is opened in turn.
-    get().openCampaign(campaignA)
-    const runA = await get().startRun('Video A')
-    get().openCampaign(campaignB)
-    const runB = await get().startRun('Video B')
+    // Explicit campaign IDs keep parallel runs attached to their own videos.
+    const [runA, runB] = await Promise.all([
+      get().startRun('Video A', { seedExposure: 0.1 }, campaignA),
+      get().startRun('Video B', { seedExposure: 0.4 }, campaignB),
+    ])
     if (!runA || !runB) throw new Error('The A/B test could not start both runs.')
 
     set({
@@ -414,10 +414,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   clearAb() {
-    set({ ab: null })
+    set({ ab: null, compareRunId: null })
   },
 
-  async createCampaign(input, title) {
+  async createCampaign(input, title, { prepare = true } = {}) {
     const { source, profile } = get()
     const view = { campaignId: get().activeCampaignId, idea: get().idea }
     if (!profile) throw new Error('createCampaign: no company profile is loaded')
@@ -452,12 +452,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       videos: { ...state.videos, [analysis.id]: analysis },
       ...(state.activeCampaignId === view.campaignId && state.idea === view.idea ? {
         activeCampaignId: id, activeVideoId: analysis.id, activeRunId: null,
-        compareRunId: null, selectedMemberId: null, idea: null,
+        compareRunId: null, ab: null, selectedMemberId: null, idea: null,
         playback: { ...state.playback, round: 0, playing: false },
       } : {}),
     }))
-    try { await get().prepareVideoResult(id) }
-    catch (cause: unknown) { throw new VideoResultError(id, cause) }
+    if (prepare) {
+      try { await get().prepareVideoResult(id) }
+      catch (cause: unknown) { throw new VideoResultError(id, cause) }
+    }
     return id
   },
 
@@ -522,6 +524,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeVideoId: campaign.videoId,
         activeRunId,
         compareRunId: null,
+        ab: null,
         idea: null,
         selectedMemberId: null,
         // Jump to the end of a finished run, as `setActiveRun` does, so opening
@@ -665,6 +668,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeVideoId: null,
       activeRunId: null,
       compareRunId: null,
+      ab: null,
       selectedMemberId: null,
     })
   },

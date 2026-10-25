@@ -569,19 +569,20 @@ test('rebuilt shoreline field covers the enlarged mask with physical sampling de
   }
 })
 
-test('overview camera fits all enlarged shore corners and retains close resident inspection', () => {
-  const camera = new THREE.PerspectiveCamera(ISLAND_VIEW.fov, 1056 / 900, 1, 900)
+test('entry camera frames the plaza from a low diagonal and retains close resident inspection', () => {
+  const camera = new THREE.PerspectiveCamera(ISLAND_VIEW.fov, 937 / 667, 1, 900)
   camera.position.fromArray(ISLAND_VIEW.position)
   camera.lookAt(...ISLAND_VIEW.target)
   camera.updateMatrixWorld(true)
-  for (let index = 0; index < expandedIsland.tiles.length; index++) {
-    if (expandedIsland.tiles[index] === Tile.Water) continue
-    const { x, z } = tileToWorld(index)
-    for (const dx of [-0.5, 0.5]) for (const dz of [-0.5, 0.5]) {
-      const projected = new THREE.Vector3(x + dx * TILE, 0.12, z + dz * TILE).project(camera)
-      assert.ok(Math.abs(projected.x) < 0.97 && Math.abs(projected.y) < 0.97)
-    }
+  // Frame the fountain and its surrounding square, rather than the entire shoreline.
+  for (const x of [-TILE, 0, TILE]) for (const z of [-TILE, 0, TILE]) {
+    const projected = new THREE.Vector3(x, 0.12, z).project(camera)
+    assert.ok(Math.abs(projected.x) < 0.8 && Math.abs(projected.y) < 0.6)
   }
+  const direction = camera.position.clone().sub(new THREE.Vector3(...ISLAND_VIEW.target))
+  const elevation = Math.atan2(direction.y, Math.hypot(direction.x, direction.z))
+  assert.ok(elevation > Math.PI / 12 && elevation < Math.PI / 7)
+  assert.ok(direction.x > 0 && direction.z > 0)
   assert.ok(camera.position.distanceTo(new THREE.Vector3(...ISLAND_VIEW.target)) < ISLAND_VIEW.maxDistance)
   assert.equal(ISLAND_VIEW.minDistance, 18)
 })
