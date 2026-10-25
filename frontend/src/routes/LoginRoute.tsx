@@ -5,6 +5,7 @@ import { themeHex } from '@/lib/themeHex'
 import { Button, Field, Input } from '@/components/ui'
 import DotGrid from '@/components/reactbits/DotGrid'
 import RotatingText from '@/components/reactbits/RotatingText'
+import { MILLBROOK_SIZE } from '@/data/millbrook'
 
 /** What the audience might do with the video; the headline cycles through them. */
 const VERDICTS = ['shares it', 'skips it', 'passes it on']
@@ -164,7 +165,7 @@ function Marquee() {
       <dl className="relative flex gap-9 text-[13px]">
         <div>
           <dt className="text-faint">Audience</dt>
-          <dd className="display tnum mt-0.5 text-lg text-paper">500 members</dd>
+          <dd className="display tnum mt-0.5 text-lg text-paper">{MILLBROOK_SIZE.total} residents</dd>
         </div>
         <div>
           <dt className="text-faint">Sharing rounds</dt>

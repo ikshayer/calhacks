@@ -53,6 +53,7 @@ function isStoredRun(value: unknown): value is StoredRun {
     typeof value.label === 'string' &&
     typeof value.videoId === 'string' &&
     isRecord(value.options) &&
+    (value.options.audienceKey === undefined || typeof value.options.audienceKey === 'string') &&
     typeof value.status === 'string'
   )
 }
@@ -83,10 +84,8 @@ function project(
   const kept: StoredRun[] = []
   for (const run of Object.values(runs)) {
     if (run.status !== 'complete' || !(run.campaignId in campaigns)) continue
-    // Rounds and decisions are left out on purpose: a 6-round, 500-member
-    // cascade is the bulk of a run and would exhaust the ~5MB localStorage
-    // budget after a handful of campaigns. A reopened run keeps its report and
-    // metrics but has nothing to replay.
+    // Store summaries rather than a full replay. The audience identity in
+    // options survives so restored results cannot be mixed with another town.
     const { id, campaignId, label, videoId, options, status, metrics, report } = run
     kept.push({
       id,

@@ -4,6 +4,7 @@ import type { ReactionKind } from '@/data/types'
 import { useAppStore, selectActiveRun } from '@/store/useAppStore'
 import { memberTimeline, type MemberTimeline } from '@/store/selectors'
 import { Pill, Section } from '@/components/ui'
+import { PersonaDetails } from './PersonaDetails'
 
 const MAX_NEIGHBOURS = 8
 
@@ -57,7 +58,8 @@ export function MemberPanel({ memberId }: { memberId: number }) {
   // Cheap enough to derive every render: a cascade caps at six rounds, so this
   // is a handful of array scans. Memoising it by hand would only be guesswork
   // about when the round log changes identity.
-  const rounds = run?.rounds
+  const compatibleRun = Boolean(run?.options.audienceKey) && run?.options.audienceKey === audience?.key
+  const rounds = compatibleRun ? run?.rounds : undefined
   const timeline = rounds?.length ? memberTimeline(rounds, memberId) : null
 
   if (!audience || !member) return null
@@ -65,7 +67,7 @@ export function MemberPanel({ memberId }: { memberId: number }) {
   const portrait = portraitFor(member.id, member.name)
 
   const group = profile?.groups.find((candidate) => candidate.id === member.groupId)
-  const decision = run?.decisions?.find((candidate) => candidate.memberId === memberId)
+  const decision = compatibleRun ? run?.decisions?.find((candidate) => candidate.memberId === memberId) : undefined
   const nameOf = (id: number): string =>
     audience.members.find((candidate) => candidate.id === id)?.name ?? `Member ${id}`
   // Only a cohort of the audience has a body on the island, and selecting
@@ -101,6 +103,11 @@ export function MemberPanel({ memberId }: { memberId: number }) {
           />
           <div className="min-w-0 flex-1">
             <h3 className="display truncate text-[16px] leading-tight text-paper">{member.name}</h3>
+            {member.millbrook && (
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+                Age {member.millbrook.persona.age} · {member.millbrook.persona.occupation}
+              </p>
+            )}
             <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
               <span
                 aria-hidden
@@ -113,6 +120,17 @@ export function MemberPanel({ memberId }: { memberId: number }) {
         </header>
 
         <p className="mt-3 text-[12.5px] leading-relaxed text-muted">{member.persona}</p>
+        {member.millbrook && (
+          <div className="mt-3">
+            <p className="mb-1.5 text-[11px] text-faint">Values</p>
+            <div className="flex flex-wrap gap-1.5">
+              {member.millbrook.persona.values.length
+                ? member.millbrook.persona.values.map((value) => <Pill key={value}>{value}</Pill>)
+                : <p className="text-[12px] text-muted">No values recorded.</p>}
+            </div>
+          </div>
+        )}
+        <p className="mt-3 text-[11px] text-faint">Assumed audience interests</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {member.interests.map((interest) => (
             <Pill key={interest}>{interest}</Pill>
@@ -120,9 +138,16 @@ export function MemberPanel({ memberId }: { memberId: number }) {
         </div>
       </div>
 
+      <PersonaDetails member={member} audience={audience} onSelect={selectMember} />
+
       {!run ? (
         <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
           Run a simulation to see how this member would respond.
+        </p>
+      ) : !compatibleRun ? (
+        <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
+          {run.options.audienceKey ? 'This run used a different audience configuration.' : 'This saved run belongs to the previous audience.'}
+          {' '}Run this version again to see this resident’s response.
         </p>
       ) : (
         <>

@@ -19,17 +19,14 @@ import type {
 } from '@/data/types'
 import { capturePoster } from '@/data/videoPoster'
 import { hashSeed } from '@/lib/rng'
+import { MILLBROOK_SIZE } from '@/data/millbrook'
 
 /**
  * How many audience members exist, and how many get a body on the island.
  *
- * The town looks better with fewer people in it. At 120 the streets were a
- * crowd you read as texture; at 48 you can follow one resident across a
- * junction, see who they are when you click them, and watch a single share
- * travel. The other 452 are still simulated and still counted — they just do
- * not need bodies to be real, and the sidebar says so.
+ * Every supplied Millbrook resident has a body on the island and is simulated.
  */
-export const AUDIENCE_SIZE = { total: 500, onIsland: 48 }
+export const AUDIENCE_SIZE = MILLBROOK_SIZE
 
 export const DEFAULT_RUN_OPTIONS: RunOptions = {
   seed: 1337,
@@ -140,7 +137,7 @@ function newCampaignId(): CampaignId {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  source: new MockDataSource(AUDIENCE_SIZE),
+  source: new MockDataSource(),
   profile: null,
   audience: null,
   audienceError: null,
@@ -160,7 +157,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   playback: { round: 0, playing: true, speed: 1 },
 
   setProfile(profile) {
-    set({ profile })
+    set({ profile, audience: null, audienceError: null, selectedMemberId: null, highlightedGroupId: null })
   },
 
   async loadAudience() {
@@ -168,10 +165,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!profile) return
     try {
       const audience = await source.loadAudience(profile)
+      if (get().profile !== profile) return
       set({ audience, audienceError: null })
     } catch (cause: unknown) {
       const message = cause instanceof Error ? cause.message : 'Could not build the audience.'
-      set({ audienceError: message })
+      if (get().profile !== profile) return
+      set({ audience: null, audienceError: message })
     }
   },
 
@@ -394,6 +393,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       seed: hashSeed(profile.id) % 100000,
       audienceVersion: profile.audienceVersion,
       ...overrides,
+      audienceKey: audience.key,
     }
 
     const runId = await source.startRun(campaignId, activeVideoId, label, options)

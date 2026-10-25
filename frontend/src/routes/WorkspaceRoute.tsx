@@ -21,7 +21,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
  * This component owns the one piece of glue that matters — building the
  * `IslandSim` from the loaded audience and keeping it alive across runs. The
  * sim is memoised on the audience, not on the run, so starting a second run
- * does not rebuild 120 characters.
+ * does not rebuild the 50 resident characters.
  */
 export function WorkspaceRoute() {
   const profile = useAppStore((state) => state.profile)
@@ -69,7 +69,8 @@ export function WorkspaceRoute() {
     )
   }, [audience, island, homesByGroup])
 
-  useCascadePlayback(sim, run?.rounds ?? [], run?.id ?? null)
+  const currentRun = run?.options.audienceKey === audience?.key ? run : undefined
+  useCascadePlayback(sim, currentRun?.rounds ?? [], currentRun?.id ?? null)
 
   // The island indexes villagers densely; the rest of the app speaks member ids.
   const selectedIndex = useMemo(() => {
@@ -92,7 +93,11 @@ export function WorkspaceRoute() {
     <div className="flex h-full flex-col lg:flex-row">
       <main className="relative min-h-[52vh] flex-1 lg:min-h-0">
         {audienceError ? (
-          <IslandFallback title="The audience could not be built">{audienceError}</IslandFallback>
+          <IslandFallback title="The audience could not be built" action={
+            <button onClick={() => void loadAudience()} className="mt-4 rounded-md bg-raised px-3 py-1.5 text-[13px] text-paper hover:text-sun">
+              Try again
+            </button>
+          }>{audienceError}</IslandFallback>
         ) : !sim || !audience ? (
           <IslandFallback title="Building the town…">
             Laying out streets and the social graph between {AUDIENCE_SIZE.total} residents.
@@ -143,7 +148,7 @@ export function WorkspaceRoute() {
           </div>
         )}
 
-        {sim && run && <PlaybackBar run={run} />}
+        {sim && currentRun && <PlaybackBar run={currentRun} />}
       </main>
 
       <Sidebar

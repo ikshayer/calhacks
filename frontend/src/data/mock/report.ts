@@ -15,8 +15,10 @@ import type {
  * never cut for space.
  */
 export const STANDING_ASSUMPTIONS = [
-  'The audience is synthetic archetypes generated from the profile you confirmed, not measured followers.',
+  'The audience is 50 fictional Millbrook residents, not measured followers. All 50 appear on the island.',
   'Group shares are assumptions you set during onboarding, not observed demographics.',
+  'Residents are assigned to audience groups proportionally, with rounding to whole people. Group interests drive reaction scoring; persona traits are descriptive.',
+  'Sharing follows the supplied family and friendship links. Relationship affinity does not weight sharing probabilities.',
   'Round 0 exposes a declared share of the audience; the graph is a simplified sharing scenario, not a recommendation algorithm.',
   'Engagement components are modelled rankings for comparing versions, not forecasts of real views, likes or shares.',
   'The P10-P90 range describes variability across seeded trials within these assumptions. It is not a validated prediction interval.',

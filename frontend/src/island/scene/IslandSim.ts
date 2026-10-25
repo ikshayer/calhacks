@@ -141,16 +141,19 @@ const SEPARATION_SPEED = 0.4
 const FOLLOW_RADIUS = 3
 const FOLLOW_LANE_WIDTH = BODY_WIDTH * 0.6
 /**
- * How long a villager held at a standstill keeps trying before it gives up and
- * waits.
+ * Slowest a villager goes while something is in its way, as a fraction of its
+ * own pace.
  *
- * A street is two bodies wide, so people going the same way have to queue, and
- * the one behind genuinely does come to a halt. Left as "walking" at nil speed
- * its walk cycle would freeze mid-stride, so it is moved onto a standing beat
- * and reads as somebody waiting for the person in front.
+ * Deliberately not zero. Coming to a dead stop behind somebody, and waiting
+ * for them to move, is what turned an ordinary queue into gridlock: at full
+ * density a third of the town was standing still, and one resident went a
+ * whole minute without moving. Still edging forward lets the sideways push
+ * carry a villager round whoever is in front.
  */
-const BLOCKED_DELAY = 0.4
-const BLOCKED_WAIT = { min: 0.6, max: 1.3 }
+const CRAWL = 0.22
+
+/** How hard a villager aims for the gap beside whoever is in its way. */
+const PASSING_BIAS = 1.6
 /**
  * How far away a passer-by is worth turning your head for.
  *
@@ -261,8 +264,6 @@ export class IslandSim {
   private readonly velocity: Float32Array
   private readonly grade: Float32Array
   private readonly timer: Float32Array
-  /** How long this villager has been held at a standstill while walking. */
-  private readonly blocked: Float32Array
 
   /** Head yaw relative to the body, and where it is heading. */
   private readonly gaze: Float32Array
@@ -336,7 +337,6 @@ export class IslandSim {
     this.velocity = new Float32Array(this.count)
     this.grade = new Float32Array(this.count)
     this.timer = new Float32Array(this.count)
-    this.blocked = new Float32Array(this.count)
     this.gaze = new Float32Array(this.count)
     this.gazeTarget = new Float32Array(this.count)
     this.crowd = new Float32Array(this.count)
@@ -613,16 +613,6 @@ export class IslandSim {
     this.velocity[index] = approach(this.velocity[index] as number, target, rate * dt)
 
     this.travel(index, dt, true)
-
-    if ((this.velocity[index] as number) <= STOPPED_SPEED) {
-      this.blocked[index] = (this.blocked[index] as number) + dt
-      if ((this.blocked[index] as number) >= BLOCKED_DELAY && !this.willStop[index]) {
-        this.blocked[index] = 0
-        this.activity[index] = Activity.Resting
-        this.timer[index] = this.rng.range(BLOCKED_WAIT.min, BLOCKED_WAIT.max)
-        return
-      }
-    } else this.blocked[index] = 0
 
     // Arriving is gated on already standing in the tile being arrived at.
     //
@@ -925,7 +915,13 @@ export class IslandSim {
       const xi = this.x[i] as number
       const zi = this.z[i] as number
       const facing = this.angle[i] as number
-      const fwdX = Math.sin(facing), fwdZ = Math.cos(facing)
+      // Measured against the way to the next junction rather than the way the
+      // body is pointing. A frame taken from the body's own heading turns with
+      // it, which is what once sent villagers spinning on the spot.
+      const aheadX = (this.waypointX[i] as number) - xi
+      const aheadZ = (this.waypointZ[i] as number) - zi
+      const span = Math.max(Math.hypot(aheadX, aheadZ), 1e-6)
+      const fwdX = aheadX / span, fwdZ = aheadZ / span
       const sideX = -fwdZ, sideZ = fwdX
 
       let nearest = Infinity
@@ -947,9 +943,23 @@ export class IslandSim {
 
             if (reach < SEPARATION_RADIUS) {
               const closeness = (SEPARATION_RADIUS - reach) / SEPARATION_RADIUS
-              const span = Math.max(reach, 1e-4)
-              this.separateX[i] = (this.separateX[i] as number) - (rx / span) * closeness
-              this.separateZ[i] = (this.separateZ[i] as number) - (rz / span) * closeness
+              const gap = Math.max(reach, 1e-4)
+              // Straight apart, so two bodies can never merge.
+              this.separateX[i] = (this.separateX[i] as number) - (rx / gap) * closeness
+              this.separateZ[i] = (this.separateZ[i] as number) - (rz / gap) * closeness
+
+              // Somebody in the way also gets gone around. Pushing only
+              // straight apart means a villager meeting someone head on, or
+              // coming up behind someone who has stopped, is shoved backwards
+              // down its own route and simply waits there — which is how a
+              // single resident standing in a street held up everyone behind
+              // it for the best part of a minute. A street is two bodies wide,
+              // so there is room to pass; this is what aims for the gap.
+              if (along > 0) {
+                const side = lateral === 0 ? (i < j ? -1 : 1) : -Math.sign(lateral)
+                this.separateX[i] = (this.separateX[i] as number) + sideX * side * closeness * PASSING_BIAS
+                this.separateZ[i] = (this.separateZ[i] as number) + sideZ * side * closeness * PASSING_BIAS
+              }
             }
             // Giving way is one-sided on purpose. Two villagers meeting at a
             // junction each have the other dead ahead, and if both slow for
@@ -961,9 +971,11 @@ export class IslandSim {
             // Anyone already standing is given way to regardless.
             const yielding = j < i || this.activity[j] !== Activity.Walking
             if (yielding && along > 0 && along < FOLLOW_RADIUS && Math.abs(lateral) < FOLLOW_LANE_WIDTH) {
-              // Shoulder to shoulder is a dead stop; the gap opens up from there.
+              // Close up behind somebody and you slow right down, but never
+              // to a complete halt: still moving is what lets the push to one
+              // side actually carry you past them.
               const gap = (along - BODY_WIDTH) / (FOLLOW_RADIUS - BODY_WIDTH)
-              this.crowd[i] = Math.min(this.crowd[i] as number, clamp(gap, 0, 1))
+              this.crowd[i] = Math.min(this.crowd[i] as number, clamp(gap, CRAWL, 1))
             }
             if (reach < nearest) {
               nearest = reach

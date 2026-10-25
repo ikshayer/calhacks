@@ -1,3 +1,5 @@
+import type { MillbrookHousehold, MillbrookPersona } from './millbrookTypes'
+
 /**
  * The vocabulary shared by every part of the frontend.
  *
@@ -57,6 +59,8 @@ export interface AudienceMember {
   groupId: GroupId
   interests: string[]
   persona: string
+  /** Complete, read-only source identity and household from the Millbrook snapshot. */
+  millbrook?: { readonly persona: MillbrookPersona; readonly household: MillbrookHousehold }
   hotButtons: string[]
   ignores: string[]
   /** Visual asset hint; recognized Mii ids are honored, legacy stems use a render adapter. */
@@ -75,6 +79,8 @@ export interface Edge {
 
 export interface Audience {
   version: number
+  /** Dataset and group configuration identity; absent on legacy generated audiences. */
+  key?: string
   members: AudienceMember[]
   edges: Edge[]
   /** `adjacency[i]` lists the member ids linked to member `i`. */
@@ -194,6 +200,8 @@ export interface RunOptions {
   /** Preserved across original and revision so the comparison is fair. */
   seed: number
   audienceVersion: number
+  /** Absent on historical runs created before persona-backed audiences. */
+  audienceKey?: string
   /** Proportion of the audience exposed in round 0. A declared assumption. */
   seedExposure: number
   maxRounds: number

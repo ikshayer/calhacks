@@ -849,6 +849,54 @@ test('nobody walks through the fountain, and no route goes under it', () => {
     `${targetedBlocked} times a resident was routed to or through the fountain tile; the push-out only hides it`)
 })
 
+test('villagers go round whoever is in the way instead of queueing behind them', () => {
+  // Bodies are solid and a street is only two of them wide, so somebody who
+  // stops in one has to be passed. Pushing only straight apart meant the
+  // villager behind was shoved back down its own route and waited there: at
+  // full density a third of the town stood still and one resident went a
+  // whole minute without moving.
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const dt = 1 / 60
+
+  for (const count of [48, 120]) {
+    const sim = new IslandSim(Array.from({ length: count }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+      island, new Map(), 99, { min: 0.5, max: 0.75 })
+    for (let frame = 0; frame < 600; frame++) sim.update(dt)
+
+    const travelled = new Float64Array(count)
+    const stalled = new Float64Array(count)
+    const worstStall = new Float64Array(count)
+    let cruise = 0
+    for (let i = 0; i < count; i++) cruise += sim.cruise[i]
+    cruise /= count
+
+    for (let frame = 0; frame < 3600; frame++) {
+      const wasX = Float32Array.from(sim.x), wasZ = Float32Array.from(sim.z)
+      sim.update(dt)
+      for (let i = 0; i < count; i++) {
+        const step = Math.hypot(sim.x[i] - wasX[i], sim.z[i] - wasZ[i])
+        travelled[i] += step
+        if (step < 0.002) {
+          stalled[i] += dt
+          worstStall[i] = Math.max(worstStall[i], stalled[i])
+        } else stalled[i] = 0
+      }
+    }
+
+    // Nobody may be pinned for much longer than an ordinary stop at a
+    // destination, which is three to six seconds.
+    const longest = Math.max(...worstStall)
+    assert.ok(longest < 12,
+      `at ${count} residents somebody went ${longest.toFixed(1)}s without moving`)
+
+    // And the town as a whole has to keep flowing, not just avoid deadlock.
+    const free = cruise * 60
+    const median = [...travelled].sort((a, b) => a - b)[Math.floor(count / 2)]
+    assert.ok(median > free * 0.6,
+      `at ${count} residents the median villager covered ${median.toFixed(1)} of a possible ${free.toFixed(1)} units`)
+  }
+})
+
 test('scrubbing the cascade back does not teleport anyone mid-street', () => {
   const island = buildElevatedIsland(hashSeed('giving-garden-island'))
   const count = 24

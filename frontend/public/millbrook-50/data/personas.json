@@ -1,0 +1,2475 @@
+{
+  "schemaVersion": 1,
+  "seed": 20261024,
+  "town": "Millbrook",
+  "tick": 0,
+  "households": [
+    {
+      "id": "house_01",
+      "surname": "Okafor",
+      "address": "100 Birch Avenue, Millbrook",
+      "memberIds": [
+        "agent_01",
+        "agent_02",
+        "agent_03",
+        "agent_04"
+      ]
+    },
+    {
+      "id": "house_02",
+      "surname": "Patel",
+      "address": "107 Birch Avenue, Millbrook",
+      "memberIds": [
+        "agent_05",
+        "agent_06",
+        "agent_07"
+      ]
+    },
+    {
+      "id": "house_03",
+      "surname": "Garcia",
+      "address": "114 Birch Avenue, Millbrook",
+      "memberIds": [
+        "agent_08",
+        "agent_09"
+      ]
+    },
+    {
+      "id": "house_04",
+      "surname": "Kim",
+      "address": "121 Oak Drive, Millbrook",
+      "memberIds": [
+        "agent_10"
+      ]
+    },
+    {
+      "id": "house_05",
+      "surname": "Nguyen",
+      "address": "128 Birch Avenue, Millbrook",
+      "memberIds": [
+        "agent_11",
+        "agent_12",
+        "agent_13",
+        "agent_14",
+        "agent_15"
+      ]
+    },
+    {
+      "id": "house_06",
+      "surname": "Johnson",
+      "address": "135 River Road, Millbrook",
+      "memberIds": [
+        "agent_16",
+        "agent_17"
+      ]
+    },
+    {
+      "id": "house_07",
+      "surname": "Haddad",
+      "address": "142 Willow Court, Millbrook",
+      "memberIds": [
+        "agent_18",
+        "agent_19",
+        "agent_20"
+      ]
+    },
+    {
+      "id": "house_08",
+      "surname": "Chen",
+      "address": "149 Oak Drive, Millbrook",
+      "memberIds": [
+        "agent_21"
+      ]
+    },
+    {
+      "id": "house_09",
+      "surname": "Reyes",
+      "address": "156 Cedar Lane, Millbrook",
+      "memberIds": [
+        "agent_22",
+        "agent_23",
+        "agent_24",
+        "agent_25"
+      ]
+    },
+    {
+      "id": "house_10",
+      "surname": "Thompson",
+      "address": "163 Maple Street, Millbrook",
+      "memberIds": [
+        "agent_26",
+        "agent_27"
+      ]
+    },
+    {
+      "id": "house_11",
+      "surname": "Martinez",
+      "address": "170 Willow Court, Millbrook",
+      "memberIds": [
+        "agent_28",
+        "agent_29",
+        "agent_30"
+      ]
+    },
+    {
+      "id": "house_12",
+      "surname": "Mensah",
+      "address": "177 Willow Court, Millbrook",
+      "memberIds": [
+        "agent_31"
+      ]
+    },
+    {
+      "id": "house_13",
+      "surname": "Ali",
+      "address": "184 Willow Court, Millbrook",
+      "memberIds": [
+        "agent_32",
+        "agent_33",
+        "agent_34",
+        "agent_35"
+      ]
+    },
+    {
+      "id": "house_14",
+      "surname": "Silva",
+      "address": "191 Willow Court, Millbrook",
+      "memberIds": [
+        "agent_36",
+        "agent_37"
+      ]
+    },
+    {
+      "id": "house_15",
+      "surname": "Brown",
+      "address": "198 Oak Drive, Millbrook",
+      "memberIds": [
+        "agent_38",
+        "agent_39",
+        "agent_40"
+      ]
+    },
+    {
+      "id": "house_16",
+      "surname": "Williams",
+      "address": "205 Cedar Lane, Millbrook",
+      "memberIds": [
+        "agent_41",
+        "agent_42"
+      ]
+    },
+    {
+      "id": "house_17",
+      "surname": "Sato",
+      "address": "212 Willow Court, Millbrook",
+      "memberIds": [
+        "agent_43",
+        "agent_44",
+        "agent_45"
+      ]
+    },
+    {
+      "id": "house_18",
+      "surname": "Kowalski",
+      "address": "219 Cedar Lane, Millbrook",
+      "memberIds": [
+        "agent_46",
+        "agent_47",
+        "agent_48"
+      ]
+    },
+    {
+      "id": "house_19",
+      "surname": "Dubois",
+      "address": "226 Maple Street, Millbrook",
+      "memberIds": [
+        "agent_49",
+        "agent_50"
+      ]
+    }
+  ],
+  "personas": [
+    {
+      "id": "agent_01",
+      "householdId": "house_01",
+      "name": "Adaeze Okafor",
+      "age": 43,
+      "gender": "woman",
+      "occupation": "social worker",
+      "education": "associate degree",
+      "hometown": "Lagos, Nigeria",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.86,
+        "extraversion": 0.07,
+        "agreeableness": 0.34,
+        "neuroticism": 0.76
+      },
+      "values": [
+        "adventure",
+        "creativity",
+        "stability"
+      ],
+      "quirks": [
+        "drinks tea at sunset",
+        "bakes for neighbors"
+      ],
+      "backstory": "Adaeze has roots in Lagos, Nigeria and now lives in Millbrook. Adaeze spends much of the week balancing work as a social worker with personal commitments. Friends know Adaeze for drinks tea at sunset and for caring about adventure. At home, Adaeze shares life with Chidi Okafor (spouse), Amara Okafor (parent), Emeka Okafor (parent). Life in Millbrook has given Adaeze a new reason to invest in the local community.",
+      "speechStyle": "warm, thoughtful, and measured",
+      "family": {
+        "agent_02": "spouse",
+        "agent_03": "parent",
+        "agent_04": "parent"
+      },
+      "friends": {
+        "agent_05": 0.87,
+        "agent_28": 0.39,
+        "agent_38": 0.36
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a social worker",
+        "make time for loved ones"
+      ],
+      "money": 7109,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_02",
+      "householdId": "house_01",
+      "name": "Chidi Okafor",
+      "age": 38,
+      "gender": "man",
+      "occupation": "software engineer",
+      "education": "trade certification",
+      "hometown": "Lagos, Nigeria",
+      "personality": {
+        "openness": 0.56,
+        "conscientiousness": 0.21,
+        "extraversion": 0.69,
+        "agreeableness": 0.3,
+        "neuroticism": 0.54
+      },
+      "values": [
+        "security",
+        "community",
+        "craftsmanship"
+      ],
+      "quirks": [
+        "makes elaborate playlists",
+        "checks the weather obsessively"
+      ],
+      "backstory": "Chidi has roots in Lagos, Nigeria and now lives in Millbrook. Chidi spends much of the week balancing work as a software engineer with personal commitments. Friends know Chidi for makes elaborate playlists and for caring about security. At home, Chidi shares life with Adaeze Okafor (spouse), Amara Okafor (parent), Emeka Okafor (parent). Life in Millbrook has given Chidi a new reason to invest in the local community.",
+      "speechStyle": "gentle with frequent questions",
+      "family": {
+        "agent_01": "spouse",
+        "agent_03": "parent",
+        "agent_04": "parent"
+      },
+      "friends": {
+        "agent_16": 0.46,
+        "agent_32": 0.58,
+        "agent_40": 0.4,
+        "agent_47": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a software engineer",
+        "make time for loved ones"
+      ],
+      "money": 10295,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_03",
+      "householdId": "house_01",
+      "name": "Amara Okafor",
+      "age": 0,
+      "gender": "man",
+      "occupation": "preschooler",
+      "education": "early childhood",
+      "hometown": "Lagos, Nigeria",
+      "personality": {
+        "openness": 0.31,
+        "conscientiousness": 1,
+        "extraversion": 0.42,
+        "agreeableness": 0.3,
+        "neuroticism": 0.56
+      },
+      "values": [
+        "community",
+        "environment",
+        "craftsmanship"
+      ],
+      "quirks": [
+        "sketches on napkins",
+        "takes photos of clouds"
+      ],
+      "backstory": "Amara has roots in Lagos, Nigeria and now lives in Millbrook. Amara spends much of the week finding their place at school and in the neighborhood. Friends know Amara for sketches on napkins and for caring about community. At home, Amara shares life with Adaeze Okafor (child), Chidi Okafor (child), Emeka Okafor (sibling). Life in Millbrook has given Amara a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_01": "child",
+        "agent_02": "child",
+        "agent_04": "sibling"
+      },
+      "friends": {
+        "agent_45": 0.54
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 49,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_04",
+      "householdId": "house_01",
+      "name": "Emeka Okafor",
+      "age": 10,
+      "gender": "nonbinary",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Lagos, Nigeria",
+      "personality": {
+        "openness": 0.35,
+        "conscientiousness": 0.29,
+        "extraversion": 0.64,
+        "agreeableness": 0.53,
+        "neuroticism": 0.55
+      },
+      "values": [
+        "service",
+        "security",
+        "environment"
+      ],
+      "quirks": [
+        "speaks in movie references",
+        "keeps a handwritten planner"
+      ],
+      "backstory": "Emeka has roots in Lagos, Nigeria and now lives in Millbrook. Emeka spends much of the week finding their place at school and in the neighborhood. Friends know Emeka for speaks in movie references and for caring about service. At home, Emeka shares life with Adaeze Okafor (child), Chidi Okafor (child), Amara Okafor (sibling). Life in Millbrook has given Emeka a new reason to invest in the local community.",
+      "speechStyle": "soft-spoken and precise",
+      "family": {
+        "agent_01": "child",
+        "agent_02": "child",
+        "agent_03": "sibling"
+      },
+      "friends": {
+        "agent_28": 0.34,
+        "agent_29": 0.63,
+        "agent_35": 0.47
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 78,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_05",
+      "householdId": "house_02",
+      "name": "Asha Patel",
+      "age": 33,
+      "gender": "woman",
+      "occupation": "carpenter",
+      "education": "master degree",
+      "hometown": "Ahmedabad, India",
+      "personality": {
+        "openness": 0.65,
+        "conscientiousness": 0.59,
+        "extraversion": 0.17,
+        "agreeableness": 0.5,
+        "neuroticism": 0.25
+      },
+      "values": [
+        "tradition",
+        "adventure",
+        "independence"
+      ],
+      "quirks": [
+        "always arrives early",
+        "memorizes trivia"
+      ],
+      "backstory": "Asha has roots in Ahmedabad, India and now lives in Millbrook. Asha spends much of the week balancing work as a carpenter with personal commitments. Friends know Asha for always arrives early and for caring about tradition. At home, Asha shares life with Ravi Patel (spouse), Priya Patel (parent). Life in Millbrook has given Asha a new reason to invest in the local community.",
+      "speechStyle": "warm, thoughtful, and measured",
+      "family": {
+        "agent_06": "spouse",
+        "agent_07": "parent"
+      },
+      "friends": {
+        "agent_01": 0.87,
+        "agent_34": 0.53,
+        "agent_36": 0.2,
+        "agent_47": 0.47,
+        "agent_49": 0.67
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a carpenter",
+        "make time for loved ones"
+      ],
+      "money": 11355,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_06",
+      "householdId": "house_02",
+      "name": "Ravi Patel",
+      "age": 35,
+      "gender": "nonbinary",
+      "occupation": "musician",
+      "education": "doctorate",
+      "hometown": "Ahmedabad, India",
+      "personality": {
+        "openness": 0.69,
+        "conscientiousness": 0.35,
+        "extraversion": 0.22,
+        "agreeableness": 0.35,
+        "neuroticism": 0.7
+      },
+      "values": [
+        "tradition",
+        "adventure",
+        "justice"
+      ],
+      "quirks": [
+        "speaks in movie references",
+        "always arrives early"
+      ],
+      "backstory": "Ravi has roots in Ahmedabad, India and now lives in Millbrook. Ravi spends much of the week balancing work as a musician with personal commitments. Friends know Ravi for speaks in movie references and for caring about tradition. At home, Ravi shares life with Asha Patel (spouse), Priya Patel (parent). Life in Millbrook has given Ravi a new reason to invest in the local community.",
+      "speechStyle": "blunt with dry humor",
+      "family": {
+        "agent_05": "spouse",
+        "agent_07": "parent"
+      },
+      "friends": {
+        "agent_15": 0.23,
+        "agent_18": 0.85,
+        "agent_27": 0.25,
+        "agent_49": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a musician",
+        "make time for loved ones"
+      ],
+      "money": 14137,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_07",
+      "householdId": "house_02",
+      "name": "Priya Patel",
+      "age": 0,
+      "gender": "man",
+      "occupation": "preschooler",
+      "education": "early childhood",
+      "hometown": "Ahmedabad, India",
+      "personality": {
+        "openness": 0.35,
+        "conscientiousness": 0.48,
+        "extraversion": 0.33,
+        "agreeableness": 0.4,
+        "neuroticism": 0.52
+      },
+      "values": [
+        "curiosity",
+        "justice",
+        "independence"
+      ],
+      "quirks": [
+        "collects unusual postcards",
+        "talks to houseplants"
+      ],
+      "backstory": "Priya has roots in Ahmedabad, India and now lives in Millbrook. Priya spends much of the week finding their place at school and in the neighborhood. Friends know Priya for collects unusual postcards and for caring about curiosity. At home, Priya shares life with Asha Patel (child), Ravi Patel (child). Life in Millbrook has given Priya a new reason to invest in the local community.",
+      "speechStyle": "energetic and quick to joke",
+      "family": {
+        "agent_05": "child",
+        "agent_06": "child"
+      },
+      "friends": {},
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 63,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_08",
+      "householdId": "house_03",
+      "name": "Sofia Garcia",
+      "age": 29,
+      "gender": "nonbinary",
+      "occupation": "dentist",
+      "education": "high school diploma",
+      "hometown": "San Antonio, Texas",
+      "personality": {
+        "openness": 0.79,
+        "conscientiousness": 0.42,
+        "extraversion": 0.5,
+        "agreeableness": 0.63,
+        "neuroticism": 0.49
+      },
+      "values": [
+        "service",
+        "curiosity",
+        "security"
+      ],
+      "quirks": [
+        "speaks in movie references",
+        "always arrives early"
+      ],
+      "backstory": "Sofia has roots in San Antonio, Texas and now lives in Millbrook. Sofia spends much of the week balancing work as a dentist with personal commitments. Friends know Sofia for speaks in movie references and for caring about service. At home, Sofia shares life with Mateo Garcia (spouse). Life in Millbrook has given Sofia a new reason to invest in the local community.",
+      "speechStyle": "warm, thoughtful, and measured",
+      "family": {
+        "agent_09": "spouse"
+      },
+      "friends": {
+        "agent_24": 0.51,
+        "agent_25": 0.63,
+        "agent_27": 0.83,
+        "agent_40": 0.84,
+        "agent_45": 0.42
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a dentist",
+        "make time for loved ones"
+      ],
+      "money": 12483,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_09",
+      "householdId": "house_03",
+      "name": "Mateo Garcia",
+      "age": 32,
+      "gender": "man",
+      "occupation": "delivery driver",
+      "education": "doctorate",
+      "hometown": "San Antonio, Texas",
+      "personality": {
+        "openness": 0.36,
+        "conscientiousness": 0.55,
+        "extraversion": 0.61,
+        "agreeableness": 0.68,
+        "neuroticism": 0.27
+      },
+      "values": [
+        "community",
+        "adventure",
+        "stability"
+      ],
+      "quirks": [
+        "talks to houseplants",
+        "organizes community potlucks"
+      ],
+      "backstory": "Mateo has roots in San Antonio, Texas and now lives in Millbrook. Mateo spends much of the week balancing work as a delivery driver with personal commitments. Friends know Mateo for talks to houseplants and for caring about community. At home, Mateo shares life with Sofia Garcia (spouse). Life in Millbrook has given Mateo a new reason to invest in the local community.",
+      "speechStyle": "soft-spoken and precise",
+      "family": {
+        "agent_08": "spouse"
+      },
+      "friends": {},
+      "mood": "neutral",
+      "goals": [
+        "grow as a delivery driver",
+        "make time for loved ones"
+      ],
+      "money": 4215,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_10",
+      "householdId": "house_04",
+      "name": "Hana Kim",
+      "age": 50,
+      "gender": "man",
+      "occupation": "social worker",
+      "education": "high school diploma",
+      "hometown": "Seoul, South Korea",
+      "personality": {
+        "openness": 0.34,
+        "conscientiousness": 0.1,
+        "extraversion": 0.35,
+        "agreeableness": 0.24,
+        "neuroticism": 0.41
+      },
+      "values": [
+        "kindness",
+        "tradition",
+        "faith"
+      ],
+      "quirks": [
+        "drinks tea at sunset",
+        "writes letters by hand"
+      ],
+      "backstory": "Hana has roots in Seoul, South Korea and now lives in Millbrook. Hana spends much of the week balancing work as a social worker with personal commitments. Friends know Hana for drinks tea at sunset and for caring about kindness. Life in Millbrook has given Hana a new reason to invest in the local community.",
+      "speechStyle": "blunt with dry humor",
+      "family": {},
+      "friends": {
+        "agent_11": 0.33,
+        "agent_17": 0.82,
+        "agent_27": 0.32,
+        "agent_50": 0.83
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a social worker",
+        "make time for loved ones"
+      ],
+      "money": 4199,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_11",
+      "householdId": "house_05",
+      "name": "Linh Nguyen",
+      "age": 58,
+      "gender": "woman",
+      "occupation": "librarian",
+      "education": "associate degree",
+      "hometown": "Da Nang, Vietnam",
+      "personality": {
+        "openness": 0.37,
+        "conscientiousness": 0.31,
+        "extraversion": 0.58,
+        "agreeableness": 0.39,
+        "neuroticism": 0.41
+      },
+      "values": [
+        "kindness",
+        "craftsmanship",
+        "environment"
+      ],
+      "quirks": [
+        "takes photos of clouds",
+        "drinks tea at sunset"
+      ],
+      "backstory": "Linh has roots in Da Nang, Vietnam and now lives in Millbrook. Linh spends much of the week balancing work as a librarian with personal commitments. Friends know Linh for takes photos of clouds and for caring about kindness. At home, Linh shares life with Anh Nguyen (spouse), Mai Nguyen (parent), Bao Nguyen (parent), Thao Nguyen (parent). Life in Millbrook has given Linh a new reason to invest in the local community.",
+      "speechStyle": "energetic and quick to joke",
+      "family": {
+        "agent_12": "spouse",
+        "agent_13": "parent",
+        "agent_14": "parent",
+        "agent_15": "parent"
+      },
+      "friends": {
+        "agent_10": 0.33,
+        "agent_39": 0.23
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a librarian",
+        "make time for loved ones"
+      ],
+      "money": 1388,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_12",
+      "householdId": "house_05",
+      "name": "Anh Nguyen",
+      "age": 55,
+      "gender": "woman",
+      "occupation": "carpenter",
+      "education": "bachelor degree",
+      "hometown": "Da Nang, Vietnam",
+      "personality": {
+        "openness": 0.39,
+        "conscientiousness": 0.23,
+        "extraversion": 0.58,
+        "agreeableness": 0.43,
+        "neuroticism": 0.52
+      },
+      "values": [
+        "curiosity",
+        "ambition",
+        "family"
+      ],
+      "quirks": [
+        "drinks tea at sunset",
+        "sketches on napkins"
+      ],
+      "backstory": "Anh has roots in Da Nang, Vietnam and now lives in Millbrook. Anh spends much of the week balancing work as a carpenter with personal commitments. Friends know Anh for drinks tea at sunset and for caring about curiosity. At home, Anh shares life with Linh Nguyen (spouse), Mai Nguyen (parent), Bao Nguyen (parent), Thao Nguyen (parent). Life in Millbrook has given Anh a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_11": "spouse",
+        "agent_13": "parent",
+        "agent_14": "parent",
+        "agent_15": "parent"
+      },
+      "friends": {
+        "agent_18": 0.28,
+        "agent_49": 0.22
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a carpenter",
+        "make time for loved ones"
+      ],
+      "money": 2916,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_13",
+      "householdId": "house_05",
+      "name": "Mai Nguyen",
+      "age": 17,
+      "gender": "woman",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Da Nang, Vietnam",
+      "personality": {
+        "openness": 0.18,
+        "conscientiousness": 0.38,
+        "extraversion": 0.26,
+        "agreeableness": 0.36,
+        "neuroticism": 0.71
+      },
+      "values": [
+        "craftsmanship",
+        "ambition",
+        "honesty"
+      ],
+      "quirks": [
+        "taps a pencil when worried",
+        "always arrives early"
+      ],
+      "backstory": "Mai has roots in Da Nang, Vietnam and now lives in Millbrook. Mai spends much of the week finding their place at school and in the neighborhood. Friends know Mai for taps a pencil when worried and for caring about craftsmanship. At home, Mai shares life with Linh Nguyen (child), Anh Nguyen (child), Bao Nguyen (sibling), Thao Nguyen (sibling). Life in Millbrook has given Mai a new reason to invest in the local community.",
+      "speechStyle": "blunt with dry humor",
+      "family": {
+        "agent_11": "child",
+        "agent_12": "child",
+        "agent_14": "sibling",
+        "agent_15": "sibling"
+      },
+      "friends": {
+        "agent_28": 0.68
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 22,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_14",
+      "householdId": "house_05",
+      "name": "Bao Nguyen",
+      "age": 17,
+      "gender": "man",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Da Nang, Vietnam",
+      "personality": {
+        "openness": 0.2,
+        "conscientiousness": 0.15,
+        "extraversion": 0.44,
+        "agreeableness": 0.16,
+        "neuroticism": 0.34
+      },
+      "values": [
+        "kindness",
+        "family",
+        "creativity"
+      ],
+      "quirks": [
+        "checks the weather obsessively",
+        "memorizes trivia"
+      ],
+      "backstory": "Bao has roots in Da Nang, Vietnam and now lives in Millbrook. Bao spends much of the week finding their place at school and in the neighborhood. Friends know Bao for checks the weather obsessively and for caring about kindness. At home, Bao shares life with Linh Nguyen (child), Anh Nguyen (child), Mai Nguyen (sibling), Thao Nguyen (sibling). Life in Millbrook has given Bao a new reason to invest in the local community.",
+      "speechStyle": "calm and reassuring",
+      "family": {
+        "agent_11": "child",
+        "agent_12": "child",
+        "agent_13": "sibling",
+        "agent_15": "sibling"
+      },
+      "friends": {},
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 7,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_15",
+      "householdId": "house_05",
+      "name": "Thao Nguyen",
+      "age": 17,
+      "gender": "nonbinary",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Da Nang, Vietnam",
+      "personality": {
+        "openness": 0.51,
+        "conscientiousness": 0.39,
+        "extraversion": 0.53,
+        "agreeableness": 0.31,
+        "neuroticism": 0.59
+      },
+      "values": [
+        "tradition",
+        "security",
+        "environment"
+      ],
+      "quirks": [
+        "organizes community potlucks",
+        "takes photos of clouds"
+      ],
+      "backstory": "Thao has roots in Da Nang, Vietnam and now lives in Millbrook. Thao spends much of the week finding their place at school and in the neighborhood. Friends know Thao for organizes community potlucks and for caring about tradition. At home, Thao shares life with Linh Nguyen (child), Anh Nguyen (child), Mai Nguyen (sibling), Bao Nguyen (sibling). Life in Millbrook has given Thao a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_11": "child",
+        "agent_12": "child",
+        "agent_13": "sibling",
+        "agent_14": "sibling"
+      },
+      "friends": {
+        "agent_06": 0.23,
+        "agent_23": 0.35,
+        "agent_30": 0.62,
+        "agent_34": 0.26,
+        "agent_40": 0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 74,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_16",
+      "householdId": "house_06",
+      "name": "Avery Johnson",
+      "age": 53,
+      "gender": "woman",
+      "occupation": "community organizer",
+      "education": "doctorate",
+      "hometown": "Detroit, Michigan",
+      "personality": {
+        "openness": 0.58,
+        "conscientiousness": 0.32,
+        "extraversion": 0.38,
+        "agreeableness": 0.56,
+        "neuroticism": 0.3
+      },
+      "values": [
+        "service",
+        "community",
+        "stability"
+      ],
+      "quirks": [
+        "speaks in movie references",
+        "memorizes trivia"
+      ],
+      "backstory": "Avery has roots in Detroit, Michigan and now lives in Millbrook. Avery spends much of the week balancing work as a community organizer with personal commitments. Friends know Avery for speaks in movie references and for caring about service. At home, Avery shares life with James Johnson (spouse). Life in Millbrook has given Avery a new reason to invest in the local community.",
+      "speechStyle": "blunt with dry humor",
+      "family": {
+        "agent_17": "spouse"
+      },
+      "friends": {
+        "agent_02": 0.46,
+        "agent_47": 0.64
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a community organizer",
+        "make time for loved ones"
+      ],
+      "money": 3473,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_17",
+      "householdId": "house_06",
+      "name": "James Johnson",
+      "age": 57,
+      "gender": "nonbinary",
+      "occupation": "carpenter",
+      "education": "doctorate",
+      "hometown": "Detroit, Michigan",
+      "personality": {
+        "openness": 0.72,
+        "conscientiousness": 0.16,
+        "extraversion": 0.34,
+        "agreeableness": 0.45,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "honesty",
+        "family",
+        "ambition"
+      ],
+      "quirks": [
+        "takes photos of clouds",
+        "names every bicycle"
+      ],
+      "backstory": "James has roots in Detroit, Michigan and now lives in Millbrook. James spends much of the week balancing work as a carpenter with personal commitments. Friends know James for takes photos of clouds and for caring about honesty. At home, James shares life with Avery Johnson (spouse). Life in Millbrook has given James a new reason to invest in the local community.",
+      "speechStyle": "gentle with frequent questions",
+      "family": {
+        "agent_16": "spouse"
+      },
+      "friends": {
+        "agent_10": 0.82,
+        "agent_26": 0.74
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a carpenter",
+        "make time for loved ones"
+      ],
+      "money": 3108,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_18",
+      "householdId": "house_07",
+      "name": "Leila Haddad",
+      "age": 56,
+      "gender": "man",
+      "occupation": "city planner",
+      "education": "trade certification",
+      "hometown": "Beirut, Lebanon",
+      "personality": {
+        "openness": 0.39,
+        "conscientiousness": 0.38,
+        "extraversion": 0.61,
+        "agreeableness": 0.48,
+        "neuroticism": 0.41
+      },
+      "values": [
+        "learning",
+        "tradition",
+        "ambition"
+      ],
+      "quirks": [
+        "taps a pencil when worried",
+        "hums while thinking"
+      ],
+      "backstory": "Leila has roots in Beirut, Lebanon and now lives in Millbrook. Leila spends much of the week balancing work as a city planner with personal commitments. Friends know Leila for taps a pencil when worried and for caring about learning. At home, Leila shares life with Samir Haddad (spouse), Nadia Haddad (parent). Life in Millbrook has given Leila a new reason to invest in the local community.",
+      "speechStyle": "energetic and quick to joke",
+      "family": {
+        "agent_19": "spouse",
+        "agent_20": "parent"
+      },
+      "friends": {
+        "agent_06": 0.85,
+        "agent_12": 0.28,
+        "agent_28": 0.52
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a city planner",
+        "make time for loved ones"
+      ],
+      "money": 11273,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_19",
+      "householdId": "house_07",
+      "name": "Samir Haddad",
+      "age": 55,
+      "gender": "nonbinary",
+      "occupation": "dentist",
+      "education": "bachelor degree",
+      "hometown": "Beirut, Lebanon",
+      "personality": {
+        "openness": 0.51,
+        "conscientiousness": 0.32,
+        "extraversion": 0.58,
+        "agreeableness": 0.36,
+        "neuroticism": 0.38
+      },
+      "values": [
+        "justice",
+        "tradition",
+        "stability"
+      ],
+      "quirks": [
+        "sketches on napkins",
+        "bakes for neighbors"
+      ],
+      "backstory": "Samir has roots in Beirut, Lebanon and now lives in Millbrook. Samir spends much of the week balancing work as a dentist with personal commitments. Friends know Samir for sketches on napkins and for caring about justice. At home, Samir shares life with Leila Haddad (spouse), Nadia Haddad (parent). Life in Millbrook has given Samir a new reason to invest in the local community.",
+      "speechStyle": "calm and reassuring",
+      "family": {
+        "agent_18": "spouse",
+        "agent_20": "parent"
+      },
+      "friends": {
+        "agent_21": 0.87,
+        "agent_31": 0.66,
+        "agent_41": 0.43,
+        "agent_50": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a dentist",
+        "make time for loved ones"
+      ],
+      "money": 13238,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_20",
+      "householdId": "house_07",
+      "name": "Nadia Haddad",
+      "age": 17,
+      "gender": "nonbinary",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Beirut, Lebanon",
+      "personality": {
+        "openness": 0.69,
+        "conscientiousness": 0.39,
+        "extraversion": 0.41,
+        "agreeableness": 0.46,
+        "neuroticism": 0.69
+      },
+      "values": [
+        "independence",
+        "creativity",
+        "craftsmanship"
+      ],
+      "quirks": [
+        "talks to houseplants",
+        "wears mismatched socks"
+      ],
+      "backstory": "Nadia has roots in Beirut, Lebanon and now lives in Millbrook. Nadia spends much of the week finding their place at school and in the neighborhood. Friends know Nadia for talks to houseplants and for caring about independence. At home, Nadia shares life with Leila Haddad (child), Samir Haddad (child). Life in Millbrook has given Nadia a new reason to invest in the local community.",
+      "speechStyle": "direct and pragmatic",
+      "family": {
+        "agent_18": "child",
+        "agent_19": "child"
+      },
+      "friends": {
+        "agent_23": 0.52,
+        "agent_34": 0.38
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 65,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_21",
+      "householdId": "house_08",
+      "name": "Mei Chen",
+      "age": 71,
+      "gender": "woman",
+      "occupation": "retired nurse",
+      "education": "bachelor degree",
+      "hometown": "Taipei, Taiwan",
+      "personality": {
+        "openness": 0.28,
+        "conscientiousness": 0.47,
+        "extraversion": 0.63,
+        "agreeableness": 0.67,
+        "neuroticism": 0.77
+      },
+      "values": [
+        "curiosity",
+        "service",
+        "security"
+      ],
+      "quirks": [
+        "names every bicycle",
+        "makes elaborate playlists"
+      ],
+      "backstory": "Mei has roots in Taipei, Taiwan and now lives in Millbrook. Mei spends much of the week sharing hard-earned experience while enjoying a quieter rhythm. Friends know Mei for names every bicycle and for caring about curiosity. Life in Millbrook has given Mei a new reason to invest in the local community.",
+      "speechStyle": "gentle with frequent questions",
+      "family": {},
+      "friends": {
+        "agent_19": 0.87,
+        "agent_33": 0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "stay connected to neighbors",
+        "pass on experience"
+      ],
+      "money": 7857,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_22",
+      "householdId": "house_09",
+      "name": "Isabel Reyes",
+      "age": 30,
+      "gender": "man",
+      "occupation": "dentist",
+      "education": "trade certification",
+      "hometown": "Manila, Philippines",
+      "personality": {
+        "openness": 0.42,
+        "conscientiousness": 0.42,
+        "extraversion": 0.35,
+        "agreeableness": 0.46,
+        "neuroticism": 0.48
+      },
+      "values": [
+        "learning",
+        "stability",
+        "environment"
+      ],
+      "quirks": [
+        "checks the weather obsessively",
+        "names every bicycle"
+      ],
+      "backstory": "Isabel has roots in Manila, Philippines and now lives in Millbrook. Isabel spends much of the week balancing work as a dentist with personal commitments. Friends know Isabel for checks the weather obsessively and for caring about learning. At home, Isabel shares life with Luis Reyes (spouse), Marisol Reyes (parent), Nico Reyes (parent). Life in Millbrook has given Isabel a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_23": "spouse",
+        "agent_24": "parent",
+        "agent_25": "parent"
+      },
+      "friends": {
+        "agent_34": 0.29,
+        "agent_44": 0.32,
+        "agent_45": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a dentist",
+        "make time for loved ones"
+      ],
+      "money": 8170,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_23",
+      "householdId": "house_09",
+      "name": "Luis Reyes",
+      "age": 33,
+      "gender": "nonbinary",
+      "occupation": "journalist",
+      "education": "associate degree",
+      "hometown": "Manila, Philippines",
+      "personality": {
+        "openness": 0.49,
+        "conscientiousness": 0.7,
+        "extraversion": 0.57,
+        "agreeableness": 0.73,
+        "neuroticism": 0.65
+      },
+      "values": [
+        "learning",
+        "security",
+        "stability"
+      ],
+      "quirks": [
+        "drinks tea at sunset",
+        "taps a pencil when worried"
+      ],
+      "backstory": "Luis has roots in Manila, Philippines and now lives in Millbrook. Luis spends much of the week balancing work as a journalist with personal commitments. Friends know Luis for drinks tea at sunset and for caring about learning. At home, Luis shares life with Isabel Reyes (spouse), Marisol Reyes (parent), Nico Reyes (parent). Life in Millbrook has given Luis a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_22": "spouse",
+        "agent_24": "parent",
+        "agent_25": "parent"
+      },
+      "friends": {
+        "agent_15": 0.35,
+        "agent_20": 0.52
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a journalist",
+        "make time for loved ones"
+      ],
+      "money": 13693,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_24",
+      "householdId": "house_09",
+      "name": "Marisol Reyes",
+      "age": 9,
+      "gender": "man",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Manila, Philippines",
+      "personality": {
+        "openness": 0.4,
+        "conscientiousness": 0.35,
+        "extraversion": 0.63,
+        "agreeableness": 0.55,
+        "neuroticism": 0.26
+      },
+      "values": [
+        "family",
+        "independence",
+        "learning"
+      ],
+      "quirks": [
+        "keeps ticket stubs",
+        "checks the weather obsessively"
+      ],
+      "backstory": "Marisol has roots in Manila, Philippines and now lives in Millbrook. Marisol spends much of the week finding their place at school and in the neighborhood. Friends know Marisol for keeps ticket stubs and for caring about family. At home, Marisol shares life with Isabel Reyes (child), Luis Reyes (child), Nico Reyes (sibling). Life in Millbrook has given Marisol a new reason to invest in the local community.",
+      "speechStyle": "calm and reassuring",
+      "family": {
+        "agent_22": "child",
+        "agent_23": "child",
+        "agent_25": "sibling"
+      },
+      "friends": {
+        "agent_08": 0.51,
+        "agent_47": 0.37
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 75,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_25",
+      "householdId": "house_09",
+      "name": "Nico Reyes",
+      "age": 7,
+      "gender": "man",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Manila, Philippines",
+      "personality": {
+        "openness": 0.6,
+        "conscientiousness": 0.52,
+        "extraversion": 0.53,
+        "agreeableness": 0.8,
+        "neuroticism": 0.67
+      },
+      "values": [
+        "ambition",
+        "environment",
+        "stability"
+      ],
+      "quirks": [
+        "takes photos of clouds",
+        "bakes for neighbors"
+      ],
+      "backstory": "Nico has roots in Manila, Philippines and now lives in Millbrook. Nico spends much of the week finding their place at school and in the neighborhood. Friends know Nico for takes photos of clouds and for caring about ambition. At home, Nico shares life with Isabel Reyes (child), Luis Reyes (child), Marisol Reyes (sibling). Life in Millbrook has given Nico a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_22": "child",
+        "agent_23": "child",
+        "agent_24": "sibling"
+      },
+      "friends": {
+        "agent_08": 0.63,
+        "agent_40": 0.55
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 73,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_26",
+      "householdId": "house_10",
+      "name": "Jordan Thompson",
+      "age": 37,
+      "gender": "nonbinary",
+      "occupation": "photographer",
+      "education": "trade certification",
+      "hometown": "Portland, Oregon",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.33,
+        "extraversion": 0.43,
+        "agreeableness": 0.56,
+        "neuroticism": 0.52
+      },
+      "values": [
+        "justice",
+        "community",
+        "stability"
+      ],
+      "quirks": [
+        "wears mismatched socks",
+        "taps a pencil when worried"
+      ],
+      "backstory": "Jordan has roots in Portland, Oregon and now lives in Millbrook. Jordan spends much of the week balancing work as a photographer with personal commitments. Friends know Jordan for wears mismatched socks and for caring about justice. At home, Jordan shares life with Morgan Thompson (spouse). Life in Millbrook has given Jordan a new reason to invest in the local community.",
+      "speechStyle": "calm and reassuring",
+      "family": {
+        "agent_27": "spouse"
+      },
+      "friends": {
+        "agent_17": 0.74
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a photographer",
+        "make time for loved ones"
+      ],
+      "money": 11762,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_27",
+      "householdId": "house_10",
+      "name": "Morgan Thompson",
+      "age": 34,
+      "gender": "man",
+      "occupation": "research scientist",
+      "education": "master degree",
+      "hometown": "Portland, Oregon",
+      "personality": {
+        "openness": 0.71,
+        "conscientiousness": 0.46,
+        "extraversion": 0.54,
+        "agreeableness": 0.62,
+        "neuroticism": 0.57
+      },
+      "values": [
+        "community",
+        "environment",
+        "kindness"
+      ],
+      "quirks": [
+        "wears mismatched socks",
+        "bakes for neighbors"
+      ],
+      "backstory": "Morgan has roots in Portland, Oregon and now lives in Millbrook. Morgan spends much of the week balancing work as a research scientist with personal commitments. Friends know Morgan for wears mismatched socks and for caring about community. At home, Morgan shares life with Jordan Thompson (spouse). Life in Millbrook has given Morgan a new reason to invest in the local community.",
+      "speechStyle": "direct and pragmatic",
+      "family": {
+        "agent_26": "spouse"
+      },
+      "friends": {
+        "agent_06": 0.25,
+        "agent_08": 0.83,
+        "agent_10": 0.32,
+        "agent_33": 0.67,
+        "agent_39": 0.51,
+        "agent_46": 0.77
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a research scientist",
+        "make time for loved ones"
+      ],
+      "money": 10199,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_28",
+      "householdId": "house_11",
+      "name": "Ana Martinez",
+      "age": 34,
+      "gender": "nonbinary",
+      "occupation": "software engineer",
+      "education": "trade certification",
+      "hometown": "Mexico City, Mexico",
+      "personality": {
+        "openness": 0.84,
+        "conscientiousness": 0.21,
+        "extraversion": 0.47,
+        "agreeableness": 0.81,
+        "neuroticism": 0.52
+      },
+      "values": [
+        "adventure",
+        "community",
+        "curiosity"
+      ],
+      "quirks": [
+        "makes elaborate playlists",
+        "sketches on napkins"
+      ],
+      "backstory": "Ana has roots in Mexico City, Mexico and now lives in Millbrook. Ana spends much of the week balancing work as a software engineer with personal commitments. Friends know Ana for makes elaborate playlists and for caring about adventure. At home, Ana shares life with Carlos Martinez (spouse), Valeria Martinez (parent). Life in Millbrook has given Ana a new reason to invest in the local community.",
+      "speechStyle": "direct and pragmatic",
+      "family": {
+        "agent_29": "spouse",
+        "agent_30": "parent"
+      },
+      "friends": {
+        "agent_01": 0.39,
+        "agent_04": 0.34,
+        "agent_13": 0.68,
+        "agent_18": 0.52,
+        "agent_40": 0.39,
+        "agent_46": 0.45
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a software engineer",
+        "make time for loved ones"
+      ],
+      "money": 2058,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_29",
+      "householdId": "house_11",
+      "name": "Carlos Martinez",
+      "age": 30,
+      "gender": "man",
+      "occupation": "photographer",
+      "education": "associate degree",
+      "hometown": "Mexico City, Mexico",
+      "personality": {
+        "openness": 0.64,
+        "conscientiousness": 0.46,
+        "extraversion": 0.37,
+        "agreeableness": 0.31,
+        "neuroticism": 0.39
+      },
+      "values": [
+        "security",
+        "faith",
+        "justice"
+      ],
+      "quirks": [
+        "wears mismatched socks",
+        "taps a pencil when worried"
+      ],
+      "backstory": "Carlos has roots in Mexico City, Mexico and now lives in Millbrook. Carlos spends much of the week balancing work as a photographer with personal commitments. Friends know Carlos for wears mismatched socks and for caring about security. At home, Carlos shares life with Ana Martinez (spouse), Valeria Martinez (parent). Life in Millbrook has given Carlos a new reason to invest in the local community.",
+      "speechStyle": "energetic and quick to joke",
+      "family": {
+        "agent_28": "spouse",
+        "agent_30": "parent"
+      },
+      "friends": {
+        "agent_04": 0.63,
+        "agent_34": 0.35,
+        "agent_49": 0.88
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a photographer",
+        "make time for loved ones"
+      ],
+      "money": 2002,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_30",
+      "householdId": "house_11",
+      "name": "Valeria Martinez",
+      "age": 3,
+      "gender": "man",
+      "occupation": "preschooler",
+      "education": "early childhood",
+      "hometown": "Mexico City, Mexico",
+      "personality": {
+        "openness": 0.44,
+        "conscientiousness": 0.15,
+        "extraversion": 0.48,
+        "agreeableness": 0.75,
+        "neuroticism": 0.78
+      },
+      "values": [
+        "family",
+        "security",
+        "service"
+      ],
+      "quirks": [
+        "takes photos of clouds",
+        "keeps ticket stubs"
+      ],
+      "backstory": "Valeria has roots in Mexico City, Mexico and now lives in Millbrook. Valeria spends much of the week finding their place at school and in the neighborhood. Friends know Valeria for takes photos of clouds and for caring about family. At home, Valeria shares life with Ana Martinez (child), Carlos Martinez (child). Life in Millbrook has given Valeria a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_28": "child",
+        "agent_29": "child"
+      },
+      "friends": {
+        "agent_15": 0.62,
+        "agent_35": 0.57,
+        "agent_37": 0.7
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 13,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_31",
+      "householdId": "house_12",
+      "name": "Akosua Mensah",
+      "age": 48,
+      "gender": "nonbinary",
+      "occupation": "software engineer",
+      "education": "high school diploma",
+      "hometown": "Accra, Ghana",
+      "personality": {
+        "openness": 0.76,
+        "conscientiousness": 0.26,
+        "extraversion": 0.66,
+        "agreeableness": 0.65,
+        "neuroticism": 0.79
+      },
+      "values": [
+        "family",
+        "justice",
+        "creativity"
+      ],
+      "quirks": [
+        "bakes for neighbors",
+        "collects unusual postcards"
+      ],
+      "backstory": "Akosua has roots in Accra, Ghana and now lives in Millbrook. Akosua spends much of the week balancing work as a software engineer with personal commitments. Friends know Akosua for bakes for neighbors and for caring about family. Life in Millbrook has given Akosua a new reason to invest in the local community.",
+      "speechStyle": "warm, thoughtful, and measured",
+      "family": {},
+      "friends": {
+        "agent_19": 0.66,
+        "agent_43": 0.31,
+        "agent_44": 0.66,
+        "agent_50": 0.87
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a software engineer",
+        "make time for loved ones"
+      ],
+      "money": 9022,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_32",
+      "householdId": "house_13",
+      "name": "Fatima Ali",
+      "age": 47,
+      "gender": "nonbinary",
+      "occupation": "social worker",
+      "education": "associate degree",
+      "hometown": "Karachi, Pakistan",
+      "personality": {
+        "openness": 0.63,
+        "conscientiousness": 0.5,
+        "extraversion": 0.84,
+        "agreeableness": 0.49,
+        "neuroticism": 0.62
+      },
+      "values": [
+        "kindness",
+        "independence",
+        "stability"
+      ],
+      "quirks": [
+        "taps a pencil when worried",
+        "sketches on napkins"
+      ],
+      "backstory": "Fatima has roots in Karachi, Pakistan and now lives in Millbrook. Fatima spends much of the week balancing work as a social worker with personal commitments. Friends know Fatima for taps a pencil when worried and for caring about kindness. At home, Fatima shares life with Yusuf Ali (spouse), Samira Ali (parent), Idris Ali (parent). Life in Millbrook has given Fatima a new reason to invest in the local community.",
+      "speechStyle": "blunt with dry humor",
+      "family": {
+        "agent_33": "spouse",
+        "agent_34": "parent",
+        "agent_35": "parent"
+      },
+      "friends": {
+        "agent_02": 0.58
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a social worker",
+        "make time for loved ones"
+      ],
+      "money": 4189,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_33",
+      "householdId": "house_13",
+      "name": "Yusuf Ali",
+      "age": 48,
+      "gender": "nonbinary",
+      "occupation": "community organizer",
+      "education": "doctorate",
+      "hometown": "Karachi, Pakistan",
+      "personality": {
+        "openness": 0.73,
+        "conscientiousness": 0.36,
+        "extraversion": 0.25,
+        "agreeableness": 0,
+        "neuroticism": 0.58
+      },
+      "values": [
+        "adventure",
+        "faith",
+        "family"
+      ],
+      "quirks": [
+        "writes letters by hand",
+        "drinks tea at sunset"
+      ],
+      "backstory": "Yusuf has roots in Karachi, Pakistan and now lives in Millbrook. Yusuf spends much of the week balancing work as a community organizer with personal commitments. Friends know Yusuf for writes letters by hand and for caring about adventure. At home, Yusuf shares life with Fatima Ali (spouse), Samira Ali (parent), Idris Ali (parent). Life in Millbrook has given Yusuf a new reason to invest in the local community.",
+      "speechStyle": "gentle with frequent questions",
+      "family": {
+        "agent_32": "spouse",
+        "agent_34": "parent",
+        "agent_35": "parent"
+      },
+      "friends": {
+        "agent_21": 0.6,
+        "agent_27": 0.67
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a community organizer",
+        "make time for loved ones"
+      ],
+      "money": 7049,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_34",
+      "householdId": "house_13",
+      "name": "Samira Ali",
+      "age": 15,
+      "gender": "nonbinary",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Karachi, Pakistan",
+      "personality": {
+        "openness": 0.35,
+        "conscientiousness": 0.65,
+        "extraversion": 0.2,
+        "agreeableness": 0.54,
+        "neuroticism": 0.62
+      },
+      "values": [
+        "community",
+        "stability",
+        "security"
+      ],
+      "quirks": [
+        "hums while thinking",
+        "takes photos of clouds"
+      ],
+      "backstory": "Samira has roots in Karachi, Pakistan and now lives in Millbrook. Samira spends much of the week finding their place at school and in the neighborhood. Friends know Samira for hums while thinking and for caring about community. At home, Samira shares life with Fatima Ali (child), Yusuf Ali (child), Idris Ali (sibling). Life in Millbrook has given Samira a new reason to invest in the local community.",
+      "speechStyle": "blunt with dry humor",
+      "family": {
+        "agent_32": "child",
+        "agent_33": "child",
+        "agent_35": "sibling"
+      },
+      "friends": {
+        "agent_05": 0.53,
+        "agent_15": 0.26,
+        "agent_20": 0.38,
+        "agent_22": 0.29,
+        "agent_29": 0.35,
+        "agent_45": 0.31,
+        "agent_46": 0.78
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 58,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_35",
+      "householdId": "house_13",
+      "name": "Idris Ali",
+      "age": 9,
+      "gender": "man",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Karachi, Pakistan",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.67,
+        "extraversion": 0.22,
+        "agreeableness": 1,
+        "neuroticism": 0.3
+      },
+      "values": [
+        "kindness",
+        "learning",
+        "stability"
+      ],
+      "quirks": [
+        "names every bicycle",
+        "checks the weather obsessively"
+      ],
+      "backstory": "Idris has roots in Karachi, Pakistan and now lives in Millbrook. Idris spends much of the week finding their place at school and in the neighborhood. Friends know Idris for names every bicycle and for caring about kindness. At home, Idris shares life with Fatima Ali (child), Yusuf Ali (child), Samira Ali (sibling). Life in Millbrook has given Idris a new reason to invest in the local community.",
+      "speechStyle": "direct and pragmatic",
+      "family": {
+        "agent_32": "child",
+        "agent_33": "child",
+        "agent_34": "sibling"
+      },
+      "friends": {
+        "agent_04": 0.47,
+        "agent_30": 0.57
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 20,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_36",
+      "householdId": "house_14",
+      "name": "Beatriz Silva",
+      "age": 49,
+      "gender": "nonbinary",
+      "occupation": "graphic designer",
+      "education": "associate degree",
+      "hometown": "Lisbon, Portugal",
+      "personality": {
+        "openness": 0.63,
+        "conscientiousness": 0.37,
+        "extraversion": 0.76,
+        "agreeableness": 0.96,
+        "neuroticism": 0.69
+      },
+      "values": [
+        "honesty",
+        "environment",
+        "creativity"
+      ],
+      "quirks": [
+        "always arrives early",
+        "talks to houseplants"
+      ],
+      "backstory": "Beatriz has roots in Lisbon, Portugal and now lives in Millbrook. Beatriz spends much of the week balancing work as a graphic designer with personal commitments. Friends know Beatriz for always arrives early and for caring about honesty. At home, Beatriz shares life with Tiago Silva (parent). Life in Millbrook has given Beatriz a new reason to invest in the local community.",
+      "speechStyle": "warm, thoughtful, and measured",
+      "family": {
+        "agent_37": "parent"
+      },
+      "friends": {
+        "agent_05": 0.2
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a graphic designer",
+        "make time for loved ones"
+      ],
+      "money": 10778,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_37",
+      "householdId": "house_14",
+      "name": "Tiago Silva",
+      "age": 17,
+      "gender": "man",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Lisbon, Portugal",
+      "personality": {
+        "openness": 0.82,
+        "conscientiousness": 0.76,
+        "extraversion": 0.81,
+        "agreeableness": 0.76,
+        "neuroticism": 0.84
+      },
+      "values": [
+        "service",
+        "kindness",
+        "creativity"
+      ],
+      "quirks": [
+        "names every bicycle",
+        "checks the weather obsessively"
+      ],
+      "backstory": "Tiago has roots in Lisbon, Portugal and now lives in Millbrook. Tiago spends much of the week finding their place at school and in the neighborhood. Friends know Tiago for names every bicycle and for caring about service. At home, Tiago shares life with Beatriz Silva (child). Life in Millbrook has given Tiago a new reason to invest in the local community.",
+      "speechStyle": "soft-spoken and precise",
+      "family": {
+        "agent_36": "child"
+      },
+      "friends": {
+        "agent_30": 0.7
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 12,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_38",
+      "householdId": "house_15",
+      "name": "Charlie Brown",
+      "age": 47,
+      "gender": "nonbinary",
+      "occupation": "bakery owner",
+      "education": "bachelor degree",
+      "hometown": "Chicago, Illinois",
+      "personality": {
+        "openness": 0.19,
+        "conscientiousness": 0.41,
+        "extraversion": 0.59,
+        "agreeableness": 0.4,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "independence",
+        "security",
+        "craftsmanship"
+      ],
+      "quirks": [
+        "collects unusual postcards",
+        "speaks in movie references"
+      ],
+      "backstory": "Charlie has roots in Chicago, Illinois and now lives in Millbrook. Charlie spends much of the week balancing work as a bakery owner with personal commitments. Friends know Charlie for collects unusual postcards and for caring about independence. At home, Charlie shares life with Alex Brown (spouse), Parker Brown (parent). Life in Millbrook has given Charlie a new reason to invest in the local community.",
+      "speechStyle": "witty and slightly sarcastic",
+      "family": {
+        "agent_39": "spouse",
+        "agent_40": "parent"
+      },
+      "friends": {
+        "agent_01": 0.36
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a bakery owner",
+        "make time for loved ones"
+      ],
+      "money": 6587,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_39",
+      "householdId": "house_15",
+      "name": "Alex Brown",
+      "age": 49,
+      "gender": "woman",
+      "occupation": "bus driver",
+      "education": "master degree",
+      "hometown": "Chicago, Illinois",
+      "personality": {
+        "openness": 0.65,
+        "conscientiousness": 0.41,
+        "extraversion": 0.64,
+        "agreeableness": 0.44,
+        "neuroticism": 0.78
+      },
+      "values": [
+        "adventure",
+        "kindness",
+        "curiosity"
+      ],
+      "quirks": [
+        "writes letters by hand",
+        "bakes for neighbors"
+      ],
+      "backstory": "Alex has roots in Chicago, Illinois and now lives in Millbrook. Alex spends much of the week balancing work as a bus driver with personal commitments. Friends know Alex for writes letters by hand and for caring about adventure. At home, Alex shares life with Charlie Brown (spouse), Parker Brown (parent). Life in Millbrook has given Alex a new reason to invest in the local community.",
+      "speechStyle": "energetic and quick to joke",
+      "family": {
+        "agent_38": "spouse",
+        "agent_40": "parent"
+      },
+      "friends": {
+        "agent_11": 0.23,
+        "agent_27": 0.51
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a bus driver",
+        "make time for loved ones"
+      ],
+      "money": 975,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_40",
+      "householdId": "house_15",
+      "name": "Parker Brown",
+      "age": 14,
+      "gender": "woman",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Chicago, Illinois",
+      "personality": {
+        "openness": 0.53,
+        "conscientiousness": 0.21,
+        "extraversion": 0.25,
+        "agreeableness": 0.59,
+        "neuroticism": 0.63
+      },
+      "values": [
+        "faith",
+        "creativity",
+        "honesty"
+      ],
+      "quirks": [
+        "taps a pencil when worried",
+        "organizes community potlucks"
+      ],
+      "backstory": "Parker has roots in Chicago, Illinois and now lives in Millbrook. Parker spends much of the week finding their place at school and in the neighborhood. Friends know Parker for taps a pencil when worried and for caring about faith. At home, Parker shares life with Charlie Brown (child), Alex Brown (child). Life in Millbrook has given Parker a new reason to invest in the local community.",
+      "speechStyle": "storytelling with vivid details",
+      "family": {
+        "agent_38": "child",
+        "agent_39": "child"
+      },
+      "friends": {
+        "agent_02": 0.4,
+        "agent_08": 0.84,
+        "agent_15": 0.6,
+        "agent_25": 0.55,
+        "agent_28": 0.39
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 70,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_41",
+      "householdId": "house_16",
+      "name": "Imani Williams",
+      "age": 80,
+      "gender": "woman",
+      "occupation": "retired shopkeeper",
+      "education": "high school diploma",
+      "hometown": "Atlanta, Georgia",
+      "personality": {
+        "openness": 0.39,
+        "conscientiousness": 0.8,
+        "extraversion": 0.66,
+        "agreeableness": 0.46,
+        "neuroticism": 0.77
+      },
+      "values": [
+        "honesty",
+        "family",
+        "justice"
+      ],
+      "quirks": [
+        "always arrives early",
+        "sketches on napkins"
+      ],
+      "backstory": "Imani has roots in Atlanta, Georgia and now lives in Millbrook. Imani spends much of the week sharing hard-earned experience while enjoying a quieter rhythm. Friends know Imani for always arrives early and for caring about honesty. At home, Imani shares life with Darius Williams (spouse). Life in Millbrook has given Imani a new reason to invest in the local community.",
+      "speechStyle": "enthusiastic with short sentences",
+      "family": {
+        "agent_42": "spouse"
+      },
+      "friends": {
+        "agent_19": 0.43,
+        "agent_50": 0.31
+      },
+      "mood": "neutral",
+      "goals": [
+        "stay connected to neighbors",
+        "pass on experience"
+      ],
+      "money": 7616,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_42",
+      "householdId": "house_16",
+      "name": "Darius Williams",
+      "age": 73,
+      "gender": "man",
+      "occupation": "retired engineer",
+      "education": "high school diploma",
+      "hometown": "Atlanta, Georgia",
+      "personality": {
+        "openness": 0.45,
+        "conscientiousness": 0.64,
+        "extraversion": 0.78,
+        "agreeableness": 0.41,
+        "neuroticism": 0.54
+      },
+      "values": [
+        "environment",
+        "security",
+        "service"
+      ],
+      "quirks": [
+        "makes elaborate playlists",
+        "talks to houseplants"
+      ],
+      "backstory": "Darius has roots in Atlanta, Georgia and now lives in Millbrook. Darius spends much of the week sharing hard-earned experience while enjoying a quieter rhythm. Friends know Darius for makes elaborate playlists and for caring about environment. At home, Darius shares life with Imani Williams (spouse). Life in Millbrook has given Darius a new reason to invest in the local community.",
+      "speechStyle": "direct and pragmatic",
+      "family": {
+        "agent_41": "spouse"
+      },
+      "friends": {},
+      "mood": "neutral",
+      "goals": [
+        "stay connected to neighbors",
+        "pass on experience"
+      ],
+      "money": 4469,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_43",
+      "householdId": "house_17",
+      "name": "Yuki Sato",
+      "age": 41,
+      "gender": "man",
+      "occupation": "social worker",
+      "education": "master degree",
+      "hometown": "Osaka, Japan",
+      "personality": {
+        "openness": 0.32,
+        "conscientiousness": 0.49,
+        "extraversion": 0.6,
+        "agreeableness": 0.77,
+        "neuroticism": 0.27
+      },
+      "values": [
+        "tradition",
+        "curiosity",
+        "kindness"
+      ],
+      "quirks": [
+        "checks the weather obsessively",
+        "makes elaborate playlists"
+      ],
+      "backstory": "Yuki has roots in Osaka, Japan and now lives in Millbrook. Yuki spends much of the week balancing work as a social worker with personal commitments. Friends know Yuki for checks the weather obsessively and for caring about tradition. At home, Yuki shares life with Hiro Sato (spouse), Emi Sato (parent). Life in Millbrook has given Yuki a new reason to invest in the local community.",
+      "speechStyle": "direct and pragmatic",
+      "family": {
+        "agent_44": "spouse",
+        "agent_45": "parent"
+      },
+      "friends": {
+        "agent_31": 0.31,
+        "agent_47": 0.34,
+        "agent_50": 0.25
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a social worker",
+        "make time for loved ones"
+      ],
+      "money": 13095,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_44",
+      "householdId": "house_17",
+      "name": "Hiro Sato",
+      "age": 43,
+      "gender": "man",
+      "occupation": "graphic designer",
+      "education": "bachelor degree",
+      "hometown": "Osaka, Japan",
+      "personality": {
+        "openness": 0.37,
+        "conscientiousness": 0.56,
+        "extraversion": 0.68,
+        "agreeableness": 0.28,
+        "neuroticism": 0.38
+      },
+      "values": [
+        "environment",
+        "faith",
+        "tradition"
+      ],
+      "quirks": [
+        "always arrives early",
+        "names every bicycle"
+      ],
+      "backstory": "Hiro has roots in Osaka, Japan and now lives in Millbrook. Hiro spends much of the week balancing work as a graphic designer with personal commitments. Friends know Hiro for always arrives early and for caring about environment. At home, Hiro shares life with Yuki Sato (spouse), Emi Sato (parent). Life in Millbrook has given Hiro a new reason to invest in the local community.",
+      "speechStyle": "gentle with frequent questions",
+      "family": {
+        "agent_43": "spouse",
+        "agent_45": "parent"
+      },
+      "friends": {
+        "agent_22": 0.32,
+        "agent_31": 0.66
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a graphic designer",
+        "make time for loved ones"
+      ],
+      "money": 5408,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_45",
+      "householdId": "house_17",
+      "name": "Emi Sato",
+      "age": 6,
+      "gender": "woman",
+      "occupation": "student",
+      "education": "school student",
+      "hometown": "Osaka, Japan",
+      "personality": {
+        "openness": 0.41,
+        "conscientiousness": 0.44,
+        "extraversion": 0.5,
+        "agreeableness": 0.49,
+        "neuroticism": 0.18
+      },
+      "values": [
+        "community",
+        "craftsmanship",
+        "adventure"
+      ],
+      "quirks": [
+        "collects unusual postcards",
+        "takes photos of clouds"
+      ],
+      "backstory": "Emi has roots in Osaka, Japan and now lives in Millbrook. Emi spends much of the week finding their place at school and in the neighborhood. Friends know Emi for collects unusual postcards and for caring about community. At home, Emi shares life with Yuki Sato (child), Hiro Sato (child). Life in Millbrook has given Emi a new reason to invest in the local community.",
+      "speechStyle": "energetic and quick to joke",
+      "family": {
+        "agent_43": "child",
+        "agent_44": "child"
+      },
+      "friends": {
+        "agent_03": 0.54,
+        "agent_08": 0.42,
+        "agent_22": 0.5,
+        "agent_34": 0.31
+      },
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 27,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_46",
+      "householdId": "house_18",
+      "name": "Anna Kowalski",
+      "age": 39,
+      "gender": "woman",
+      "occupation": "shop owner",
+      "education": "doctorate",
+      "hometown": "Krakow, Poland",
+      "personality": {
+        "openness": 0.64,
+        "conscientiousness": 0.45,
+        "extraversion": 0.74,
+        "agreeableness": 0.81,
+        "neuroticism": 0.66
+      },
+      "values": [
+        "family",
+        "honesty",
+        "creativity"
+      ],
+      "quirks": [
+        "talks to houseplants",
+        "checks the weather obsessively"
+      ],
+      "backstory": "Anna has roots in Krakow, Poland and now lives in Millbrook. Anna spends much of the week balancing work as a shop owner with personal commitments. Friends know Anna for talks to houseplants and for caring about family. At home, Anna shares life with Piotr Kowalski (spouse), Maja Kowalski (parent). Life in Millbrook has given Anna a new reason to invest in the local community.",
+      "speechStyle": "soft-spoken and precise",
+      "family": {
+        "agent_47": "spouse",
+        "agent_48": "parent"
+      },
+      "friends": {
+        "agent_27": 0.77,
+        "agent_28": 0.45,
+        "agent_34": 0.78
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a shop owner",
+        "make time for loved ones"
+      ],
+      "money": 12458,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_47",
+      "householdId": "house_18",
+      "name": "Piotr Kowalski",
+      "age": 34,
+      "gender": "nonbinary",
+      "occupation": "paramedic",
+      "education": "doctorate",
+      "hometown": "Krakow, Poland",
+      "personality": {
+        "openness": 0.57,
+        "conscientiousness": 0.71,
+        "extraversion": 0.46,
+        "agreeableness": 0.57,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "learning",
+        "craftsmanship",
+        "environment"
+      ],
+      "quirks": [
+        "sketches on napkins",
+        "uses colorful sticky notes"
+      ],
+      "backstory": "Piotr has roots in Krakow, Poland and now lives in Millbrook. Piotr spends much of the week balancing work as a paramedic with personal commitments. Friends know Piotr for sketches on napkins and for caring about learning. At home, Piotr shares life with Anna Kowalski (spouse), Maja Kowalski (parent). Life in Millbrook has given Piotr a new reason to invest in the local community.",
+      "speechStyle": "soft-spoken and precise",
+      "family": {
+        "agent_46": "spouse",
+        "agent_48": "parent"
+      },
+      "friends": {
+        "agent_02": 0.5,
+        "agent_05": 0.47,
+        "agent_16": 0.64,
+        "agent_24": 0.37,
+        "agent_43": 0.34
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a paramedic",
+        "make time for loved ones"
+      ],
+      "money": 14344,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_48",
+      "householdId": "house_18",
+      "name": "Maja Kowalski",
+      "age": 0,
+      "gender": "man",
+      "occupation": "preschooler",
+      "education": "early childhood",
+      "hometown": "Krakow, Poland",
+      "personality": {
+        "openness": 0.61,
+        "conscientiousness": 0.37,
+        "extraversion": 0.62,
+        "agreeableness": 0.57,
+        "neuroticism": 0.47
+      },
+      "values": [
+        "service",
+        "curiosity",
+        "ambition"
+      ],
+      "quirks": [
+        "talks to houseplants",
+        "collects unusual postcards"
+      ],
+      "backstory": "Maja has roots in Krakow, Poland and now lives in Millbrook. Maja spends much of the week finding their place at school and in the neighborhood. Friends know Maja for talks to houseplants and for caring about service. At home, Maja shares life with Anna Kowalski (child), Piotr Kowalski (child). Life in Millbrook has given Maja a new reason to invest in the local community.",
+      "speechStyle": "warm, thoughtful, and measured",
+      "family": {
+        "agent_46": "child",
+        "agent_47": "child"
+      },
+      "friends": {},
+      "mood": "neutral",
+      "goals": [
+        "build friendships",
+        "learn a new skill"
+      ],
+      "money": 34,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_49",
+      "householdId": "house_19",
+      "name": "Claire Dubois",
+      "age": 52,
+      "gender": "nonbinary",
+      "occupation": "data analyst",
+      "education": "master degree",
+      "hometown": "Montreal, Canada",
+      "personality": {
+        "openness": 0.44,
+        "conscientiousness": 0.39,
+        "extraversion": 0.79,
+        "agreeableness": 0.45,
+        "neuroticism": 0.29
+      },
+      "values": [
+        "community",
+        "service",
+        "learning"
+      ],
+      "quirks": [
+        "names every bicycle",
+        "speaks in movie references"
+      ],
+      "backstory": "Claire has roots in Montreal, Canada and now lives in Millbrook. Claire spends much of the week balancing work as a data analyst with personal commitments. Friends know Claire for names every bicycle and for caring about community. At home, Claire shares life with Julien Dubois (spouse). Life in Millbrook has given Claire a new reason to invest in the local community.",
+      "speechStyle": "soft-spoken and precise",
+      "family": {
+        "agent_50": "spouse"
+      },
+      "friends": {
+        "agent_05": 0.67,
+        "agent_06": 0.3,
+        "agent_12": 0.22,
+        "agent_29": 0.88
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a data analyst",
+        "make time for loved ones"
+      ],
+      "money": 2590,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "agent_50",
+      "householdId": "house_19",
+      "name": "Julien Dubois",
+      "age": 57,
+      "gender": "woman",
+      "occupation": "photographer",
+      "education": "trade certification",
+      "hometown": "Montreal, Canada",
+      "personality": {
+        "openness": 0.47,
+        "conscientiousness": 0.52,
+        "extraversion": 0.44,
+        "agreeableness": 0.5,
+        "neuroticism": 0.64
+      },
+      "values": [
+        "security",
+        "justice",
+        "stability"
+      ],
+      "quirks": [
+        "drinks tea at sunset",
+        "uses colorful sticky notes"
+      ],
+      "backstory": "Julien has roots in Montreal, Canada and now lives in Millbrook. Julien spends much of the week balancing work as a photographer with personal commitments. Friends know Julien for drinks tea at sunset and for caring about security. At home, Julien shares life with Claire Dubois (spouse). Life in Millbrook has given Julien a new reason to invest in the local community.",
+      "speechStyle": "calm and reassuring",
+      "family": {
+        "agent_49": "spouse"
+      },
+      "friends": {
+        "agent_10": 0.83,
+        "agent_19": 0.4,
+        "agent_31": 0.87,
+        "agent_41": 0.31,
+        "agent_43": 0.25
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow as a photographer",
+        "make time for loved ones"
+      ],
+      "money": 9099,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    }
+  ]
+}

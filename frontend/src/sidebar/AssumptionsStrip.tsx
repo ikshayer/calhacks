@@ -14,9 +14,11 @@ import { useAppStore, type RunState } from '@/store/useAppStore'
 export function AssumptionsStrip({ run }: { run?: RunState }) {
   const [open, setOpen] = useState(false)
   const source = useAppStore((state) => state.source)
+  const audience = useAppStore((state) => state.audience)
 
   const coverage = run?.metrics?.coverage
   const missing = run?.metrics?.missing ?? 0
+  const total = run?.decisions?.length ?? (run?.options.audienceKey === audience?.key ? audience?.members.length : undefined)
 
   return (
     <div className="shrink-0 border-t border-line bg-ink">
@@ -31,7 +33,7 @@ export function AssumptionsStrip({ run }: { run?: RunState }) {
         <span className="flex-1 text-[11.5px] leading-snug text-muted">
           Simulated, not measured. {source.kind === 'mock' && 'Running locally. '}
           {coverage !== undefined && coverage < 1
-            ? `${missing} of ${run?.decisions?.length ?? 500} members had no prediction.`
+            ? `${missing}${total === undefined ? '' : ` of ${total}`} members had no prediction.`
             : 'Read the assumptions behind these numbers.'}
         </span>
         <span
@@ -59,7 +61,7 @@ export function AssumptionsStrip({ run }: { run?: RunState }) {
               —
             </span>
             <span>
-              Residents are Kenney&apos;s CC0 Mini Characters and the town is built from Kenney&apos;s
+              Residents use the existing Mii-style avatars and the town is built from Kenney&apos;s
               CC0 city kits; portraits are DiceBear open-peeps (CC0). The buildings and the small
               talk are set dressing and carry no data. Full credits in{' '}
               <code className="text-muted">ASSET-CREDITS.md</code>.

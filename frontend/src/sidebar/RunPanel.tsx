@@ -122,15 +122,21 @@ export function RunPanel() {
             label="Seeded exposure"
             value={`${(activeRun.options.seedExposure * 100).toFixed(0)}% of audience`}
           />
-          <Detail label="Audience" value={`v${activeRun.options.audienceVersion}`} />
+          <Detail label="Audience" value={activeRun.options.audienceKey ? `Millbrook · v${activeRun.options.audienceVersion}` : 'Previous audience'} />
           <Detail label="Round cap" value={String(activeRun.options.maxRounds)} />
         </dl>
       )}
 
+      {activeRun && activeRun.options.audienceKey !== audience?.key && (
+        <p className="mt-3 rounded-lg border border-line px-3 py-2.5 text-[12px] leading-relaxed text-muted">
+          {activeRun.options.audienceKey ? 'This run used a different audience configuration.' : 'This saved run belongs to the previous audience.'}
+          {' '}Its results are preserved. Run this version again to see responses from the current residents.
+        </p>
+      )}
+
       {ordered.length > 1 && (
         <p className="mt-3 text-[11px] leading-relaxed text-faint">
-          Every run uses the same audience, social graph, starting exposure and seeds, so
-          differences come from the video and nothing else.
+          Compare runs with matching audience and exposure settings to isolate changes in the video.
         </p>
       )}
     </Section>
