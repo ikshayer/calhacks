@@ -172,6 +172,10 @@ export function startUploadServer(): Server {
     const origin = req.headers.origin;
     if (origin && config.uploadAllowedOrigins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
+      // Chrome asks before a public https page may call 127.0.0.1 (Private Network Access).
+      if (req.headers['access-control-request-private-network'] === 'true') {
+        res.setHeader('Access-Control-Allow-Private-Network', 'true');
+      }
     }
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-File-Name');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS');
