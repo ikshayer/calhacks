@@ -1,19 +1,8 @@
-import { useMemo, useState } from 'react'
-import {
-  useAppStore,
-  selectActiveCampaign,
-  selectActiveRun,
-  selectActiveVideo,
-} from '@/store/useAppStore'
-import { Button, Section } from '@/components/ui'
+﻿import { useMemo, useState } from 'react'
+import { useAppStore, selectActiveCampaign, selectActiveRun, selectActiveVideo } from '@/store/useAppStore'
+import { Section } from '@/components/ui'
+import { Button } from '@/components/ui/button'
 
-/**
- * Starting a run, and switching between the ones already done.
- *
- * Every run inherits the same seed, audience and starting exposure. That is not
- * a detail: it is the only thing that makes "the revision did better" mean
- * anything, so the panel states it rather than hiding it.
- */
 export function RunPanel() {
   const video = useAppStore(selectActiveVideo)
   const audience = useAppStore((state) => state.audience)
@@ -24,130 +13,32 @@ export function RunPanel() {
   const setActiveRun = useAppStore((state) => state.setActiveRun)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // `runs` holds every campaign's runs once history is restored, so the
-  // switcher has to be scoped: offering someone another campaign's runs here
-  // would let them compare two videos while the panel claims the comparison is
-  // like-for-like.
-  const ordered = useMemo(
-    () => Object.values(runs).filter((run) => run.campaignId === campaign?.id),
-    [runs, campaign?.id],
-  )
-  // A campaign restored from history has no file behind it, and the source
-  // forgot the video with the page: starting a run would throw.
+  const ordered = useMemo(() => Object.values(runs).filter((run) => run.campaignId === campaign?.id), [runs, campaign?.id])
   const needsVideo = campaign?.videoAvailable === false
   const ready = Boolean(video && audience) && !needsVideo
-
+  const running = activeRun?.status === 'scoring' || activeRun?.status === 'cascading'
   const begin = async () => {
     setBusy(true)
     setError(null)
-    try {
-      const label = ordered.length === 0 ? 'Original' : `Version ${ordered.length + 1}`
-      await startRun(label)
-    } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'The run could not be started.')
-    } finally {
-      setBusy(false)
-    }
+    try { await startRun(ordered.length === 0 ? 'Original' : `Version ${ordered.length + 1}`) }
+    catch (cause: unknown) { setError(cause instanceof Error ? cause.message : 'The simulation could not start.') }
+    finally { setBusy(false) }
   }
 
   return (
-    <Section
-      title="Simulation"
-      aside={
-        activeRun && (
-          <span className="text-[11.5px] text-ui-faint">
-            {activeRun.status === 'scoring' && 'Scoring…'}
-            {activeRun.status === 'cascading' && 'Spreading…'}
-            {activeRun.status === 'complete' && 'Done'}
-            {activeRun.status === 'failed' && 'Failed'}
-          </span>
-        )
-      }
-    >
-      <Button className="w-full py-2.5" onClick={() => void begin()} disabled={!ready || busy}>
-        {busy
-          ? 'Starting…'
-          : ordered.length === 0
-            ? 'Run the simulation'
-            : 'Run this version'}
-      </Button>
-
-      {!ready && (
-        <p className="mt-2.5 text-[12px] leading-relaxed text-ui-faint">
-          {needsVideo
-            ? 'Re-attach the video above to run this campaign again. The saved report stays readable either way.'
-            : 'Upload a video first. The audience is already built and waiting.'}
-        </p>
-      )}
-
-      {error && (
-        <p role="alert" className="mt-2.5 text-[12.5px] leading-snug text-ui-danger">
-          {error}
-        </p>
-      )}
-
-      {ordered.length > 1 && (
-        <div className="mt-4">
-          <p className="mb-2 text-[12px] text-ui-text">Runs</p>
-          <div className="space-y-1.5">
-            {ordered.map((run) => {
-              const active = run.id === activeRun?.id
-              return (
-                <button
-                  key={run.id}
-                  onClick={() => setActiveRun(run.id)}
-                  className={
-                    'flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left transition-colors ' +
-                    (active ? 'border-ui-accent bg-ui-accent/[0.07]' : 'border-ui-border bg-ui-well hover:border-ui-edge')
-                  }
-                >
-                  <span className="truncate text-[12.5px] text-ui-text">{run.label}</span>
-                  <span className="tnum shrink-0 text-[11.5px] text-ui-muted">
-                    {run.metrics
-                      ? `${run.metrics.likes + run.metrics.shares + run.metrics.comments} actions`
-                      : '—'}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {activeRun && (
-        <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-ui-border pt-3.5 text-[11.5px]">
-          <Detail label="Seed" value={String(activeRun.options.seed)} />
-          <Detail
-            label="Seeded exposure"
-            value={`${(activeRun.options.seedExposure * 100).toFixed(0)}% of audience`}
-          />
-          <Detail label="Audience" value={activeRun.options.audienceKey ? `Millbrook · v${activeRun.options.audienceVersion}` : 'Previous audience'} />
-          <Detail label="Round cap" value={String(activeRun.options.maxRounds)} />
-        </dl>
-      )}
-
-      {activeRun && activeRun.options.audienceKey !== audience?.key && (
-        <p className="mt-3 rounded-lg border border-ui-border px-3 py-2.5 text-[12px] leading-relaxed text-ui-muted">
-          {activeRun.options.audienceKey ? 'This run used a different audience configuration.' : 'This saved run belongs to the previous audience.'}
-          {' '}Its results are preserved. Run this version again to see responses from the current residents.
-        </p>
-      )}
-
-      {ordered.length > 1 && (
-        <p className="mt-3 text-[11px] leading-relaxed text-ui-faint">
-          Compare runs with matching audience and exposure settings to isolate changes in the video.
-        </p>
-      )}
+    <Section title="Simulation" className="py-3" aside={<span role="status" className="max-w-[170px] truncate text-[11px] text-ui-faint" title={activeRun?.note}>{running ? (activeRun?.note || 'Running…') : activeRun?.status === 'failed' ? 'Failed' : ''}</span>}>
+      <div className="flex items-center gap-2">
+        {ordered.length > 1 && <select aria-label="Saved runs" value={activeRun?.id ?? ''} onChange={(event) => setActiveRun(event.target.value)}
+          className="min-w-0 flex-1 rounded-md border border-ui-border bg-ui-well px-2 py-2 text-[12px] text-ui-text">
+          {ordered.map((run) => <option key={run.id} value={run.id}>{run.label}</option>)}
+        </select>}
+        <Button className={ordered.length > 1 ? '' : 'w-full'} disabled={!ready || busy || running} onClick={() => void begin()}>
+          {busy ? 'Starting…' : running ? 'Running…' : ordered.length ? 'Run again' : 'Run simulation'}
+        </Button>
+      </div>
+      {!ready && <p className="mt-2 text-[11px] text-ui-faint">{needsVideo ? 'Re-attach the video to run again.' : 'Attach a video to start.'}</p>}
+      {(error || activeRun?.error) && <p role="alert" className="mt-2 text-[12px] text-ui-danger">{error || activeRun?.error}</p>}
+      {activeRun && activeRun.options.audienceKey !== audience?.key && <p className="mt-2 text-[10.5px] text-ui-faint">Saved results · a previous audience</p>}
     </Section>
-  )
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-ui-faint">{label}</dt>
-      <dd className="tnum mt-0.5 text-ui-muted">{value}</dd>
-    </div>
   )
 }

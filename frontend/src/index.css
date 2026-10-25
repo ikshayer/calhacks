@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+@layer base {
+  button:not(:disabled):not([aria-disabled='true']),
+  [role='button']:not(:disabled):not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+}
+
 /*
   The chrome sits next to a bright, saturated, toy-like 3D island. Matching it
   would produce a garish interface and unreadable text over a moving scene, so

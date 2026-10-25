@@ -40,7 +40,7 @@ src/
     Villagers.tsx    rig clones + THE single useFrame
     AnimationBudget  distance/frustum LOD for skeleton updates
     fx/              reaction emotes, share trails, ambient chatter, group rings
-  sidebar/         upload, run, metrics, groups, network, report, chat, compare
+  sidebar/         Overview charts and controls; Assistant conversation
   store/           zustand + profile persistence
 ```
 
@@ -56,6 +56,23 @@ To add the real driver: implement the interface, and swap the instance in
 `store/useAppStore.ts`. No screen changes.
 
 ### Simulation assistant
+
+The simulation sidebar has exactly two tabs: **Overview** and **Assistant**.
+Overview shows compact response charts, expected outcomes and campaign-option
+comparisons for ideas; video runs show reach, independent action bars and trial
+variability before playback/run controls. Selected residents appear as compact
+cards inside Overview, with personality and response probability bars. Selecting
+a resident does not request a paid generated explanation. Full report prose,
+assumptions and analysis remain in the store and in the assistant's grounding.
+Saved video runs without replay events use their stored final totals and group
+metrics. They do not borrow the current audience's denominator. Missing idea
+predictions are excluded from response-chart denominators and counted explicitly.
+Signal editing and the sharing network are collapsed by default.
+
+Use the arrow keys, Home and End to switch tabs. **Assistant** remains available
+while inspecting a resident, and **Ask assistant** carries that resident into the
+conversation. The overview's charts include numeric legends and accessible labels.
+Run `npm run test:overview` for chart-summary and saved-result regressions.
 
 Open **Assistant** in the simulation sidebar after an idea report is ready or a
 video run completes. **No video is required for idea-report questions.** Ask
