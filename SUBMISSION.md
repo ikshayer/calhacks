@@ -52,7 +52,7 @@ https://github.com/ikshayer/calhacks
 
 **Devpost project URL**
 ```
-[ADD]
+https://devpost.com/software/simthetic
 ```
 
 **Demo video URL**
