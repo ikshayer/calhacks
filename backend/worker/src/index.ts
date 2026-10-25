@@ -13,6 +13,8 @@ import { writeReport } from './jobs/writeReport.ts';
 import { DbConnection } from './module_bindings/index.ts';
 import { setStage } from './stage.ts';
 import { startUploadServer } from './upload.ts';
+import { createJobRunner } from './jobRunner.ts';
+import { videoJobEligibility } from './videoJobEligibility.ts';
 import type { Job } from './module_bindings/types.ts';
 
 /**
@@ -57,42 +59,7 @@ const handlers: Record<string, Handler> = {
   explain_idea_member: explainIdeaMember,
 };
 
-/** Jobs already picked up by this process, so an insert and the initial sync don't double-claim. */
-const seen = new Set<bigint>();
-
-async function handleJob(conn: DbConnection, job: Job) {
-  const handler = handlers[job.kind];
-  if (!handler || job.status !== 'queued' || seen.has(job.id)) return;
-  seen.add(job.id);
-
-  try {
-    await conn.reducers.claimJob({ jobId: job.id });
-  } catch (error) {
-    // Losing the race to another worker is expected; anything else is a real failure.
-    const message = errorMessage(error);
-    if (message.includes('job already claimed')) return;
-    console.error(`[job ${job.id}] could not claim ${job.kind}: ${message}`);
-    seen.delete(job.id);
-    return;
-  }
-
-  try {
-    await handler(conn, job);
-    await conn.reducers.finishJob({ jobId: job.id });
-  } catch (error) {
-    const message = errorMessage(error);
-    console.error(`[job ${job.id}] ${job.kind} failed: ${message}`);
-    try {
-      await conn.reducers.failJob({ jobId: job.id, error: message });
-    } catch (reportError) {
-      console.error(`[job ${job.id}] could not record the failure; job stays claimed: ${errorMessage(reportError)}`);
-    }
-  }
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+const handleJob = createJobRunner(handlers, (conn, job) => videoJobEligibility(conn, job, config.uploadsDir));
 
 /** A missing token file means first run; any other read error is a real problem. */
 async function loadToken(): Promise<string | undefined> {
@@ -126,6 +93,13 @@ DbConnection.builder()
     }
 
     conn.db.job.onInsert((_ctx, job) => void handleJob(conn, job));
+    const reconsiderVideo = (videoId: bigint) => {
+      for (const job of conn.db.job.iter()) {
+        if (job.kind === 'analyse_video' && job.status === 'queued' && job.targetId === videoId.toString()) void handleJob(conn, job);
+      }
+    };
+    conn.db.video.onInsert((_ctx, video) => reconsiderVideo(video.id));
+    conn.db.video.onUpdate((_ctx, _previous, video) => reconsiderVideo(video.id));
     conn
       .subscriptionBuilder()
       .onApplied(() => {

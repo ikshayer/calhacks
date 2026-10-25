@@ -1,7 +1,7 @@
 ﻿import { useAppStore, selectActiveRun } from '@/store/useAppStore'
 import { Section, Stat } from '@/components/ui'
-import { nonnegative, visibleRunResults } from '@/data/overviewStats'
-import { ChartBar, chartNumber } from './OverviewCharts'
+import { chartNumber, nonnegative, visibleRunResults } from '@/data/overviewStats'
+import { ChartBar } from './OverviewCharts'
 
 /** Independent action counts; one resident can take several different actions. */
 export function MetricsPanel() {

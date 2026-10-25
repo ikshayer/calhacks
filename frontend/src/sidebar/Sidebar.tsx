@@ -19,17 +19,18 @@ type TabId = 'overview' | 'chat'
 const TABS = [{ id: 'overview', label: 'Overview' }, { id: 'chat', label: 'Assistant' }] as const
 
 /** Two persistent destinations: visual results and the full report conversation. */
-export function Sidebar({ shadows, onShadowsChange, playing }: {
-  shadows: boolean; onShadowsChange(value: boolean): void; playing: boolean
-}) {
+export function Sidebar({ playing }: { playing: boolean }) {
   const [activeTab, setTab] = useState<TabId>('overview')
   const [chatMember, setChatMember] = useState<{ subjectKey: string; name: string } | null>(null)
   const profile = useAppStore((state) => state.profile)
   const run = useAppStore(selectActiveRun)
+  const preparation = useAppStore((state) => state.activeCampaignId ? state.videoPreparations[state.activeCampaignId] : undefined)
   const idea = useAppStore((state) => state.idea)
   const subject = chatSubject(idea, run)
   const subjectKey = subject ? chatTargetKey(subject) : ''
   const campaign = useAppStore(selectActiveCampaign)
+  const videoReady = run?.status === 'complete' && Boolean(run.report && run.metrics) && !run.error
+  const preparing = preparation?.status === 'preparing' || (run && !videoReady && !run.error && run.status !== 'failed')
   const selectedMemberId = useAppStore((state) => state.selectedMemberId)
   const selectedMember = useAppStore((state) => state.audience?.members.find((member) => member.id === state.selectedMemberId))
   const selectMember = useAppStore((state) => state.selectMember)
@@ -82,17 +83,16 @@ export function Sidebar({ shadows, onShadowsChange, playing }: {
       <div className="flex min-h-0 flex-1 flex-col" role="tabpanel" tabIndex={0} id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'chat' ? <ChatPanel memberName={chatMember?.subjectKey === subjectKey ? chatMember.name : undefined} /> : (
           <div className="scroll-slim min-h-0 flex-1 overflow-y-auto">
-            {selectedMemberId !== null ? <MemberPanel memberId={selectedMemberId} onAsk={openAssistant} onBack={() => { setTab('overview'); selectMember(null) }} />
+            {!idea && !videoReady ? <><RunPanel />{!preparing && <SignalsPanel />}</> : selectedMemberId !== null ? <MemberPanel memberId={selectedMemberId} onAsk={openAssistant} onBack={() => { setTab('overview'); selectMember(null) }} />
               : idea ? <IdeaPanel onAsk={openAssistant} /> : <>
-                {run?.status === 'complete' && <MetricsPanel />}
+                <MetricsPanel />
                 <RunPanel />
                 <SignalsPanel />
-                {run && run.status !== 'complete' && <MetricsPanel />}
                 <GroupsPanel />
                 <MiniGraph />
                 <div className="flex justify-end px-4 py-2"><Button variant="outline" size="sm" onClick={openAssistant}>Ask assistant</Button></div>
               </>}
-            <ViewOptions shadows={shadows} onShadowsChange={onShadowsChange} sourceLabel={source.label} playing={playing} />
+            {(idea || videoReady) && <ViewOptions sourceLabel={source.label} playing={playing} complete={!idea && videoReady} />}
           </div>
         )}
       </div>

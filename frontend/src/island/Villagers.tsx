@@ -23,8 +23,7 @@ interface VillagersProps {
 }
 
 export function Villagers(props: VillagersProps) {
-  const legacy = import.meta.env.DEV && new URLSearchParams(location.search).get('residents') === 'kenney'
-  return legacy ? <KenneyVillagers {...props} models={props.legacyModels} /> : <Residents {...props} />
+  return <Residents {...props} />
 }
 
 function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex, onSelect, shadows, paused }: VillagersProps) {
@@ -67,17 +66,11 @@ function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex
       return rig
     })
     rigsRef.current = rigs
-    if (import.meta.env.DEV) {
-      Object.assign(window, { __residentScene: { sim, camera, rigs, models, budget,
-        inspect: () => rigs.map((rig, index) => ({ memberId: sim.memberOfIndex(index), model: models[index],
-          uuid: rig.root.uuid, ...rig.controller.snapshot() })) } })
-    }
     return () => {
       for (const rig of rigs) { container.remove(rig.root); rig.dispose() }
       rigsRef.current = []
-      if (import.meta.env.DEV) delete (window as unknown as Record<string, unknown>).__residentScene
     }
-  }, [sim, models, templates, appearanceContext, camera, budget])
+  }, [sim, models, templates, appearanceContext])
 
   useEffect(() => { for (const rig of rigsRef.current) setResidentShadows(rig.root, shadows) }, [shadows])
 

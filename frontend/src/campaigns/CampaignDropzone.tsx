@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { useAppStore } from '@/store/useAppStore'
+import { useEffect, useRef, useState } from 'react'
+import { useAppStore, VideoResultError } from '@/store/useAppStore'
 import { readDuration } from '@/data/videoPoster'
 import type { CampaignId } from '@/data/types'
 import { Button } from '@/components/ui'
@@ -22,49 +22,57 @@ function titleFromFile(name: string): string {
  */
 export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): void }) {
   const createCampaign = useAppStore((state) => state.createCampaign)
+  const prepareVideoResult = useAppStore((state) => state.prepareVideoResult)
   const live = useAppStore((state) => state.source.kind === 'spacetime')
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const accept = async (file: File) => {
-    setError(null)
-    if (!file.type.startsWith('video/')) {
-      setError(`${file.name} is not a video file.`)
-      return
-    }
+  const locked = useRef(false)
+  const mounted = useRef(true)
+  const [retryCampaignId, setRetryCampaignId] = useState<CampaignId | null>(null)
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
+
+  // Lock synchronously, including the initial demo fetch, before React can
+  // render disabled buttons. Remounts never resubmit this background action.
+  const runExclusive = async (work: () => Promise<CampaignId>) => {
+    if (locked.current) return
+    locked.current = true
     setBusy(true)
+    setError(null)
+    setRetryCampaignId(null)
     try {
-      const durationSec = await readDuration(file)
-      const id = await createCampaign(
-        { name: file.name, durationSec, file },
-        titleFromFile(file.name),
-      )
-      onCreated(id)
+      const id = await work()
+      const current = useAppStore.getState()
+      if (mounted.current && current.activeCampaignId === id && !current.idea) onCreated(id)
     } catch (cause: unknown) {
-      console.error('Could not create the campaign', cause)
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : 'That file could not be read. Try an mp4 or a mov.',
-      )
-      setBusy(false)
+      console.error('Could not prepare video result', cause)
+      if (mounted.current) {
+        setError(cause instanceof Error ? cause.message : 'The video result could not be prepared.')
+        if (cause instanceof VideoResultError) setRetryCampaignId(cause.campaignId)
+      }
+    } finally {
+      locked.current = false
+      if (mounted.current) setBusy(false)
     }
   }
 
-  // Demo videos go through the same path as a dropped file (poster, playback, upload, cache).
-  const pickDemo = async (file: string) => {
-    setError(null)
-    try {
-      const response = await fetch(`/demo/${file}`)
-      if (!response.ok) throw new Error(`The demo video could not be loaded (HTTP ${response.status}).`)
-      const blob = await response.blob()
-      await accept(new File([blob], file, { type: blob.type || 'video/mp4' }))
-    } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'The demo video could not be loaded.')
-    }
+  const createFromFile = async (file: File) => {
+    if (!file.type.startsWith('video/')) throw new Error(`${file.name} is not a video file.`)
+    const durationSec = await readDuration(file)
+    return createCampaign({ name: file.name, durationSec, file }, titleFromFile(file.name))
   }
+  const accept = (file: File) => runExclusive(() => createFromFile(file))
+  const pickDemo = (file: string) => runExclusive(async () => {
+    const response = await fetch(`/demo/${file}`)
+    if (!response.ok) throw new Error(`The demo video could not be loaded (HTTP ${response.status}).`)
+    const blob = await response.blob()
+    return createFromFile(new File([blob], file, { type: blob.type || 'video/mp4' }))
+  })
 
   return (
     <div
@@ -101,10 +109,10 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
         }}
       />
       <p className="display text-[20px] text-title" aria-live="polite">
-        {busy ? (live ? 'Analysing… about 20–40 seconds' : 'Reading the file…') : 'Drop a video here'}
+        {busy ? 'Preparing results...' : 'Drop a video here'}
       </p>
       <p className="mx-auto mt-1.5 max-w-[40ch] text-[15px] leading-relaxed text-subtle">
-        {live
+        {busy ? 'Your finished result will open automatically.' : live
           ? 'Sent only to the worker on this laptop for analysis. Never posted.'
           : 'It stays in this browser. Nothing is uploaded, posted or shared.'}
       </p>
@@ -128,6 +136,11 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
           </Button>
         ))}
       </div>
+      {retryCampaignId && !busy && <Button variant="secondary" className="mt-3" onClick={() => void runExclusive(async () => {
+        try { await prepareVideoResult(retryCampaignId) }
+        catch (cause: unknown) { throw new VideoResultError(retryCampaignId, cause) }
+        return retryCampaignId
+      })}>Retry results</Button>}
       {error && (
         <p role="alert" className="mt-3.5 text-[13.5px] leading-snug text-ui-danger">
           {error}

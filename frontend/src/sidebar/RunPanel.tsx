@@ -1,44 +1,39 @@
-﻿import { useMemo, useState } from 'react'
-import { useAppStore, selectActiveCampaign, selectActiveRun, selectActiveVideo } from '@/store/useAppStore'
+﻿import { useState } from 'react'
+import { useAppStore, selectActiveCampaign, selectActiveRun } from '@/store/useAppStore'
 import { Section } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 
+/** Video uploads prepare results automatically. Only recovery and history need controls. */
 export function RunPanel() {
-  const video = useAppStore(selectActiveVideo)
-  const audience = useAppStore((state) => state.audience)
-  const runs = useAppStore((state) => state.runs)
   const campaign = useAppStore(selectActiveCampaign)
-  const activeRun = useAppStore(selectActiveRun)
-  const startRun = useAppStore((state) => state.startRun)
+  const run = useAppStore(selectActiveRun)
+  const runs = useAppStore((state) => state.runs)
+  const preparation = useAppStore((state) => state.activeCampaignId ? state.videoPreparations[state.activeCampaignId] : undefined)
+  const prepare = useAppStore((state) => state.prepareVideoResult)
   const setActiveRun = useAppStore((state) => state.setActiveRun)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const ordered = useMemo(() => Object.values(runs).filter((run) => run.campaignId === campaign?.id), [runs, campaign?.id])
-  const needsVideo = campaign?.videoAvailable === false
-  const ready = Boolean(video && audience) && !needsVideo
-  const running = activeRun?.status === 'scoring' || activeRun?.status === 'cascading'
-  const begin = async () => {
-    setBusy(true)
-    setError(null)
-    try { await startRun(ordered.length === 0 ? 'Original' : `Version ${ordered.length + 1}`) }
-    catch (cause: unknown) { setError(cause instanceof Error ? cause.message : 'The simulation could not start.') }
-    finally { setBusy(false) }
+  const [retrying, setRetrying] = useState(false)
+  if (!campaign) return null
+  const history = campaign.runIds.map((id) => runs[id]).filter((entry) => entry?.status === 'complete' && entry.metrics && entry.report)
+  const complete = run?.status === 'complete' && run.metrics && run.report && !run.error
+  const error = preparation?.status === 'failed' ? preparation.error : run?.error
+  const failed = Boolean(error) || run?.status === 'failed'
+  const loading = !complete && !failed && (retrying || preparation?.status === 'preparing' || (run && run.status !== 'failed'))
+  const retry = async () => {
+    setRetrying(true)
+    try { await prepare(campaign.id) }
+    catch (cause: unknown) { console.error('Could not prepare video result', cause) }
+    finally { setRetrying(false) }
   }
-
-  return (
-    <Section title="Simulation" className="py-3" aside={<span role="status" className="max-w-[170px] truncate text-[11px] text-ui-faint" title={activeRun?.note}>{running ? (activeRun?.note || 'Running…') : activeRun?.status === 'failed' ? 'Failed' : ''}</span>}>
-      <div className="flex items-center gap-2">
-        {ordered.length > 1 && <select aria-label="Saved runs" value={activeRun?.id ?? ''} onChange={(event) => setActiveRun(event.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-ui-border bg-ui-well px-2 py-2 text-[12px] text-ui-text">
-          {ordered.map((run) => <option key={run.id} value={run.id}>{run.label}</option>)}
-        </select>}
-        <Button className={ordered.length > 1 ? '' : 'w-full'} disabled={!ready || busy || running} onClick={() => void begin()}>
-          {busy ? 'Starting…' : running ? 'Running…' : ordered.length ? 'Run again' : 'Run simulation'}
-        </Button>
-      </div>
-      {!ready && <p className="mt-2 text-[11px] text-ui-faint">{needsVideo ? 'Re-attach the video to run again.' : 'Attach a video to start.'}</p>}
-      {(error || activeRun?.error) && <p role="alert" className="mt-2 text-[12px] text-ui-danger">{error || activeRun?.error}</p>}
-      {activeRun && activeRun.options.audienceKey !== audience?.key && <p className="mt-2 text-[10.5px] text-ui-faint">Saved results · a previous audience</p>}
-    </Section>
-  )
+  if (complete && history.length < 2) return null
+  return <Section title={complete ? 'Saved results' : loading ? 'Video result' : 'Result unavailable'} className="py-3">
+    {loading ? <p role="status" className="text-[12px] text-ui-muted">Preparing results…</p> : !complete ? <>
+      {error && <p role="alert" className="mb-2 text-[12px] text-ui-danger">{error}</p>}
+      {campaign.videoAvailable ? <Button variant="outline" size="sm" onClick={() => void retry()} disabled={retrying}>Retry results</Button>
+        : <p className="text-[11px] text-ui-faint">Re-attach the original video to prepare its result.</p>}
+    </> : null}
+    {history.length > 1 && <select aria-label="Saved results" value={run?.id ?? ''} onChange={(event) => setActiveRun(event.target.value)}
+      className="mt-2 w-full rounded-md border border-ui-border bg-ui-well px-2 py-2 text-[12px] text-ui-text">
+      {history.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+    </select>}
+  </Section>
 }

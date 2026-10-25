@@ -1,23 +1,14 @@
-# Mii character export experiment
+# Mii character exports
 
-Run `npm run dev` in `frontend`, then open
-<http://127.0.0.1:5173/mii-test.html>. This is a separate development entry;
-the production island renderer has not been switched to the new character.
-
-The page supports one resident, lineups of four, six, ten, or twenty designs, or 48 independent animated clones,
-Walk (initial selection), Idle, Look around, Wave, pause, neutral/island lighting, shadows, and a ten-second
-benchmark after a two-second warmup. Keep the tab visible while measuring.
-Changing rendering mode, design, count, clip, movement, speed, view, pause, lighting, or shadows cancels
-the current measurement. The Rendering selector compares the optimized crowd
-against the original export at the same camera and display settings.
+The production island uses the exported resident designs described here. This
+document records their authoring workflow and renderer integration.
 
 ## Additional designs
 
-The preview includes **Nia**, **Theo**, and **Rowan** alongside the original, plus
+The roster includes **Nia**, **Theo**, and **Rowan** alongside the original, plus
 six additional designs: **Maya**, **Jules**, **Iris**, **Omar**, **Pip**, and **Vera**.
 The newest ten are **Luna**, **Felix**, **Zuri**, **Hugo**, **Cleo**, **Eden**,
-**Kai**, **Sage**, **Arlo**, and **Bea**. The preview opens on **All 20 designs**;
-the newest ten, earlier six, and original four also have their own groups.
+**Kai**, **Sage**, **Arlo**, and **Bea**.
 All twenty authoring files and the Blender comparison
 scene are saved in `assets/residents/`; their editor options and palettes are
 recorded in `scripts/mii_resident_presets.py`. Each preserves the hand/arm repair.
@@ -77,13 +68,8 @@ Every exported `MiiTest` rig has `walkStrideLength: 0.44` (model units per cycle
 and `walkCycleSeconds: 1` in its glTF extras. When manually changing step length
 or duration, update the action's stride metadata and scene fps accordingly.
 
-The preview's **In place** mode plays the stationary cycle. **Travel** adds
-`strideLength / cycleSeconds × displayedScale × playbackRate` along the existing
-forward direction (+Z in glTF). The 0.5–1.5× control changes cadence and travel
-together. Residents have independent phases. Idle/Walk fades last 0.18 seconds;
-travel follows the blended walking weight. Pausing freezes both pose and travel.
-The camera, lights, and labels follow movement. Floor lines are one preview unit
-apart; Front/Side buttons make contact and clearance easy to inspect.
+Residents have independent phases. Idle/Walk fades last 0.18 seconds, and the
+controller synchronizes walk cadence with simulation travel speed.
 
 Regenerate the Blender comparison with:
 
@@ -93,7 +79,7 @@ Regenerate the Blender comparison with:
 
 ## Crowd rendering optimization
 
-The optimized preview prepares each design once at load time:
+The renderer prepares each design once at load time:
 
 - Combine solid body/head/hair geometry into one skinned mesh, with the original
   linear PBR colors stored as vertex colors.
@@ -169,8 +155,8 @@ production build pass; full lint reports only existing unrelated warnings.
 For all twenty real exports, the browser check compares indexed triangle counts
 and deformed vertex positions at twelve poses per design (240 total), including
 Walk. It also verifies stride metadata, clip duration, matching endpoints,
-stationary roots, and planted foot motion after synchronized travel. Run it in
-the preview's developer console:
+stationary roots, and planted foot motion after synchronized travel. With the
+local Vite development server running, execute it in the workspace browser console:
 
 ```javascript
 await (await import('/scripts/resident-rendering.browser-check.mjs')).checkResidentExports()
@@ -197,8 +183,8 @@ modes, repeated Idle/Walk transitions, pause/resume, and all three speed setting
 The production adapter temporarily maps phone, ordinary reactions and dismissal
 to Idle and Sharing to a single wave. Dedicated poses remain follow-up work.
 Sprite selections are frozen in this test; runtime blinking and expression
-changes are not implemented. The legacy Kenney renderer remains available for
-development comparison without changing the approved Mii materials.
+changes are not implemented. The legacy Kenney renderer remains available as an
+automatic fallback if the resident exports cannot load.
 
 The creator's listing does not state an asset reuse license. Record the applicable
 terms before treating the experiment as a production asset.
@@ -227,14 +213,6 @@ Phone, ordinary reactions and dismissal temporarily use Idle; Sharing waves
 once on entry, then returns to Idle. Dedicated phone/dismissal poses and facial
 expressions remain follow-up animation work. Cascade pause continues to pause
 round progression while ambient walking continues.
-
-Development inspection: `/workspace?residents=roster` cycles all twenty designs
-across actual cohort bodies; `/workspace?residents=kenney` restores the legacy
-renderer and its original ambient speed. `window.__residentScene.inspect()`
-provides stable member/model assignments, rig UUIDs, weights and animation
-clocks; `.budget.lastUpdated` reports animation evaluations. These inspection
-options do not modify persisted audience data.
-
 
 ## Island surface pass
 

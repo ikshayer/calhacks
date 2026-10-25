@@ -21,14 +21,12 @@ import type {
  *
  * Two drivers implement this:
  *
- *  - `MockDataSource` runs the whole cascade in the browser from a seed. It is
- *    what makes the frontend buildable before the backend exists, and it is
- *    also the "explicitly labeled precomputed demo replay" that HACK.md
- *    requires as the offline fallback. It is not throwaway.
+ *  - `MockDataSource` runs the cascade in the browser from a seed and provides
+ *    a labeled offline demo.
  *  - `SpacetimeDataSource` maps these calls onto owner-scoped SpacetimeDB
  *    tables and subscriptions.
  *
- * Both stay wired at the expo; `VITE_DATA_SOURCE` picks the default.
+ * `VITE_DATA_SOURCE` selects the driver.
  */
 export interface SimDataSource {
   /** Human-readable, shown in the UI so nobody demos the mock while believing it is live. */
@@ -45,12 +43,7 @@ export interface SimDataSource {
   analyseVideo(campaignId: string, input: VideoInput, label: string): Promise<VideoAnalysis>
 
   /**
-   * Record a user correction to the analysed signals.
-   *
-   * The content analysis is a model's read of the video, and the user knows the
-   * video better than the model does. Correcting it is a product feature, not a
-   * test hook: it is also how you ask "what would a clearer ask do here?"
-   * without re-editing the footage first.
+   * Restore saved campaign signals when a video is reattached and analysed again.
    */
   reviseSignals(videoId: string, signals: ContentSignals): Promise<VideoAnalysis>
 
@@ -69,7 +62,7 @@ export interface SimDataSource {
 
   getRun(runId: RunId): Promise<RunSummary | undefined>
 
-  getReport(runId: RunId): Promise<Report>
+  getReport(runId: RunId, retryFailed?: boolean): Promise<Report>
 
   /** Follow-up chat, grounded in the profile, the upload and the run results. */
   chat(runId: RunId, history: ChatTurn[], message: string): Promise<string>

@@ -5,6 +5,11 @@ export function nonnegative(value: number | undefined): number | undefined {
   return value !== undefined && Number.isFinite(value) && value >= 0 ? value : undefined
 }
 
+export function chartNumber(value: number | undefined, digits = 0): string {
+  const valid = nonnegative(value)
+  return valid === undefined ? '—' : valid.toLocaleString(undefined, { maximumFractionDigits: digits })
+}
+
 export function probability(value: number | undefined): number | undefined {
   const valid = nonnegative(value)
   return valid !== undefined && valid <= 1 ? valid : undefined

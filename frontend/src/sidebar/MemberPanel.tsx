@@ -63,7 +63,7 @@ export function MemberPanel({ memberId, onAsk, onBack }: { memberId: number; onA
           const value = probability(raw)
           return <ChartBar key={label} label={label} value={value} max={1} detail={value === undefined ? 'Unavailable' : `${Math.round(value * 100)}%`} />
         })}
-        <p className="text-[10.5px] text-ui-faint">{idea ? 'Uncalibrated · return/share assume a visit' : 'Per exposure · synthetic probabilities'}</p>
+        <p className="text-[10.5px] text-ui-faint">{idea ? 'Uncalibrated · return/share assume a visit' : 'Per exposure · predicted probabilities'}</p>
       </div>}
       {timeline && <div className="mt-3 border-t border-ui-border pt-2">
         <p className="mb-1.5 text-[10.5px] text-ui-faint">In the replay</p>

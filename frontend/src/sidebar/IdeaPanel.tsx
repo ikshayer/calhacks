@@ -1,8 +1,8 @@
 ﻿import { useAppStore } from '@/store/useAppStore'
 import { Section, Stat } from '@/components/ui'
 import { Button } from '@/components/ui/button'
-import { ideaResponse, nonnegative, recommendedOption } from '@/data/overviewStats'
-import { ChartBar, ResponseDonut, chartNumber } from './OverviewCharts'
+import { chartNumber, ideaResponse, nonnegative, recommendedOption } from '@/data/overviewStats'
+import { ChartBar, ResponseDonut } from './OverviewCharts'
 
 /** The overview shows the result; the assistant retains the complete report. */
 export function IdeaPanel({ onAsk }: { onAsk(): void }) {
@@ -65,8 +65,7 @@ export function IdeaPanel({ onAsk }: { onAsk(): void }) {
           {recommended && <p className="mt-3 truncate text-[12px] font-medium text-ui-text" title={recommended}>Recommended: {recommended}</p>}
         </Section>
       )}
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <p className="text-[10.5px] text-ui-faint">Synthetic estimates · not a forecast</p>
+      <div className="flex justify-end px-4 py-3">
         <Button variant="outline" size="sm" onClick={onAsk}>Ask assistant</Button>
       </div>
     </>

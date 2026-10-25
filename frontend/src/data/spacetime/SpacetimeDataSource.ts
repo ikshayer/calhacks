@@ -179,7 +179,12 @@ export class SpacetimeDataSource implements SimDataSource {
     const row = await this.waitFor(WAIT.analysis, 'the video analysis', () => {
       const v = [...conn.db.video.iter()].find((row) => row.clientKey === clientKey)
       if (!v || (v.status !== 'ready' && v.status !== 'failed')) return undefined
-      if (v.status === 'failed') throw new Error(`Video analysis failed: ${v.error ?? 'unknown error'}`)
+      if (v.status === 'failed') {
+        if (sourceUrl.startsWith('upload:') && /Video file is not readable at\b/i.test(v.error ?? '')) {
+          throw new Error('The uploaded video was unavailable to the worker that picked it up. Restart connected workers with the latest code, then re-upload the original video.')
+        }
+        throw new Error(`Video analysis failed: ${v.error ?? 'unknown error'}`)
+      }
       return v
     })
     return toVideo(row, this.uploadUrl)
@@ -279,12 +284,21 @@ export class SpacetimeDataSource implements SimDataSource {
     return row ? toRunSummary(row) : undefined
   }
 
-  async getReport(runId: RunId): Promise<Report> {
+  async getReport(runId: RunId, retryFailed = false): Promise<Report> {
     const conn = await this.connect()
     const id = BigInt(runId)
+    let previousFailure: ReportRow | undefined
+    if (retryFailed) {
+      const report = conn.db.report.runId.find(id)
+      if (!report || report.status === 'failed') {
+        previousFailure = report ?? undefined
+        await conn.reducers.requestReport({ runId: id })
+      }
+    }
     const row = await this.waitFor(WAIT.report, 'the report', () => {
       const r = conn.db.report.runId.find(id)
       if (!r || r.status === 'writing') return undefined
+      if (previousFailure && r.status === 'failed' && r.updatedAt.microsSinceUnixEpoch === previousFailure.updatedAt.microsSinceUnixEpoch) return undefined
       if (r.status === 'failed') throw new Error(`The report could not be written: ${r.error ?? 'unknown error'}`)
       return r
     })

@@ -140,10 +140,6 @@ export function IdeaTestCard() {
           </p>
         )}
       </div>
-
-      <p className="mt-5 text-[13.5px] text-subtle">
-        Simulated residents of a fictional town — not consumer research, not a sales forecast.
-      </p>
     </section>
   )
 }

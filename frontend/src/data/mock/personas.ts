@@ -80,7 +80,7 @@ export interface AudienceSize {
 }
 
 /**
- * Build the synthetic audience and its sharing graph.
+ * Build the simulation audience and its sharing graph.
  *
  * The graph is small-world, per the HACK.md sim spec: each member links to 3-8
  * others, mostly inside their own group (shared interests), with a few random

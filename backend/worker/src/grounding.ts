@@ -138,7 +138,7 @@ export function groundingText(g: Grounding): string {
     'Analysis notes:',
     ...g.analysis.notes.map((n) => `  [${n.at}s] ${n.severity}: ${n.title}. ${n.detail}`),
     '',
-    `Simulated run (synthetic audience of ${g.audienceSize} members, not measured engagement). Round 0 shows the video to ${Math.round(g.run.options.seedExposure * 100)}% of the audience; each share exposes that member's connections in the next round.`,
+    `Digital simulation (${g.audienceSize} resident profiles). Round 0 shows the video to ${Math.round(g.run.options.seedExposure * 100)}% of the audience; each share exposes that member's connections in the next round.`,
     `Canonical trial: ${m.uniqueExposed} of ${g.audienceSize} members exposed, ${m.watch} watched through, ${m.likes} likes, ${m.comments} comments, ${m.shares} shares, over ${m.rounds} rounds. Coverage ${(m.coverage * 100).toFixed(0)}%.`,
     `Variability: total actions (watch + like + comment + share) per trial across 200 seeded trials, p10/p50/p90: ${m.spread.p10}/${m.spread.p50}/${m.spread.p90}.`,
     'By group:',

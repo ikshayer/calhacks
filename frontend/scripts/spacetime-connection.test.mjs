@@ -151,3 +151,49 @@ test('a subscription failing after initial success is discarded without invalida
   assert.equal(source.connect(), retry)
   assert.equal(attempts[1].disconnects, 0)
 })
+
+test('report retry requests only the failed report and waits past the previous failed cache row', async (t) => {
+  const source = new SpacetimeDataSource('ws://test.invalid', 'test-db')
+  let row = { runId: 1n, status: 'failed', error: 'Old failure', updatedAt: { microsSinceUnixEpoch: 1n }, summary: '', notes: [], hooks: [], references: [], assumptions: [] }
+  let requests = 0
+  t.mock.method(source, 'connect', async () => ({
+    db: { report: { runId: { find: () => row } } },
+    reducers: { requestReport: async () => { requests++ } },
+  }))
+  await assert.rejects(source.getReport('1'), /Old failure/)
+  assert.equal(requests, 0)
+  const retry = source.getReport('1', true)
+  let settled = false
+  retry.then(() => { settled = true })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(requests, 1)
+  assert.equal(settled, false, 'the old failed row must not immediately reject a rewrite request')
+  row = { ...row, status: 'ready', error: undefined, summary: 'Rewritten report', updatedAt: { microsSinceUnixEpoch: 2n } }
+  source.listeners.forEach((listener) => listener())
+  assert.equal((await retry).summary, 'Rewritten report')
+})
+
+test('missing local uploads get recovery guidance while ffmpeg and API failures retain their diagnosis', async (t) => {
+  const source = new SpacetimeDataSource('ws://test.invalid', 'test-db')
+  let row
+  let failure = 'Video file is not readable at C:\\OtherMachine\\uploads\\test-upload.mp4: ENOENT: no such file or directory'
+  t.mock.method(source, 'profileId', () => 'test-profile')
+  t.mock.method(source, 'uploadFile', async () => 'upload:test-upload.mp4')
+  t.mock.method(source, 'connect', async () => ({
+    db: { video: { iter: () => row ? [row] : [] } },
+    reducers: { createVideo: async (args) => { row = { ...args, status: 'failed', error: failure } } },
+  }))
+  const input = { name: 'original.mp4', durationSec: 18, file: new File(['video'], 'original.mp4', { type: 'video/mp4' }) }
+  await assert.rejects(source.analyseVideo('campaign', input, 'Original'), (error) => {
+    assert.match(error.message, /re-upload the original video/)
+    assert.doesNotMatch(error.message, /OtherMachine|ENOENT/)
+    return true
+  })
+  for (failure of ['spawn ffprobe ENOENT', 'Anthropic rejected the API key (401)']) {
+    await assert.rejects(source.analyseVideo('campaign', input, 'Original'), (error) => {
+      assert.ok(error.message.includes(failure))
+      assert.doesNotMatch(error.message, /re-upload/)
+      return true
+    })
+  }
+})

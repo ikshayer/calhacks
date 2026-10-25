@@ -1,9 +1,7 @@
 import { VERDICT_STYLE, type IdeaVerdict } from '@/data/ideaVerdict'
-import { nonnegative, type ideaResponse } from '@/data/overviewStats'
+import { chartNumber, nonnegative, type ideaResponse } from '@/data/overviewStats'
 
-export const VERDICTS: IdeaVerdict[] = ['going', 'maybe', 'not']
-export const chartNumber = (value: number | undefined, digits = 0) =>
-  nonnegative(value) === undefined ? '—' : value!.toLocaleString(undefined, { maximumFractionDigits: digits })
+const VERDICTS: IdeaVerdict[] = ['going', 'maybe', 'not']
 
 export function ChartBar({ label, value, max, color = 'var(--color-ui-accent)', detail }: {
   label: string; value?: number; max?: number; color?: string; detail?: string
@@ -25,16 +23,15 @@ export function ChartBar({ label, value, max, color = 'var(--color-ui-accent)', 
 }
 
 export function ResponseDonut({ response }: { response: ReturnType<typeof ideaResponse> }) {
-  let offset = 0
   const label = VERDICTS.map((verdict) => `${VERDICT_STYLE[verdict].label}: ${response.counts[verdict]} of ${response.scored} scored`).join('; ')
   return (
     <div className="flex items-center gap-5">
       <svg viewBox="0 0 96 96" className="h-28 w-28 shrink-0" role="img" aria-label={`${label}; ${response.missing} unscored`}>
         <circle cx="48" cy="48" r="35" fill="none" stroke="var(--color-ui-raised)" strokeWidth="12" />
-        {VERDICTS.map((verdict) => {
+        {VERDICTS.map((verdict, index) => {
           const size = response.scored ? response.counts[verdict] / response.scored * 100 : 0
-          const start = offset
-          offset += size
+          const preceding = VERDICTS.slice(0, index).reduce((total, prior) => total + response.counts[prior], 0)
+          const start = response.scored ? preceding / response.scored * 100 : 0
           return <circle key={verdict} cx="48" cy="48" r="35" fill="none" stroke={VERDICT_STYLE[verdict].color}
             strokeWidth="12" pathLength="100" strokeDasharray={`${size} ${100 - size}`} strokeDashoffset={-start} transform="rotate(-90 48 48)" />
         })}
