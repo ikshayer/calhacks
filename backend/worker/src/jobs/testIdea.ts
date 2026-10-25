@@ -21,7 +21,6 @@ const USD_PER_JEV_INPUT_TOKEN = 0.042 / 1_000_000;
 const MAX_CITED = 6;
 const MAX_AGE = 120;
 /** Residents with a known age below this are not buyers for these ideas, so they are left out unless the target names them. */
-const MIN_DECISION_AGE = 13;
 /** Longest slice of one profile field shown to the analyst, so 100+ residents stay within the prompt. */
 const FIELD_CHARS = 220;
 
@@ -311,7 +310,7 @@ const ANALYSIS_SCHEMA = {
 
 const ANALYSIS_INSTRUCTIONS = `ROLE: Campaign Strategy Analyst. You are analyzing synthetic customer simulation results for a small business. Compare campaigns using the same evaluation methodology. Calculate the number of exposed agents, interested agents, simulated visits, and shares (use the provided computed metrics; do not recompute differently). Identify recurring objections and distinct audience segments. Identify which campaign performs best within the business budget. Explain tradeoffs and uncertainty. Recommend one low-cost real-world experiment. Define a measurable KPI, such as coupon redemption or first-time purchases.
 
-Inputs, all in the user message: the business profile, the idea and the audience it was aimed at, the budget and campaign options with their costs (or 'none given'), the computed metrics, how many residents under 13 were excluded from the simulation, and one row per simulated resident (name, age, occupation, whether they are in the target audience, their simulated probabilities, and their values, goals and beliefs).
+Inputs, all in the user message: the business profile, the idea and the audience it was aimed at, the budget and campaign options with their costs (or 'none given'), the computed metrics, and one row per simulated resident (name, age, occupation, whether they are in the target audience, their simulated probabilities, and their values, goals and beliefs).
 
 Rules:
 - Never describe simulated responses as actual consumer research.
@@ -322,7 +321,6 @@ Rules:
 - If fewer than 5 residents are in the target audience, say the sample is too small to read the target on its own and lean on the whole-town result.
 - If no budget or no campaign options were given, say a budget comparison is not possible, and do not invent options or costs.
 - Always refer to residents by name (for example 'Maria, 34'). Never refer to them by row number, list position or memberId in any text field; memberId appears only in the 'memberId' field of reasons.
-- If any residents under 13 were excluded, mention it once in assumptions (they were left out because young children are not decision-makers for this idea).
 - Use only the numbers in the user message. Do not invent quotes, accounts or facts about the town.
 
 Return JSON matching the schema.
@@ -376,7 +374,7 @@ export function validateAnalysis(value: unknown, memberIds: ReadonlySet<number>)
   if (!isRecord(value)) return fail('expected a JSON object');
   const { reasons } = value;
   if (!Array.isArray(reasons)) return fail('reasons must be an array');
-  // A bad citation (an unscored resident such as an excluded child, or a repeat) is dropped with a
+  // A bad citation (an unscored resident, or a repeat) is dropped with a
   // warning rather than failing the whole test: citations only add reasons to the resident list.
   const seen = new Set<number>();
   const checkedReasons: { memberId: number; reason: string }[] = [];
@@ -440,7 +438,6 @@ function analysisInput(
   options: readonly CampaignOption[],
   metrics: IdeaMetrics,
   rows: string[],
-  excludedUnderage: number,
 ): string {
   const optionLines =
     options.length > 0 ? options.map((o, i) => `${i + 1}. ${o.name} (cost $${o.costUsd}): ${metrics.optionVisits[i]!.toFixed(1)} simulated visits`) : ['none given'];
@@ -455,7 +452,6 @@ function analysisInput(
     `Campaign options:\n${optionLines.join('\n')}`,
     `Computed metrics (whole town, ${metrics.scored} scored residents): ${metrics.inTarget} in target; ${metrics.interested} interested (visit >= 0.5), ${metrics.interestedInTarget} of them in target; ` +
       `expected visits ${metrics.expectedVisits.toFixed(1)}; expected shares ${metrics.expectedShares.toFixed(1)}`,
-    `Excluded from the simulation: ${excludedUnderage} residents under age ${MIN_DECISION_AGE}${excludedUnderage === 0 ? ' (none)' : ' (assumed not to be decision-makers for this idea)'}`,
     `Residents (probabilities are simulated, raw, uncalibrated):\n${rows.join('\n')}`,
   ].join('\n\n');
 }
@@ -558,13 +554,8 @@ export async function testIdea(conn: DbConnection, job: Job): Promise<void> {
   }
   const idea = parsed;
 
-  // Young children are excluded from scoring, metrics and the analyst unless the target explicitly includes them. Unknown ages stay.
-  const targetIncludesMinors =
-    (idea.maxAge !== null && idea.maxAge < MIN_DECISION_AGE) || (idea.minAge !== null && idea.minAge < MIN_DECISION_AGE);
-  const residents = targetIncludesMinors ? everyone : everyone.filter((r) => r.age === undefined || r.age >= MIN_DECISION_AGE);
-  const excludedUnderage = everyone.length - residents.length;
-  console.log(`[idea ${id}] excluded ${excludedUnderage} residents under age ${MIN_DECISION_AGE} (${residents.length} of ${everyone.length} kept)`);
-  if (residents.length === 0) throw new Error(`test_idea: every resident is under age ${MIN_DECISION_AGE}, so there is nobody to score`);
+  // Every resident is scored, children included; the target age range only marks who is "in target".
+  const residents = everyone;
 
   // 3. Score every resident.
   const questions = questionsFor(options);
@@ -647,7 +638,7 @@ export async function testIdea(conn: DbConnection, job: Job): Promise<void> {
   const scoredResidents = ideaResidents.filter((r) => !r.missing);
   const profiles = new Map(residents.map((r) => [r.member.memberId, r.profile]));
   const rows = scoredResidents.map((r) => residentRow(r, profiles.get(r.memberId)!));
-  const userText = analysisInput(profile, idea, row.budgetUsd, options, metrics, rows, excludedUnderage);
+  const userText = analysisInput(profile, idea, row.budgetUsd, options, metrics, rows);
   const citable = new Set(scoredResidents.map((r) => r.memberId));
   const analysisCacheParts = [models.ideaAnalysis.id, ANALYSIS_INSTRUCTIONS, ANALYSIS_SCHEMA, userText];
   let draft = await lookup('idea-analysis', analysisCacheParts, (v) => validateAnalysis(v, citable));
