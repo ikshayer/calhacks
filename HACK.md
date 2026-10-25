@@ -181,3 +181,117 @@ Mocked, hardcoded, or seeded parts we will disclose in the demo:
 - Sun ~01:40 PT hack-check (HARDEN, ~7.8 h left). Frontend restarted (localhost:5173); worker NOT running. Reel expansion and calibration on hold; realism ideas (backtest, real shares, persona fields) proposed, none started. Fetch.ai (arian-fetchai) still unmerged and untested. Weakest: Functionality (no full browser run-through). Next: start worker, run video + idea in the browser, merge/verify Fetch.ai, then demo video + README + pitch.
 - Sun ~03:00 PT Town expanded to 300 residents: the 50 Millbrook residents stay on the island; 250 neighbours are derived from them in code (new name, age +-6y, personality +-0.12, mood, money +-40%, no memories, linked to their source resident plus two random people). They are simulated and counted but not drawn; disclose them as derived, not hand-written. Default starting exposure back to 10% (30 residents); the 50-resident cascade stopped at round 2. Calibration was fitted on the 50 only and is unchanged. New A/B card on the campaigns page (below the idea and video cards): two videos plus a goal run in parallel against the same audience and seed; sidebar A/B toggle, Compare tab, and a per-group "where each wins" table. The goal text is shown with the results; the simulation does not read it. Not yet clicked through in a browser.
 - Sun ~04:50 PT Reworked demo video (third demo button, frontend/public/demo/reworked.mp4, 20 s, 9:16). Written by Claude Opus 5.5 through the API (backend/worker/scripts/generateVideoCode.ts, `npm run video:generate`) as a Remotion composition (videos/src/GivingGardenReworked.tsx), using 8 photos from Jim and the Apify niche findings (person-first hook, one ask, date + place). Photos were resized and stripped of location data (videos/public/photos). On-screen text is limited to facts Jim supplied (harvest Fri Oct 30, 4308 Church Lane, Parker TX 75002) plus "We grow sustainable food for our community" from the original video; "He came out to the farm" and "Bring a friend" are unconfirmed wording. People in the photos agreed to appear. Original and Revision videos untouched. Not yet analysed through the pipeline, so its cache is cold.
+- Sun ~04:40 PT Fetch.ai agents working end to end through ASI:One chat ("test demo"): orchestrator (mailbox, Agent Chat Protocol, handle reel-rehearsal) -> ingest -> simulation -> start_run on Maincloud -> our worker (JEV, cascade, report) -> progress lines and report back in chat. Merged origin/arian-fetchai (only agents/ added); SpacetimeDB module gained Shayer's idea-chat table/reducers and idea_test.audienceVersion (additive publish to calhacks-wwif0, data intact). Run locally with agents/run_split.py (orchestrator and the two private agents in separate processes, because the Agent Inspector cannot connect to a Bureau). agents/.env is gitignored and holds the CLI identity's token (owner of profile gg). Honest limits: (1) the chat replies are text only; (2) "test <reel url>" falls back to the cached demo video and says so, because create_video accepts only demo: sources; (3) the agent uses a FIXED seed (2995 = the browser app's rule for profile gg), so a chat run is repeatable; it is a typical result (8 actions vs p10/p50/p90 5/9/16), not a best case; the original video's result is dull because the video is weak; (4) the agents answer only while this laptop runs the worker and both agent processes; (5) the replay link was removed because the app cannot open a run it did not start.
+- Sun ~04:55 PT Three-way simulation on profile gg (300-member generated audience, seed 2995, 10% start, same for all): Original reached 30 / typical total actions p50 9 (p10-p90 5-16); Revision 36 / 20 (10-43); Reworked 96 / 92 (40-147), 3 rounds, 8 shares. Each step is decisive under the Compare rule. Caveat to say out loud: the Reworked video follows the advice the simulator gave on the Original (real footage, volunteers, one ask), so the ranking is partly the model agreeing with its own advice; it is a ranking, not a forecast of real engagement. Rows added to Maincloud: video 25, runs 33-35.
+
+##FETCH AI TRACK REQS
+Cal Hacks ASI:One Submission — Deliverables & How to Submit
+Submission Process
+Submit your project through Devpost.
+Register your submission through the Cal Hacks ASI:One Submission Agent (steps below). Watch the video here : Submission Process on ASI:One
+Before You Start: Get Your URLs Ready
+ASI:One Shared Chat URL
+Go to asi1.ai and open the chat where you demo your agent.
+Click the search icon in the left sidebar.
+Under Current chat, click Share chat.
+Copy the link (e.g. https://asi1.ai/shared-chat/...).
+Agentverse Agent Profile URL
+Go to agentverse.ai and open your agent.
+Go to the agent's profile page.
+Copy the URL (e.g. https://agentverse.ai/agents/details/agent1q.../profile).
+Repeat for each agent you built.
+Team Lead: Create Your Submission
+In ASI:One, message Cal Hacks ASI:One Submission agent. Something simple like "Hi"  works.
+On the welcome card, click Create team (I'm the lead).
+Fill in the required details:
+
+Field
+Required?
+Project name
+Yes
+Table number
+Optional
+Your name
+Yes
+Your email
+Yes
+Team size including you (1–4)
+Yes
+What problem does your project solve?
+Yes
+Public GitHub repository URL
+Yes
+Devpost project URL
+Yes
+Demo video URL
+Yes
+
+Bonus Points: Agentverse Agents & ASI:One Shared Chats (Optional)
+How many agents did you build? Set the number.
+Agent profile URLs: Paste them, separated by commas.
+How many shared chats? Set the number.
+Shared chat URLs: Paste them, separated by commas.
+Click Continue to review.
+Check your details:
+Everything correct? Click Confirm submission.
+Need a change? Click Edit details, update the form, then Continue to review again.
+After you confirm, you'll get a Team ID (e.g. lahacks-ce25ed57). Share it with your teammates.
+Teammates: Join Your Team
+In ASI:One, start a chat with Cal Hacks ASI:One Submission agent (e.g. "Hi").
+Click Join with Team ID.
+Enter the Team ID from your lead and click Continue.
+Enter your name and email, then click Join team.
+Submission Status
+
+Status
+Meaning
+Incomplete
+Your details are saved. Still waiting for teammates to join.
+Submitted
+All teammates have joined. You're done! ✅
+
+
+Note: The team lead can click Edit details any time before the deadline.
+
+Challenge statement
+
+ASI:One Agent Challenge – From Intent to Action
+The Challenge
+Most AI applications stop at conversation. Your challenge is to build an AI agent that can be discovered through ASI:One, understand a user's intent, and take meaningful action to solve a real-world problem.
+
+Your agent might coordinate services, automate workflows, analyze live information, make recommendations, complete transactions, collaborate with other specialized agents, or execute multi-step tasks. The result should be more than a chatbot or a thin wrapper around an API.
+
+What to Build
+Build a single agent or multi-agent system that:
+
+Solves a clearly defined real-world problem.
+Performs multi-step planning, reasoning, or orchestration.
+Uses tools, APIs, external services, data sources, MCP, or other agents to produce an executable outcome.
+Is registered on Agentverse and discoverable through ASI:One.
+Implements the Agent Chat Protocol (ACP).
+Allows the complete primary workflow to be demonstrated directly inside an ASI:One conversation without requiring a custom frontend.
+(Recommended) Uses ASI1 Interactive Cards to provide rich, guided user interactions such as forms, carousels, review screens, detail views, or custom interactive layouts directly inside ASI:One conversations.
+You may use any framework, including Google ADK, LangGraph, CrewAI, OpenAI Agents SDK, Claude Agent SDK, uAgents, or plain Python.
+
+Mandatory Requirements
+To be eligible for prizes, your project must:
+
+Register at least one agent on Agentverse.
+Implement the Agent Chat Protocol (ACP).
+Be discoverable and directly usable through ASI:One.
+Demonstrate meaningful tool execution or multi-agent orchestration.
+Complete the primary user workflow entirely within an ASI:One conversation.
+Submit a public GitHub repository with instructions to run or test the project.
+Bonus Points
+Projects may receive additional consideration for:
+
+Effective multi-agent collaboration.
+Implementation of the Payment Protocol with a credible monetization model.
+Effective use of ASI Interactive Cards to create intuitive, guided, and action-oriented user experiences inside ASI:One.
+Strong reliability, error handling, and recovery from failed tool calls.
+Creative use of real-time data and external services.
+An agent that could realistically continue operating after the hackathon.
+Deliverables & How to Submit
+Submit your project through Devpost
+You also need to register your submission through the CalHacks Hackathon ASI:One Submission Agent (steps below). Watch the video here : Submission Process on ASI:One
+Refer to this document for full information

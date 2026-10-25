@@ -53,13 +53,18 @@ agent = Agent(
         "Tests how a short video lands with different audiences before you "
         "publish it. Send a reel link or say 'test demo' and it runs a private "
         "audience simulation, streams progress, and returns engagement "
-        "numbers, a written report and a link to the live replay."
+        "numbers and a written report."
     ),
 )
 
 chat_proto = Protocol(spec=chat_protocol_spec)
 
 URL_RE = re.compile(r"https?://\S+")
+# "test demo", "run the demo video", "simulate this reel", or just "demo". A bare "run" or "test"
+# inside another sentence ("what do you do to run it?") must not start a simulation.
+START_RE = re.compile(r"\b(?:test|run|simulate)\b[\s\w]{0,24}?\b(?:demo|reel|video)\b")
+def wants_simulation(low: str) -> bool:
+    return low.strip(" .!?") in ("demo", "test", "simulate") or START_RE.search(low) is not None
 
 HELP = """**Reel Rehearsal** — see how a video lands before you post it.
 
@@ -67,7 +72,7 @@ HELP = """**Reel Rehearsal** — see how a video lands before you post it.
 - Paste an Instagram reel link and I'll test it.
 
 I'll stream progress while it runs, then give you the simulated engagement
-numbers, the written report, and a link to watch the cascade replay.
+numbers and the written report.
 
 These are **simulated** audience reactions, not predictions of real
 engagement. The first round exposes 10% of the audience and the scoring
@@ -136,7 +141,7 @@ async def run_workflow(ctx: Context, sender: str, url: str) -> None:
         return
 
     run_id = started.run_id
-    await say(ctx, sender, f"Run `{run_id}` is going. Watch it live: {started.island_url}")
+    await say(ctx, sender, f"Run `{run_id}` is going.")
 
     # 3. Stream progress until the run and its report settle.
     deadline = time.monotonic() + config.RUN_TIMEOUT_SECONDS
@@ -170,8 +175,7 @@ async def run_workflow(ctx: Context, sender: str, url: str) -> None:
         await say(
             ctx,
             sender,
-            f"The run is still going after {config.RUN_TIMEOUT_SECONDS}s. "
-            f"It will finish on the island: {started.island_url}",
+            f"The run is still going after {config.RUN_TIMEOUT_SECONDS}s. It keeps running in the background.",
             end=True,
         )
         return
@@ -180,8 +184,7 @@ async def run_workflow(ctx: Context, sender: str, url: str) -> None:
         await say(
             ctx,
             sender,
-            f"The run failed: {failure}\n\nNothing was published. "
-            f"You can retry from the web app: {started.island_url}",
+            f"The run failed: {failure}\n\nNothing was published.",
             end=True,
         )
         return
@@ -211,8 +214,6 @@ def render(subject: str, result: RunResult) -> str:
         parts += ["", "**Report**", "", result.report_text]
     parts += [
         "",
-        f"Watch the cascade replay: {result.island_url}",
-        "",
         "_Simulated audience reactions, not a prediction of real engagement. "
         "The first round exposes 10% of the audience and the scoring "
         "calibration is fixed._",
@@ -238,7 +239,7 @@ async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
         low = text.lower()
         if match:
             await run_workflow(ctx, sender, match.group(0).rstrip(".,)"))
-        elif "demo" in low or "test" in low or "run" in low or "simulate" in low:
+        elif wants_simulation(low):
             await run_workflow(ctx, sender, "")
         else:
             await say(ctx, sender, HELP, end=True)

@@ -48,9 +48,11 @@ import ReviseSignalsReducer from "./revise_signals_reducer";
 import RunCascadeForRunReducer from "./run_cascade_for_run_reducer";
 import SaveAudienceReducer from "./save_audience_reducer";
 import SendChatMessageReducer from "./send_chat_message_reducer";
+import SendIdeaChatMessageReducer from "./send_idea_chat_message_reducer";
 import SetChatReplyReducer from "./set_chat_reply_reducer";
 import SetComparisonSummaryReducer from "./set_comparison_summary_reducer";
 import SetExplanationReducer from "./set_explanation_reducer";
+import SetIdeaChatReplyReducer from "./set_idea_chat_reply_reducer";
 import SetIdeaReasonReducer from "./set_idea_reason_reducer";
 import SetIdeaResultReducer from "./set_idea_result_reducer";
 import SetJobStageReducer from "./set_job_stage_reducer";
@@ -73,6 +75,7 @@ import ChatMessageRow from "./chat_message_table";
 import CompanyProfileRow from "./company_profile_table";
 import ComparisonRow from "./comparison_table";
 import DecisionRow from "./decision_table";
+import IdeaChatMessageRow from "./idea_chat_message_table";
 import IdeaTestRow from "./idea_test_table";
 import JobRow from "./job_table";
 import ReferenceReelRow from "./reference_reel_table";
@@ -173,6 +176,20 @@ const tablesSchema = __schema({
       { name: 'decision_row_id_key', constraint: 'unique', columns: ['rowId'] },
     ],
   }, DecisionRow),
+  ideaChatMessage: __table({
+    name: 'idea_chat_message',
+    indexes: [
+      { accessor: 'id', name: 'idea_chat_message_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'ideaId', name: 'idea_chat_message_idea_id_idx_btree', algorithm: 'btree', columns: [
+        'ideaId',
+      ] },
+    ],
+    constraints: [
+      { name: 'idea_chat_message_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, IdeaChatMessageRow),
   ideaTest: __table({
     name: 'idea_test',
     indexes: [
@@ -315,9 +332,11 @@ const reducersSchema = __reducers(
   __reducerSchema("run_cascade_for_run", RunCascadeForRunReducer),
   __reducerSchema("save_audience", SaveAudienceReducer),
   __reducerSchema("send_chat_message", SendChatMessageReducer),
+  __reducerSchema("send_idea_chat_message", SendIdeaChatMessageReducer),
   __reducerSchema("set_chat_reply", SetChatReplyReducer),
   __reducerSchema("set_comparison_summary", SetComparisonSummaryReducer),
   __reducerSchema("set_explanation", SetExplanationReducer),
+  __reducerSchema("set_idea_chat_reply", SetIdeaChatReplyReducer),
   __reducerSchema("set_idea_reason", SetIdeaReasonReducer),
   __reducerSchema("set_idea_result", SetIdeaResultReducer),
   __reducerSchema("set_job_stage", SetJobStageReducer),

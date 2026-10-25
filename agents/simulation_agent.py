@@ -8,7 +8,6 @@ agent only calls `start_run` and reads rows.
 
 from __future__ import annotations
 
-import time
 import uuid
 
 import config
@@ -33,6 +32,10 @@ TERMINAL = {"complete", "failed"}
 # the first round exposes 10% of the audience.
 SEED_EXPOSURE = 0.1
 MAX_ROUNDS = 6
+
+# Fixed so the same video gives the same result on every run. 2995 is what the browser app derives
+# for the profile "gg" (hashSeed(profile.id) % 100000), so a chat run and an app run match.
+RUN_SEED = 2995
 
 
 def island_url(run_id: str) -> str:
@@ -77,7 +80,7 @@ async def start(video_id: str) -> str:
 
     client_key = f"agent-{uuid.uuid4().hex[:12]}"
     options = [
-        int(time.time()) % 2**31,          # seed
+        RUN_SEED,
         int(profile.get("audience_version", 1)),
         SEED_EXPOSURE,
         MAX_ROUNDS,

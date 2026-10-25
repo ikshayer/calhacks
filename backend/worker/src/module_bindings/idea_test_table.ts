@@ -44,4 +44,5 @@ export default __t.row({
   createdAt: __t.timestamp().name("created_at"),
   updatedAt: __t.timestamp().name("updated_at"),
   plainJson: __t.string().name("plain_json"),
+  audienceVersion: __t.option(__t.u32()).name("audience_version"),
 });

@@ -11,16 +11,15 @@ reel link, or say "test demo", and this agent runs a private audience
 simulation: a few hundred synthetic audience members each decide whether they
 would watch it through, like, comment or share, and sharing spreads the video
 through their social graph round by round. You get the simulated engagement
-numbers, a written report with timestamped notes and rewritten hooks, and a
-link to watch the cascade replay in 3D. Nothing is published and nothing is
-posted on your behalf.
+numbers and a written report with timestamped notes and rewritten hooks.
+Nothing is published and nothing is posted on your behalf.
 </description>
 
 <use_cases>
     <use_case>Test an unpublished reel against a simulated audience before posting it.</use_case>
     <use_case>See which parts of a video lose people, with timestamps.</use_case>
     <use_case>Get rewritten hook suggestions grounded in the actual video.</use_case>
-    <use_case>Watch how a video would spread through a social graph, round by round.</use_case>
+    <use_case>See how far a video spreads through a social graph, round by round, and how many people it reaches.</use_case>
 </use_cases>
 
 <payload_requirements>
