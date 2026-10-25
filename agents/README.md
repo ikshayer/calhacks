@@ -9,11 +9,11 @@ in the Node worker (the JEV key must never reach an agent), the cascade stays
 in the SpacetimeDB module, and the report is still written by Claude in the
 worker. These agents only call `start_run` and read rows back.
 
-| Agent | Public | Address (with the dev seeds) | Job |
+| Agent | Public | Address (live) | Job |
 | --- | --- | --- | --- |
-| `reels-orchestrator` | yes, Chat Protocol | `agent1qtw577dxgf9pmw2q3fm3042au43dghf3etfvp6cspweyhd6u0tqjkaf7ty9` | Parse the chat message, drive the others, stream progress, reply. |
-| `reel-ingest` | no | `agent1qdxe6wr460srx7wf8x0l9yg8sjpzgvpl2le4x3efjlzmhgwf3s8mkqpmnzl` | Resolve a reel URL to a runnable video id, scraping with Apify for context. |
-| `reel-simulation` | no | `agent1qgffwkhdu5235pd3ex7wdp0kqxpg02j9930sldzfdk242jnrqh5q5sfgjpr` | Call `start_run`, watch the run and job rows, read the report. |
+| `reels-orchestrator` | yes, Chat Protocol | `agent1q2mslcxwezpm5j7y7tyes754pagc3mv4qd3ampfhcm92rx63w3y62qz9vjg` | Parse the chat message, drive the others, stream progress, reply. |
+| `reel-ingest` | no | `agent1qderhnzcjcszmv60xhv9c6rlr29rtnwkq7d2v5w3nwh6gql30hvdvz8jlsq` | Resolve a reel URL to a runnable video id, scraping with Apify for context. |
+| `reel-simulation` | no | `agent1q2xe9930mrh94vryadcu99yrcz6dltmxflu7tmmxv0xu277a3zhqvucddh9` | Call `start_run`, watch the run and job rows, read the report. |
 
 Addresses are derived from the seeds, so **set real seeds in `.env` before
 registering** — the addresses above change with them.
