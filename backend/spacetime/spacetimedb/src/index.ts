@@ -664,6 +664,7 @@ export const testIdea = spacetimedb.reducer(
       error: undefined,
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
+      plainJson: '',
     });
     enqueue(ctx, 'test_idea', row.id.toString());
   }
@@ -679,11 +680,41 @@ export const setIdeaResult = spacetimedb.reducer(
     residents: t.array(IdeaResident),
     metrics: IdeaMetrics,
     analysis: IdeaAnalysis,
+    plainJson: t.string(),
   },
   (ctx, { id, ...fields }) => {
     requireWorker(ctx);
     const row = ctx.db.ideaTest.id.find(id);
     if (!row) throw new SenderError('unknown idea test');
     ctx.db.ideaTest.id.update({ ...row, ...fields, status: 'ready', error: undefined, updatedAt: ctx.timestamp });
+  }
+);
+
+/** Ask for one resident's reason for their idea verdict; the worker writes it into idea_test.residents. Cached once written. */
+export const requestIdeaReason = spacetimedb.reducer({ ideaId: t.u64(), memberId: t.u32() }, (ctx, { ideaId, memberId }) => {
+  const idea = ctx.db.ideaTest.id.find(ideaId);
+  if (!idea) throw new SenderError('unknown idea test');
+  requireOwner(ctx, idea.owner);
+  if (idea.status !== 'ready') throw new SenderError(`idea test is ${idea.status}, not ready`);
+  const resident = idea.residents.find((r) => r.memberId === memberId);
+  if (!resident) throw new SenderError('this resident was not part of the idea test');
+  if (resident.missing) throw new SenderError('this resident has no prediction');
+  if (resident.reason) return;
+  const targetId = `${ideaId}:${memberId}`;
+  const inFlight = [...ctx.db.job.iter()].some(
+    (j) => j.kind === 'explain_idea_member' && j.targetId === targetId && (j.status === 'queued' || j.status === 'claimed')
+  );
+  if (!inFlight) enqueue(ctx, 'explain_idea_member', targetId);
+});
+
+export const setIdeaReason = spacetimedb.reducer(
+  { ideaId: t.u64(), memberId: t.u32(), reason: t.string() },
+  (ctx, { ideaId, memberId, reason }) => {
+    requireWorker(ctx);
+    const idea = ctx.db.ideaTest.id.find(ideaId);
+    if (!idea) throw new SenderError('unknown idea test');
+    if (!idea.residents.some((r) => r.memberId === memberId)) throw new SenderError('unknown resident for this idea test');
+    const residents = idea.residents.map((r) => (r.memberId === memberId ? { ...r, reason } : r));
+    ctx.db.ideaTest.id.update({ ...idea, residents, updatedAt: ctx.timestamp });
   }
 );

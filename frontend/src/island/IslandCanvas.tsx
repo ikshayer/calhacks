@@ -11,6 +11,8 @@ import { Town } from './Town'
 import { Villagers } from './Villagers'
 import { AmbientChatter } from './fx/AmbientChatter'
 import { GroupHighlight } from './fx/GroupHighlight'
+import { VerdictRings } from './fx/VerdictRings'
+import { VERDICT_STYLE, type IdeaVerdict } from '@/data/ideaVerdict'
 import { ISLAND_SPACING, type Island } from './scene/island'
 import type { IslandSim } from './scene/IslandSim'
 import { residentAppearance, RESIDENT_IDS } from './residentAppearance'
@@ -28,6 +30,8 @@ export interface IslandCanvasProps {
   /** Group to ring on the ground, or null. Driven by the sidebar. */
   highlightGroupId: string | null
   highlightColor: string
+  /** Member ids to ring by idea verdict; the static verdict colours are used. */
+  verdicts?: Record<IdeaVerdict, number[]>
   /** Dropped first when frames get expensive. */
   shadows: boolean
   paused: boolean
@@ -81,6 +85,7 @@ export function IslandCanvas({
   onSelect,
   highlightGroupId,
   highlightColor,
+  verdicts,
   shadows,
   paused,
   onTownError,
@@ -162,6 +167,13 @@ export function IslandCanvas({
         <AmbientChatter sim={sim} paused={paused} />
         {highlightGroupId && (
           <GroupHighlight sim={sim} groupId={highlightGroupId} color={highlightColor} />
+        )}
+        {verdicts && (
+          <>
+            <VerdictRings sim={sim} memberIds={verdicts.going} color={VERDICT_STYLE.going.color} />
+            <VerdictRings sim={sim} memberIds={verdicts.maybe} color={VERDICT_STYLE.maybe.color} />
+            <VerdictRings sim={sim} memberIds={verdicts.not} color={VERDICT_STYLE.not.color} />
+          </>
         )}
       </Suspense>
 

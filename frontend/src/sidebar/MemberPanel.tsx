@@ -1,6 +1,8 @@
 import { createAvatar } from '@dicebear/core'
 import { openPeeps } from '@dicebear/collection'
-import type { ReactionKind } from '@/data/types'
+import { useEffect, useState } from 'react'
+import type { IdeaResident, IdeaTestResult, ReactionKind } from '@/data/types'
+import { VERDICT_STYLE, verdictOf } from '@/data/ideaVerdict'
 import { useAppStore, selectActiveRun } from '@/store/useAppStore'
 import { memberTimeline, type MemberTimeline } from '@/store/selectors'
 import { Pill, Section } from '@/components/ui'
@@ -55,6 +57,8 @@ export function MemberPanel({ memberId }: { memberId: number }) {
   const selectMember = useAppStore((state) => state.selectMember)
 
   const member = audience?.members.find((candidate) => candidate.id === memberId)
+  const ideaResult = useAppStore((state) => (state.idea?.status === 'ready' ? state.idea.result : undefined))
+  const ideaResident = ideaResult?.residents.find((candidate) => candidate.memberId === memberId)
 
   // Cheap enough to derive every render: a cascade caps at six rounds, so this
   // is a handful of array scans. Memoising it by hand would only be guesswork
@@ -119,7 +123,14 @@ export function MemberPanel({ memberId }: { memberId: number }) {
             </p>
           </div>
         </header>
+      </div>
 
+      {/* In the idea view the verdict and its reason are the point, so they come first. */}
+      {ideaResident && ideaResult && (
+        <IdeaVerdictSection result={ideaResult} resident={ideaResident} />
+      )}
+
+      <div className="border-b border-line px-4 pb-4">
         <p className="mt-3 text-[12.5px] leading-relaxed text-muted">{member.persona}</p>
         {member.millbrook && (
           <div className="mt-3">
@@ -140,17 +151,18 @@ export function MemberPanel({ memberId }: { memberId: number }) {
       </div>
 
       <PersonaDetails member={member} audience={audience} onSelect={selectMember} />
-
       {!run ? (
-        <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
-          Run a simulation to see how this member would respond.
-        </p>
-      ) : !compatibleRun ? (
+        ideaResident ? null : (
+          <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
+            Run a simulation to see how this member would respond.
+          </p>
+        )
+      ) : !compatibleRun ? (ideaResident ? null : (
         <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
           {run.options.audienceKey ? 'This run used a different audience configuration.' : 'This saved run belongs to the previous audience.'}
           {' '}Run this version again to see this resident’s response.
         </p>
-      ) : (
+      )) : (
         <>
           <Section title="What they did in this run">
             {timeline ? (
@@ -231,6 +243,102 @@ export function MemberPanel({ memberId }: { memberId: number }) {
       )}
     </div>
   )
+}
+
+function IdeaVerdictSection({
+  result,
+  resident,
+}: {
+  result: IdeaTestResult
+  resident: IdeaResident
+}) {
+  const verdict = verdictOf(resident)
+  const input = useAppStore((state) => state.idea?.input)
+  return (
+    <Section title="Idea verdict">
+      {verdict === undefined ? (
+        <div className="rounded-lg border border-line bg-panel px-3 py-2.5">
+          <p className="text-[12.5px] font-medium text-paper">No prediction</p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+            This resident’s profile lacked what the question needed, so they are left out of the
+            counts rather than counted as a no.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="flex items-center gap-2 text-[13px] font-medium" style={{ color: VERDICT_STYLE[verdict].color }}>
+            <span
+              aria-hidden
+              className="inline-block h-2.5 w-2.5 rounded-full"
+              style={{ background: VERDICT_STYLE[verdict].color }}
+            />
+            {VERDICT_STYLE[verdict].label}
+          </p>
+          <div className="mt-3 space-y-1.5">
+            <Probability label="Would visit" value={resident.pVisit} color="#7fb069" />
+            <Probability label="Would come back" value={resident.pReturn} color="#6aa9c9" />
+            <Probability label="Would tell a friend" value={resident.pShare} color="#e2735f" />
+          </div>
+          {input && input.options.length > 0 && resident.optionInterest.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1.5 text-[11.5px] text-faint">Interest in each option</p>
+              <div className="space-y-1.5">
+                {input.options.map((option, index) => (
+                  <Probability
+                    key={option.name}
+                    label={option.name}
+                    value={resident.optionInterest[index] ?? 0}
+                    color="#f2b53c"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="mt-3">
+            <IdeaReason ideaId={result.id} resident={resident} />
+            <p className="mt-2 text-[11px] leading-relaxed text-faint">
+              A generated rationale for a simulated decision, not something this person did.
+            </p>
+          </div>
+        </>
+      )}
+    </Section>
+  )
+}
+
+function IdeaReason({ ideaId, resident }: { ideaId: string; resident: IdeaResident }) {
+  const source = useAppStore((state) => state.source)
+  // Keyed by member, so a panel reopened on someone else never shows the previous answer.
+  const [fetched, setFetched] = useState<{ memberId: number; text: string; error?: string } | null>(null)
+  const memberId = resident.memberId
+
+  useEffect(() => {
+    if (resident.reason) return
+    let live = true
+    source
+      .explainIdeaResident(ideaId, memberId)
+      .then((text) => {
+        if (live) setFetched({ memberId, text })
+      })
+      .catch((cause: unknown) => {
+        if (live) {
+          setFetched({
+            memberId,
+            text: '',
+            error: cause instanceof Error ? cause.message : 'The reason could not be written.',
+          })
+        }
+      })
+    return () => {
+      live = false
+    }
+  }, [source, ideaId, memberId, resident.reason])
+
+  const current = fetched?.memberId === memberId ? fetched : null
+  const text = resident.reason || current?.text || ''
+  if (current?.error) return <p className="text-[12px] leading-relaxed text-bloom">{current.error}</p>
+  if (!text) return <p className="text-[12.5px] leading-relaxed text-faint">Writing a reason…</p>
+  return <p className="text-[12.5px] leading-relaxed text-muted">{text}</p>
 }
 
 function TimelineSummary({

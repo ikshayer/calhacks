@@ -43,6 +43,11 @@ export interface CompanyProfile {
   tone: string[]
   inspirationAccounts: string[]
   groups: AudienceGroup[]
+  /**
+   * Whether the groups above shape the simulation. `false` puts every resident in one
+   * neutral group with no assumed interests (see data/simulationProfile.ts). Absent = true.
+   */
+  useAudienceGroups?: boolean
   /** Bumped whenever the groups change, so runs can declare which audience they used. */
   audienceVersion: number
 }
@@ -364,6 +369,22 @@ export interface IdeaAnalysis {
   limitations: string[]
 }
 
+/** A plain-language point and the reason behind it. */
+export interface IdeaPlainPoint {
+  what: string
+  because: string
+}
+
+/** The analysis restated in plain words; every point carries its own reason. */
+export interface IdeaPlainExplanation {
+  answer: { text: string; because: string }
+  bestBet: IdeaPlainPoint
+  experiment: IdeaPlainPoint
+  howYouKnow: IdeaPlainPoint
+  /** One to three. */
+  objections: { reason: string; because: string }[]
+}
+
 export interface IdeaTestResult {
   id: string
   status: 'running' | 'ready' | 'failed'
@@ -375,6 +396,8 @@ export interface IdeaTestResult {
   residents: IdeaResident[]
   metrics?: IdeaMetrics
   analysis?: IdeaAnalysis
+  /** Absent for older rows or when the stored JSON was unusable. */
+  plain?: IdeaPlainExplanation
   error?: string
   stage?: string
 }

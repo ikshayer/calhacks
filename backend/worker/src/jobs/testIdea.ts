@@ -231,10 +231,33 @@ export function computeMetrics(residents: readonly IdeaResident[], optionCount: 
 // Step 5: the analyst
 // ---------------------------------------------------------------------------
 
+export interface PlainPair {
+  what: string;
+  because: string;
+}
+
+/** The plain-language read of the result, shown to the owner. Serialised into the `plainJson` column. */
+export interface PlainAnswer {
+  answer: { text: string; because: string };
+  bestBet: PlainPair;
+  experiment: PlainPair;
+  howYouKnow: PlainPair;
+  objections: { reason: string; because: string }[];
+}
+
 export interface AnalysisDraft {
   analysis: IdeaAnalysis;
+  plain: PlainAnswer;
   reasons: { memberId: number; reason: string }[];
 }
+
+const pairOf = (first: string) =>
+  ({
+    type: 'object',
+    additionalProperties: false,
+    required: [first, 'because'],
+    properties: { [first]: text, because: text },
+  }) as const;
 
 const ANALYSIS_SCHEMA = {
   type: 'object',
@@ -250,6 +273,7 @@ const ANALYSIS_SCHEMA = {
     'assumptions',
     'limitations',
     'reasons',
+    'plain',
   ],
   properties: {
     recommendedCampaign: text,
@@ -261,6 +285,18 @@ const ANALYSIS_SCHEMA = {
     successMetric: text,
     assumptions: { type: 'array', items: text },
     limitations: { type: 'array', items: text },
+    plain: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['answer', 'bestBet', 'experiment', 'howYouKnow', 'objections'],
+      properties: {
+        answer: pairOf('text'),
+        bestBet: pairOf('what'),
+        experiment: pairOf('what'),
+        howYouKnow: pairOf('what'),
+        objections: { type: 'array', items: pairOf('reason') },
+      },
+    },
     reasons: {
       type: 'array',
       items: {
@@ -300,26 +336,68 @@ experiment: one low-cost real-world experiment to check the recommendation with 
 successMetric: one measurable KPI for that experiment, with how to count it.
 assumptions: the assumptions this analysis rests on (recommendations that are not observations belong here or in budgetAllocation).
 limitations: confidence limitations, including that residents are simulated and probabilities are uncalibrated.
-reasons: up to ${MAX_CITED} residents worth citing, each with 'memberId' exactly as shown in the rows and a one-sentence 'reason' that names the resident and ties their answer to their values, goals or beliefs. Cite only residents that appear in the rows.`;
+reasons: up to ${MAX_CITED} residents worth citing, each with 'memberId' exactly as shown in the rows and a one-sentence 'reason' that names the resident and ties their answer to their values, goals or beliefs. Cite only residents that appear in the rows.
+plain: the same result told to a shop owner who has never seen a research report. Fields:
+- answer.text: the overall result in 1-2 sentences. answer.because: why the town reacted that way. Say 'simulated residents' at least once in answer.because. If the evidence is thin (for example nobody is in the target age, or fewer than 5 are), say so plainly in answer.because.
+- bestBet.what: which campaign or approach to pick. bestBet.because: why, citing the simulated visit numbers you were given, compared with the alternatives and their costs. If no options were given, say so and do not invent any.
+- experiment.what: one cheap real-world test to run first. experiment.because: why it is the right first step.
+- howYouKnow.what: the one number to measure. howYouKnow.because: why that number shows success.
+- objections: 1-3 entries. Each reason says why some residents would say no; each because points to what in their profiles shows it and names 1-2 residents (for example 'Maria, 34').
+Writing rules for plain: plain everyday language, like a friend explaining. Short sentences. No jargon (no 'KPI', 'segment', 'conversion', 'cohort'). Every 'because' must point to specific simulated evidence from the input (counts, visit numbers, named residents and their values or goals). Never invent numbers. Never refer to residents by row number or memberId.`;
+
+export function validatePlain(value: unknown): PlainAnswer {
+  if (!isRecord(value)) return fail('plain must be an object');
+  const pair = (field: string, first: string) => {
+    const v = value[field];
+    if (!isRecord(v)) return fail(`plain.${field} must be an object`);
+    return { first: nonEmpty(v[first], `plain.${field}.${first}`), because: nonEmpty(v.because, `plain.${field}.because`) };
+  };
+  const answer = pair('answer', 'text');
+  const bestBet = pair('bestBet', 'what');
+  const experiment = pair('experiment', 'what');
+  const howYouKnow = pair('howYouKnow', 'what');
+  const { objections } = value;
+  if (!Array.isArray(objections)) return fail('plain.objections must be an array');
+  if (objections.length < 1 || objections.length > 3) return fail(`plain.objections must have 1-3 entries, got ${objections.length}`);
+  return {
+    answer: { text: answer.first, because: answer.because },
+    bestBet: { what: bestBet.first, because: bestBet.because },
+    experiment: { what: experiment.first, because: experiment.because },
+    howYouKnow: { what: howYouKnow.first, because: howYouKnow.because },
+    objections: objections.map((item, i) => {
+      if (!isRecord(item)) return fail(`plain.objections[${i}] must be an object`);
+      return { reason: nonEmpty(item.reason, `plain.objections[${i}].reason`), because: nonEmpty(item.because, `plain.objections[${i}].because`) };
+    }),
+  };
+}
 
 /** Throws on anything the model returned that the rest of the pipeline cannot trust. */
 export function validateAnalysis(value: unknown, memberIds: ReadonlySet<number>): AnalysisDraft {
   if (!isRecord(value)) return fail('expected a JSON object');
   const { reasons } = value;
   if (!Array.isArray(reasons)) return fail('reasons must be an array');
-  if (reasons.length > MAX_CITED) return fail(`at most ${MAX_CITED} residents may be cited, got ${reasons.length}`);
-
+  // A bad citation (an unscored resident such as an excluded child, or a repeat) is dropped with a
+  // warning rather than failing the whole test: citations only add reasons to the resident list.
   const seen = new Set<number>();
-  const checkedReasons = reasons.map((item) => {
+  const checkedReasons: { memberId: number; reason: string }[] = [];
+  for (const item of reasons) {
     if (!isRecord(item)) return fail('reasons entries must be objects');
     const { memberId } = item;
     if (typeof memberId !== 'number' || !Number.isInteger(memberId) || !memberIds.has(memberId)) {
-      return fail(`cited memberId ${JSON.stringify(memberId)} is not a scored resident`);
+      console.warn(`[idea] dropping citation of ${JSON.stringify(memberId)}: not a scored resident`);
+      continue;
     }
-    if (seen.has(memberId)) return fail(`memberId ${memberId} is cited twice`);
+    if (seen.has(memberId)) {
+      console.warn(`[idea] dropping repeat citation of resident ${memberId}`);
+      continue;
+    }
+    if (checkedReasons.length >= MAX_CITED) {
+      console.warn(`[idea] dropping citation of resident ${memberId}: more than ${MAX_CITED} cited`);
+      continue;
+    }
     seen.add(memberId);
-    return { memberId, reason: nonEmpty(item.reason, 'reason') };
-  });
+    checkedReasons.push({ memberId, reason: nonEmpty(item.reason, 'reason') });
+  }
 
   return {
     analysis: {
@@ -333,6 +411,7 @@ export function validateAnalysis(value: unknown, memberIds: ReadonlySet<number>)
       assumptions: stringList(value.assumptions, 'assumptions', 1, 10),
       limitations: stringList(value.limitations, 'limitations', 1, 10),
     },
+    plain: validatePlain(value.plain),
     reasons: checkedReasons,
   };
 }
@@ -603,6 +682,7 @@ export async function testIdea(conn: DbConnection, job: Job): Promise<void> {
     residents: finalResidents,
     metrics,
     analysis: draft.analysis,
+    plainJson: JSON.stringify(draft.plain),
   });
 
   const seconds = ((performance.now() - started) / 1000).toFixed(1);

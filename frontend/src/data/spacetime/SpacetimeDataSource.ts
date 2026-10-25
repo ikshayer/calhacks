@@ -5,6 +5,7 @@ import type {
   CompanyProfile,
   ContentSignals,
   Decision,
+  IdeaPlainExplanation,
   IdeaTestInput,
   IdeaTestResult,
   Report,
@@ -20,6 +21,7 @@ import type {
 } from '@/data/types'
 import { buildMillbrookAudience, fetchMillbrookWorld } from '@/data/millbrook'
 import { predictionProfile } from '@/data/predictionProfile'
+import { simulationProfile } from '@/data/simulationProfile'
 import type { MillbrookWorld } from '@/data/millbrookTypes'
 import { DbConnection } from '@/module_bindings'
 import type {
@@ -103,7 +105,9 @@ export class SpacetimeDataSource implements SimDataSource {
       this.world = undefined
       throw cause
     })
-    const audience = buildMillbrookAudience(await this.world, structuredClone(profile))
+    // With audience groups switched off, the simulation sees one neutral group (simulationProfile).
+    const simulated = simulationProfile(structuredClone(profile))
+    const audience = buildMillbrookAudience(await this.world, simulated)
     if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     const profileId = `${profile.id}-${this.identityHex.slice(0, 16)}`
     const isNew = !conn.db.companyProfile.id.find(profileId)
@@ -118,7 +122,7 @@ export class SpacetimeDataSource implements SimDataSource {
       objective: profile.objective,
       tone: profile.tone,
       inspirationAccounts: profile.inspirationAccounts,
-      groups: profile.groups,
+      groups: simulated.groups,
       audienceVersion: profile.audienceVersion,
     })
     await conn.reducers.saveAudience({
@@ -359,6 +363,20 @@ export class SpacetimeDataSource implements SimDataSource {
       return undefined
     })
     return toIdeaTest(row)
+  }
+
+  async explainIdeaResident(ideaId: string, memberId: number): Promise<string> {
+    const conn = await this.connect()
+    const id = BigInt(ideaId)
+    const find = () => {
+      const row = [...conn.db.ideaTest.iter()].find((r) => r.id === id)
+      return row?.residents.find((r) => r.memberId === memberId)
+    }
+    const existing = find()
+    if (!existing) throw new Error(`No resident ${memberId} in this idea test.`)
+    if (existing.reason) return existing.reason
+    await conn.reducers.requestIdeaReason({ ideaId: id, memberId })
+    return this.waitFor(WAIT.explanation, 'the resident’s reason', () => find()?.reason || undefined)
   }
 
   // -------------------------------------------------------------------------
@@ -625,6 +643,46 @@ function toIdeaTest(row: IdeaTestRow): IdeaTestResult {
     residents: row.residents,
     metrics: row.metrics,
     analysis: row.analysis,
+    plain: parsePlain(row.plainJson, row.id.toString()),
     error: row.error,
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isPoint(value: unknown): value is { what: string; because: string } {
+  return isRecord(value) && typeof value.what === 'string' && typeof value.because === 'string'
+}
+
+function isPlainExplanation(value: unknown): value is IdeaPlainExplanation {
+  if (!isRecord(value)) return false
+  const { answer, bestBet, experiment, howYouKnow, objections } = value
+  return (
+    isRecord(answer) &&
+    typeof answer.text === 'string' &&
+    typeof answer.because === 'string' &&
+    isPoint(bestBet) &&
+    isPoint(experiment) &&
+    isPoint(howYouKnow) &&
+    Array.isArray(objections) &&
+    objections.every((o) => isRecord(o) && typeof o.reason === 'string' && typeof o.because === 'string')
+  )
+}
+
+function parsePlain(json: string, id: string): IdeaPlainExplanation | undefined {
+  if (json === '') return undefined
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(json)
+  } catch (error) {
+    console.warn(`Idea test ${id}: plainJson is not valid JSON; showing the long-form analysis.`, error)
+    return undefined
+  }
+  if (!isPlainExplanation(parsed)) {
+    console.warn(`Idea test ${id}: plainJson does not have the expected shape; showing the long-form analysis.`)
+    return undefined
+  }
+  return parsed
 }

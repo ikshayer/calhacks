@@ -62,6 +62,15 @@ export type StoredRun = Pick<
   'id' | 'campaignId' | 'label' | 'videoId' | 'options' | 'status' | 'metrics' | 'report'
 >
 
+/** An idea test shown on the island and sidebar in place of a video run. */
+export type IdeaViewState = {
+  input: IdeaTestInput
+  status: 'running' | 'ready' | 'failed'
+  stage: string
+  result?: IdeaTestResult
+  error?: string
+}
+
 interface PlaybackState {
   /** How many rounds have been applied: 0 means nothing has happened yet. */
   round: number
@@ -89,6 +98,9 @@ interface AppState {
   /** The run held alongside it for an A/B comparison. */
   compareRunId: RunId | null
 
+  /** The idea test the island is showing, if any. */
+  idea: IdeaViewState | null
+
   selectedMemberId: number | null
   /** Group whose villagers are ringed on the island, while a sidebar row is pointed at. */
   highlightedGroupId: string | null
@@ -114,6 +126,9 @@ interface AppState {
   startRun(label: string, overrides?: Partial<RunOptions>): Promise<RunId | null>
   /** Ask the simulated town about an idea that has no video yet. */
   testIdea(input: IdeaTestInput, onProgress: (stage: string) => void): Promise<IdeaTestResult>
+  /** Run an idea test and show it on the island; progress and the result land in `idea`. */
+  startIdeaTest(input: IdeaTestInput): Promise<void>
+  clearIdeaTest(): void
   setActiveRun(runId: RunId): void
   setCompareRun(runId: RunId | null): void
 
@@ -184,6 +199,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeRunId: null,
   compareRunId: null,
 
+  idea: null,
+
   selectedMemberId: null,
   highlightedGroupId: null,
   playback: { round: 0, playing: true, speed: 1 },
@@ -232,6 +249,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   async testIdea(input, onProgress) {
     await ensureAudience(get)
     return get().source.testIdea(input, onProgress)
+  },
+
+  async startIdeaTest(input) {
+    set({
+      idea: { input, status: 'running', stage: 'Starting' },
+      activeRunId: null,
+      compareRunId: null,
+      selectedMemberId: null,
+    })
+    // A newer test (or a cleared one) replaces `idea`; its completion is stale.
+    const current = () => get().idea?.input === input
+    try {
+      const result = await get().testIdea(input, (stage) => {
+        if (!current()) return
+        set((state) => (state.idea ? { idea: { ...state.idea, stage } } : state))
+      })
+      if (!current()) return
+      set((state) => (state.idea ? { idea: { ...state.idea, status: 'ready', result } } : state))
+    } catch (cause: unknown) {
+      console.error('Idea test failed', cause)
+      if (!current()) return
+      const error = cause instanceof Error ? cause.message : 'The idea test failed.'
+      set((state) => (state.idea ? { idea: { ...state.idea, status: 'failed', error } } : state))
+    }
+  },
+
+  clearIdeaTest() {
+    set({ idea: null })
   },
 
   setActiveVideo(videoId) {
@@ -457,6 +502,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           },
         },
         activeRunId: runId,
+        idea: null,
         selectedMemberId: null,
         playback: { ...state.playback, round: 0, playing: true },
       }

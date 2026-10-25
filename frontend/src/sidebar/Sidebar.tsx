@@ -5,6 +5,7 @@ import { useAppStore, selectActiveCampaign, selectActiveRun } from '@/store/useA
 import { useAuth } from '@/auth/AuthProvider'
 import { SignalsPanel } from './SignalsPanel'
 import { MemberPanel } from './MemberPanel'
+import { IdeaPanel } from './IdeaPanel'
 import { RunPanel } from './RunPanel'
 import { MetricsPanel } from './MetricsPanel'
 import { GroupsPanel } from './GroupsPanel'
@@ -137,6 +138,7 @@ export function Sidebar({
             <MemberPanel memberId={selectedMemberId} />
           ) : (
             <>
+              <IdeaPanel />
               {tab === 'overview' && (
                 <>
                   <SignalsPanel />

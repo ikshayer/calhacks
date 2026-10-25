@@ -502,6 +502,11 @@ const ideaTest = table({ name: 'idea_test', public: true }, {
   error: t.option(t.string()),
   createdAt: t.timestamp(),
   updatedAt: t.timestamp(),
+  /**
+   * Plain-language explanation for the overview, as JSON: { answer, bestBet, experiment, howYouKnow,
+   * objections[] }, each with a `because`. Written by the analyst; numbers shown beside it come from metrics.
+   */
+  plainJson: t.string().default(''),
 });
 
 const spacetimedb = schema({

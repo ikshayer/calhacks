@@ -17,6 +17,7 @@ import type {
   VideoInput,
 } from '@/data/types'
 import { buildMillbrookAudience, fetchMillbrookWorld } from '../millbrook.ts'
+import { simulationProfile } from '../simulationProfile.ts'
 import type { MillbrookWorld } from '../millbrookTypes'
 import { runCascade, scoreAudience, type CascadeResult } from './scriptedCascade.ts'
 import { buildReport, plural } from './report.ts'
@@ -74,7 +75,7 @@ export class MockDataSource implements SimDataSource {
       this.world = undefined
       throw cause
     })
-    const audience = buildMillbrookAudience(await this.world, snapshot)
+    const audience = buildMillbrookAudience(await this.world, simulationProfile(snapshot))
     this.profile = snapshot
     if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     this.audience = audience
@@ -244,6 +245,10 @@ export class MockDataSource implements SimDataSource {
   }
 
   async testIdea(): Promise<IdeaTestResult> {
+    throw new Error('Idea tests need the live backend (VITE_DATA_SOURCE=spacetime).')
+  }
+
+  async explainIdeaResident(): Promise<string> {
     throw new Error('Idea tests need the live backend (VITE_DATA_SOURCE=spacetime).')
   }
 

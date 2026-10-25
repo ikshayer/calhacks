@@ -262,6 +262,7 @@ export const IdeaTest = __t.object("IdeaTest", {
   error: __t.option(__t.string()),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
+  plainJson: __t.string(),
 });
 export type IdeaTest = __Infer<typeof IdeaTest>;
 

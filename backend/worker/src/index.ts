@@ -5,6 +5,7 @@ import { analyseVideo } from './jobs/analyseVideo.ts';
 import { filterReferenceReels, filterReferences } from './jobs/filterReferences.ts';
 import { chatReply } from './jobs/chatReply.ts';
 import { explainComparison } from './jobs/explainComparison.ts';
+import { explainIdeaMember } from './jobs/explainIdeaMember.ts';
 import { explainMember } from './jobs/explainMember.ts';
 import { scoreRun } from './jobs/scoreRun.ts';
 import { testIdea } from './jobs/testIdea.ts';
@@ -52,6 +53,7 @@ const handlers: Record<string, Handler> = {
   explain_member: explainMember,
   explain_comparison: explainComparison,
   test_idea: testIdea,
+  explain_idea_member: explainIdeaMember,
 };
 
 /** Jobs already picked up by this process, so an insert and the initial sync don't double-claim. */

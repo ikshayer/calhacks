@@ -41,6 +41,7 @@ import FailJobReducer from "./fail_job_reducer";
 import FinishJobReducer from "./finish_job_reducer";
 import RegisterWorkerReducer from "./register_worker_reducer";
 import RequestExplanationReducer from "./request_explanation_reducer";
+import RequestIdeaReasonReducer from "./request_idea_reason_reducer";
 import RequestReferencesReducer from "./request_references_reducer";
 import RequestReportReducer from "./request_report_reducer";
 import ReviseSignalsReducer from "./revise_signals_reducer";
@@ -50,6 +51,7 @@ import SendChatMessageReducer from "./send_chat_message_reducer";
 import SetChatReplyReducer from "./set_chat_reply_reducer";
 import SetComparisonSummaryReducer from "./set_comparison_summary_reducer";
 import SetExplanationReducer from "./set_explanation_reducer";
+import SetIdeaReasonReducer from "./set_idea_reason_reducer";
 import SetIdeaResultReducer from "./set_idea_result_reducer";
 import SetJobStageReducer from "./set_job_stage_reducer";
 import SetReelRelevanceReducer from "./set_reel_relevance_reducer";
@@ -306,6 +308,7 @@ const reducersSchema = __reducers(
   __reducerSchema("finish_job", FinishJobReducer),
   __reducerSchema("register_worker", RegisterWorkerReducer),
   __reducerSchema("request_explanation", RequestExplanationReducer),
+  __reducerSchema("request_idea_reason", RequestIdeaReasonReducer),
   __reducerSchema("request_references", RequestReferencesReducer),
   __reducerSchema("request_report", RequestReportReducer),
   __reducerSchema("revise_signals", ReviseSignalsReducer),
@@ -315,6 +318,7 @@ const reducersSchema = __reducers(
   __reducerSchema("set_chat_reply", SetChatReplyReducer),
   __reducerSchema("set_comparison_summary", SetComparisonSummaryReducer),
   __reducerSchema("set_explanation", SetExplanationReducer),
+  __reducerSchema("set_idea_reason", SetIdeaReasonReducer),
   __reducerSchema("set_idea_result", SetIdeaResultReducer),
   __reducerSchema("set_job_stage", SetJobStageReducer),
   __reducerSchema("set_reel_relevance", SetReelRelevanceReducer),

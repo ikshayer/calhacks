@@ -29,6 +29,7 @@ function Shell() {
   const { session, loading } = useAuth()
   const profile = useAppStore((state) => state.profile)
   const activeCampaignId = useAppStore((state) => state.activeCampaignId)
+  const ideaActive = useAppStore((state) => state.idea !== null)
   // Restores the saved profile for the signed-in user, and saves it on change.
   const restoringProfile = useProfilePersistence(session?.userId)
   // Same contract for the campaign history, so the hub does not flash empty.
@@ -49,7 +50,8 @@ function Shell() {
   }
 
   const onboarded = profile !== null && profile.name.trim().length > 0
-  const hasCampaign = activeCampaignId !== null
+  // An idea test (no video) also opens the workspace, so the island can show the verdicts.
+  const hasCampaign = activeCampaignId !== null || ideaActive
 
   return (
     <Routes>

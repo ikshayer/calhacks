@@ -45,7 +45,7 @@ export function OnboardingRoute() {
     step === 0
       ? draft.name.trim().length > 1 && draft.pitch.trim().length > 10
       : step === 1
-        ? draft.groups.length > 0
+        ? draft.useAudienceGroups === false || draft.groups.length > 0
         : true
 
   const finish = () => {

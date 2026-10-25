@@ -46,8 +46,41 @@ export function AudienceStep({ draft, patch }: StepProps) {
     setNewLabel('')
   }
 
+  // Off means the groups below are kept but ignored: every resident is simulated as "Everyone".
+  const enabled = draft.useAudienceGroups !== false
+
   return (
     <div>
+      <label className="mb-4 flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-line bg-panel px-3.5 py-3">
+        <span>
+          <span className="block text-[13.5px] font-medium text-paper">Use audience groups</span>
+          <span className="mt-0.5 block text-[12px] leading-relaxed text-faint">
+            {enabled
+              ? 'Residents are sorted into these groups, and each group’s interests shape the prediction.'
+              : 'Off: the groups have no effect. Each resident is judged only on their own profile.'}
+          </span>
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => patch({ useAudienceGroups: !enabled })}
+          className={
+            'relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors ' +
+            (enabled ? 'bg-sun' : 'bg-line')
+          }
+        >
+          <span
+            aria-hidden
+            className={
+              'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-paper transition-transform ' +
+              (enabled ? 'translate-x-5' : 'translate-x-0')
+            }
+          />
+        </button>
+      </label>
+
+      <fieldset disabled={!enabled} className={enabled ? '' : 'opacity-40'}>
       <div className="space-y-2.5">
         {draft.groups.map((group) => (
           <div
@@ -134,6 +167,7 @@ export function AudienceStep({ draft, patch }: StepProps) {
         follower demographics, and every result in the app inherits that assumption — so it is worth
         getting them roughly right.
       </p>
+      </fieldset>
     </div>
   )
 }

@@ -11,6 +11,7 @@ import { IslandSim } from '@/island/scene/IslandSim'
 import { IslandCanvas } from '@/island/IslandCanvas'
 import { useCascadePlayback } from '@/island/useCascadePlayback'
 import { hashSeed } from '@/lib/rng'
+import { verdictOf, type IdeaVerdict } from '@/data/ideaVerdict'
 import { Sidebar } from '@/sidebar/Sidebar'
 import { PlaybackBar } from '@/sidebar/PlaybackBar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -35,6 +36,19 @@ export function WorkspaceRoute() {
   const highlightedGroupId = useAppStore((state) => state.highlightedGroupId)
   const highlightColor =
     profile?.groups.find((group) => group.id === highlightedGroupId)?.color ?? '#f2b53c'
+
+  const idea = useAppStore((state) => state.idea)
+  const ideaResult = idea?.status === 'ready' ? idea.result : undefined
+  // Stable identity: the ring components memoise on these arrays.
+  const verdicts = useMemo(() => {
+    if (!ideaResult) return undefined
+    const grouped: Record<IdeaVerdict, number[]> = { going: [], maybe: [], not: [] }
+    for (const resident of ideaResult.residents) {
+      const verdict = verdictOf(resident)
+      if (verdict) grouped[verdict].push(resident.memberId)
+    }
+    return grouped
+  }, [ideaResult])
 
   const [shadows, setShadows] = useState(true)
   // The town degrades to an empty island rather than failing the whole scene, so
@@ -132,6 +146,7 @@ export function WorkspaceRoute() {
               }
               highlightGroupId={highlightedGroupId}
               highlightColor={highlightColor}
+              verdicts={verdicts}
               shadows={shadows}
               paused={false}
               onTownError={(error) =>
@@ -148,7 +163,14 @@ export function WorkspaceRoute() {
           </div>
         )}
 
-        {sim && currentRun && <PlaybackBar run={currentRun} />}
+        {idea?.status === 'running' && (
+          <div className="over-canvas absolute inset-x-3 bottom-3 rounded-lg px-3.5 py-2.5 lg:inset-x-auto lg:left-3 lg:max-w-[46ch]">
+            <p className="text-[12.5px] font-medium text-sun">Testing your idea on the town</p>
+            <p className="mt-1 text-[11.5px] leading-snug text-muted">{idea.stage}</p>
+          </div>
+        )}
+
+        {sim && currentRun && !idea && <PlaybackBar run={currentRun} />}
       </main>
 
       <Sidebar

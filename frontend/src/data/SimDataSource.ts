@@ -93,4 +93,10 @@ export interface SimDataSource {
    * the finished test or rejects with the worker's error.
    */
   testIdea(input: IdeaTestInput, onProgress: (stage: string) => void): Promise<IdeaTestResult>
+
+  /**
+   * Why one resident would or would not go for a tested idea. The live backend
+   * writes it on demand the first time it is asked for, then caches it.
+   */
+  explainIdeaResident(ideaId: string, memberId: number): Promise<string>
 }

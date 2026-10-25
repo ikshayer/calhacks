@@ -31,4 +31,5 @@ export default {
   get analysis() {
     return IdeaAnalysis;
   },
+  plainJson: __t.string(),
 };
