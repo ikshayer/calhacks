@@ -133,3 +133,9 @@ Residents are Kenney's CC0 Mini Characters and the town is built from Kenney's
 CC0 city kits; no Nintendo assets are used. Ambient speech bubbles are
 decoration and deliberately carry no opinion — only the emoji reactions come
 from the simulation.
+
+## Idea consistency tests
+
+Run `npm run test:ideas` for offline coverage of the production idea pipeline and evaluation harness. Run `npm run eval:ideas -- --live` to evaluate 48 idea inputs across five repetitions and all 50 Millbrook residents, with fresh calls, fixed-payload diagnostics, and isolated-cache replay. Live credentials are read from the repository-root `.env`; no database is contacted.
+
+See [`scripts/idea-eval/README.md`](scripts/idea-eval/README.md) for acceptance criteria, smaller runs, resumption, and JSON/CSV/Markdown reports.

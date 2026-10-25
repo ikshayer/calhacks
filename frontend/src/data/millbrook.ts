@@ -18,8 +18,9 @@ function requireData(condition: unknown, message: string): asserts condition {
 
 /** Validate every field consumed by the profile and all cross-record references. */
 export function validateMillbrookWorld(value: unknown): asserts value is MillbrookWorld {
-  requireData(record(value) && value.schemaVersion === 1, 'unsupported world schema')
-  requireData(integer(value.seed) && integer(value.tick) && typeof value.town === 'string', 'invalid world metadata')
+  requireData(record(value) && value.schemaVersion === 2, 'unsupported world schema')
+  requireData(integer(value.tick) && typeof value.town === 'string' && typeof value.description === 'string' &&
+    value.relationConvention === "family[otherId] is what that person is to me (e.g. 'child' = they are my child)", 'invalid world metadata or family convention')
   requireData(Array.isArray(value.personas) && value.personas.length === MILLBROOK_SIZE.total, 'expected exactly 50 residents')
   requireData(Array.isArray(value.households) && value.households.length > 0, 'missing households')
   const ids = new Set<string>()
@@ -32,7 +33,7 @@ export function validateMillbrookWorld(value: unknown): asserts value is Millbro
   }
   for (const persona of value.personas) {
     requireData(record(persona), 'invalid resident')
-    requireData(typeof persona.id === 'string' && /^agent_\d{2}$/.test(persona.id) && !ids.has(persona.id), 'duplicate or invalid resident id')
+    requireData(typeof persona.id === 'string' && /^m\d{2}$/.test(persona.id) && !ids.has(persona.id), 'duplicate or invalid resident id')
     ids.add(persona.id)
     requireData(integer(persona.age), `invalid age for ${persona.id}`)
     for (const field of ['householdId', 'name', 'gender', 'occupation', 'education', 'hometown', 'backstory', 'speechStyle', 'location']) {
@@ -48,6 +49,10 @@ export function validateMillbrookWorld(value: unknown): asserts value is Millbro
     }
     requireData(typeof persona.mood === 'string' && ['neutral', 'happy', 'stressed', 'sad', 'excited', 'angry', 'calm'].includes(persona.mood), `invalid mood for ${persona.id}`)
     requireData(finite(persona.money) && record(persona.family) && record(persona.friends), `invalid state or relationships for ${persona.id}`)
+    requireData(finite(persona.annualIncome) && persona.annualIncome >= 0, `invalid annualIncome for ${persona.id}`)
+    requireData(finite(persona.techSavvy) && persona.techSavvy >= 0 && persona.techSavvy <= 1, `invalid techSavvy for ${persona.id}`)
+    requireData(persona.adoptionStyle === null || (typeof persona.adoptionStyle === 'string' &&
+      ['innovator', 'early_adopter', 'early_majority', 'late_majority', 'laggard'].includes(persona.adoptionStyle)), `invalid adoptionStyle for ${persona.id}`)
     requireData(Array.isArray(persona.memories), `invalid memories for ${persona.id}`)
     const memories = new Set<string>()
     for (const memory of persona.memories) {
@@ -65,7 +70,10 @@ export function validateMillbrookWorld(value: unknown): asserts value is Millbro
     }
   }
   requireData(membership.size === ids.size, 'resident missing from household')
-  const opposite: Record<FamilyRelation, FamilyRelation> = { spouse: 'spouse', parent: 'child', child: 'parent', sibling: 'sibling' }
+  const opposite: Record<FamilyRelation, FamilyRelation> = {
+    spouse: 'spouse', parent: 'child', child: 'parent', sibling: 'sibling',
+    grandparent: 'grandchild', grandchild: 'grandparent', 'ex-spouse': 'ex-spouse', partner: 'partner',
+  }
   for (const persona of world.personas) {
     for (const [id, relation] of Object.entries(persona.family)) {
       requireData(id !== persona.id && Object.hasOwn(opposite, relation) && byId.get(id)?.family[persona.id] === opposite[relation], `invalid family link for ${persona.id}`)
@@ -77,7 +85,7 @@ export function validateMillbrookWorld(value: unknown): asserts value is Millbro
 }
 
 export async function fetchMillbrookWorld(fetcher: typeof fetch = fetch): Promise<MillbrookWorld> {
-  const response = await fetcher('/millbrook-50/data/personas.json')
+  const response = await fetcher('/millbrook-50/millbrook.json')
   if (!response.ok) throw new Error(`Could not load Millbrook personas (HTTP ${response.status}).`)
   const world: unknown = await response.json()
   validateMillbrookWorld(world)
@@ -106,7 +114,7 @@ export function buildMillbrookAudience(world: MillbrookWorld, profile: CompanyPr
   const personas = [...world.personas].sort((a, b) => a.id.localeCompare(b.id, 'en'))
   const groups = [...profile.groups].sort((a, b) => a.id.localeCompare(b.id, 'en'))
   const counts = allocateGroups(groups)
-  const shuffledIds = createRng(hashSeed(`${world.seed}:${profile.id}`)).shuffle(personas.map((_, index) => index))
+  const shuffledIds = createRng(hashSeed(`${world.town}:${profile.id}`)).shuffle(personas.map((_, index) => index))
   const assigned = new Map<number, AudienceGroup>()
   let cursor = 0
   groups.forEach((group, index) => {
@@ -145,5 +153,5 @@ export function buildMillbrookAudience(world: MillbrookWorld, profile: CompanyPr
     adjacency[b]!.push(a)
   }
   const definition = JSON.stringify({ world, profileId: profile.id, groups })
-  return { version: profile.audienceVersion, key: `millbrook-v1:${hashSeed(definition).toString(16)}`, members, edges, adjacency }
+  return { version: profile.audienceVersion, key: `millbrook-v2:${hashSeed(definition).toString(16)}`, members, edges, adjacency }
 }

@@ -2,8 +2,9 @@ import type { ReactNode } from 'react'
 import type { Audience, AudienceMember } from '@/data/types'
 import type { FamilyRelation } from '@/data/millbrookTypes'
 
-const FAMILY_ROLE: Record<FamilyRelation, string> = {
-  spouse: 'Spouse of', parent: 'Parent of', child: 'Child of', sibling: 'Sibling of',
+const FAMILY_RELATION: Record<FamilyRelation, string> = {
+  spouse: 'Spouse', parent: 'Parent', child: 'Child', sibling: 'Sibling',
+  grandparent: 'Grandparent', grandchild: 'Grandchild', 'ex-spouse': 'Ex-spouse', partner: 'Partner',
 }
 
 function Detail({ label, children }: { label: string; children: ReactNode }) {
@@ -62,6 +63,10 @@ export function PersonaDetails({ member, audience, onSelect }: {
         <dl className="space-y-3">
           <Detail label="Quirks">{persona.quirks.join('; ') || 'None recorded.'}</Detail>
           <Detail label="Speech style">{persona.speechStyle || 'None recorded.'}</Detail>
+          <Detail label="Tech familiarity">{Math.round(persona.techSavvy * 100)} / 100</Detail>
+          <Detail label="Adoption style">{persona.adoptionStyle === null
+            ? 'Not specified.'
+            : persona.adoptionStyle.charAt(0).toUpperCase() + persona.adoptionStyle.slice(1).replaceAll('_', ' ')}</Detail>
         </dl>
       </Expandable>
 
@@ -77,11 +82,11 @@ export function PersonaDetails({ member, audience, onSelect }: {
           </ul>
         </div>
         <div className="text-[12px] leading-relaxed text-muted">
-          <p className="mb-1 text-[11px] text-faint">Family · this resident’s role</p>
+          <p className="mb-1 text-[11px] text-faint">Family · relation to this resident</p>
           {Object.keys(persona.family).length ? (
             <ul className="space-y-1">
               {Object.entries(persona.family).map(([id, relation]) => (
-                <li key={id}>{FAMILY_ROLE[relation]} {personLink(id)}</li>
+                <li key={id}>{FAMILY_RELATION[relation]}: {personLink(id)}</li>
               ))}
             </ul>
           ) : <p>No family links recorded.</p>}
@@ -104,6 +109,7 @@ export function PersonaDetails({ member, audience, onSelect }: {
           <Detail label="Mood">{persona.mood}</Detail>
           <Detail label="Location">{persona.location}</Detail>
           <Detail label="Money">{persona.money.toLocaleString('en-US')} (source units)</Detail>
+          <Detail label="Annual income">{persona.annualIncome.toLocaleString('en-US')} (source units)</Detail>
         </dl>
         <dl className="space-y-3">
           <Detail label="Goals">{persona.goals.join('; ') || 'No goals recorded.'}</Detail>

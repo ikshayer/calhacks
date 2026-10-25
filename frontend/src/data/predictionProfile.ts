@@ -24,6 +24,11 @@ export function predictionProfile(member: AudienceMember): string {
     beliefs: p.beliefs,
     mood: p.mood,
     speechStyle: p.speechStyle,
+    money: p.money,
+    annualIncome: p.annualIncome,
+    techSavvy: p.techSavvy,
+    adoptionStyle: p.adoptionStyle,
+    location: p.location,
     memories,
   })
 }

@@ -1,5 +1,6 @@
 /** Browser-only contracts for the supplied Millbrook snapshot; no generator imports. */
-export type FamilyRelation = 'spouse' | 'parent' | 'child' | 'sibling'
+export type FamilyRelation = 'spouse' | 'parent' | 'child' | 'sibling' | 'grandparent' | 'grandchild' | 'ex-spouse' | 'partner'
+export type AdoptionStyle = 'innovator' | 'early_adopter' | 'early_majority' | 'late_majority' | 'laggard'
 export type PersonaMood = 'neutral' | 'happy' | 'stressed' | 'sad' | 'excited' | 'angry' | 'calm'
 
 export interface PersonaMemory {
@@ -26,12 +27,16 @@ export interface MillbrookPersona {
   readonly quirks: readonly string[]
   readonly backstory: string
   readonly speechStyle: string
-  /** Describes this resident's role: parent means "parent of the referenced resident". */
+  /** Describes the referenced resident: child means "that person is my child". */
   readonly family: Readonly<Record<string, FamilyRelation>>
   readonly friends: Readonly<Record<string, number>>
   readonly mood: PersonaMood
   readonly goals: readonly string[]
   readonly money: number
+  readonly annualIncome: number
+  readonly techSavvy: number
+  /** The source leaves this unspecified for some residents; never infer a value. */
+  readonly adoptionStyle: AdoptionStyle | null
   readonly location: string
   readonly memories: readonly PersonaMemory[]
   readonly beliefs: readonly string[]
@@ -45,9 +50,10 @@ export interface MillbrookHousehold {
 }
 
 export interface MillbrookWorld {
-  readonly schemaVersion: 1
-  readonly seed: number
+  readonly schemaVersion: 2
+  readonly relationConvention: string
   readonly town: string
+  readonly description: string
   readonly tick: number
   readonly households: readonly MillbrookHousehold[]
   readonly personas: readonly MillbrookPersona[]
