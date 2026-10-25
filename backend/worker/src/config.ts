@@ -45,7 +45,7 @@ export const config = {
   /** Local HTTP server that receives video uploads from the browser. */
   uploadPort: Number(process.env.UPLOAD_PORT ?? 8787),
   /** Browser origins allowed to upload, comma-separated. Both local dev ports and the Vercel deployment by default. */
-  uploadAllowedOrigins: (process.env.UPLOAD_ALLOWED_ORIGIN ?? 'http://localhost:5173,http://localhost:5174,https://calhacks-giving-garden.vercel.app')
+  uploadAllowedOrigins: (process.env.UPLOAD_ALLOWED_ORIGIN ?? 'http://localhost:5173,http://localhost:5174,https://calhacks-giving-garden.vercel.app,https://simthetic.vercel.app')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
