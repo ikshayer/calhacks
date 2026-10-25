@@ -1,4 +1,4 @@
-import { createRng, hashSeed } from '@/lib/rng'
+import { createRng, hashSeed } from '../../lib/rng.ts'
 import type { SimDataSource } from '@/data/SimDataSource'
 import type {
   Audience,
@@ -6,6 +6,7 @@ import type {
   CompanyProfile,
   ContentSignals,
   Decision,
+  IdeaTestResult,
   Report,
   RunEvent,
   RunId,
@@ -15,9 +16,11 @@ import type {
   VideoAnalysis,
   VideoInput,
 } from '@/data/types'
-import { generateAudience, type AudienceSize } from './personas'
-import { runCascade, scoreAudience, type CascadeResult } from './scriptedCascade'
-import { buildReport, plural } from './report'
+import { buildMillbrookAudience, fetchMillbrookWorld } from '../millbrook.ts'
+import { simulationProfile } from '../simulationProfile.ts'
+import type { MillbrookWorld } from '../millbrookTypes'
+import { runCascade, scoreAudience, type CascadeResult } from './scriptedCascade.ts'
+import { buildReport, plural } from './report.ts'
 
 /** How long the mock pretends each backend stage takes, in milliseconds. */
 const LATENCY = { scoring: 900, perRound: 650 }
@@ -26,6 +29,9 @@ interface StoredRun {
   summary: RunSummary
   decisions: Decision[]
   cascade: CascadeResult
+  audience: Audience
+  video: VideoAnalysis
+  groupLabels: Map<string, string>
 }
 
 /**
@@ -45,36 +51,39 @@ export class MockDataSource implements SimDataSource {
   readonly kind = 'mock' as const
   readonly label = 'Local simulation (no backend)'
 
-  private readonly size: AudienceSize
+  private world?: Promise<MillbrookWorld>
   private audience?: Audience
-  private audienceKey = ''
   /** Retained so group ids can be resolved back to the labels the user chose. */
   private profile?: CompanyProfile
   private readonly videos = new Map<string, VideoAnalysis>()
   private readonly runs = new Map<RunId, StoredRun>()
   private counter = 0
-
-  constructor(size: AudienceSize = { total: 500, onIsland: 120 }) {
-    this.size = size
-  }
+  /**
+   * Distinguishes ids minted in this page load from ids restored from storage.
+   *
+   * Campaigns and their runs are persisted, but this counter restarts at zero on
+   * every load, so a bare `video-1` after a reload would collide with the
+   * `video-1` already sitting in a restored campaign and silently overwrite it.
+   * A live backend mints globally unique ids; the mock has to fake that.
+   */
+  private readonly session = Math.random().toString(36).slice(2, 8)
 
   async loadAudience(profile: CompanyProfile): Promise<Audience> {
-    // Regenerate only when the audience definition actually changed, so a
-    // re-render never silently swaps the audience under a comparison.
-    const key = `${profile.id}:${profile.audienceVersion}:${profile.groups
-      .map((g) => `${g.id}@${g.share.toFixed(4)}`)
-      .join(',')}`
-    this.profile = profile
-    if (this.audience && this.audienceKey === key) return this.audience
-
-    const audience = generateAudience(profile, this.size, hashSeed(key))
+    const snapshot = structuredClone(profile)
+    // Share concurrent reads, but allow retry after a failed read.
+    this.world ??= fetchMillbrookWorld().catch((cause: unknown) => {
+      this.world = undefined
+      throw cause
+    })
+    const audience = buildMillbrookAudience(await this.world, simulationProfile(snapshot))
+    this.profile = snapshot
+    if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     this.audience = audience
-    this.audienceKey = key
     return audience
   }
 
   async analyseVideo(campaignId: string, input: VideoInput, label: string): Promise<VideoAnalysis> {
-    const id = `video-${++this.counter}`
+    const id = `video-${this.session}-${++this.counter}`
     const signals = deriveSignals(input)
     const analysis: VideoAnalysis = {
       id,
@@ -84,7 +93,8 @@ export class MockDataSource implements SimDataSource {
       durationSec: input.durationSec,
       signals,
       summary: describeContent(signals, input.name),
-      objectUrl: input.file ? URL.createObjectURL(input.file) : undefined,
+      // No file means a pre-loaded demo video, served from public/demo.
+      objectUrl: input.file ? URL.createObjectURL(input.file) : `/demo/${input.name}`,
     }
     this.videos.set(id, analysis)
     return analysis
@@ -114,10 +124,13 @@ export class MockDataSource implements SimDataSource {
   ): Promise<RunId> {
     const audience = this.audience
     if (!audience) throw new Error('startRun: no audience loaded')
+    if (options.audienceKey !== audience.key || options.audienceVersion !== audience.version) {
+      throw new Error('The audience changed. Reload it before starting a run.')
+    }
     const video = this.videos.get(videoId)
     if (!video) throw new Error(`startRun: unknown video ${videoId}`)
 
-    const id = `run-${++this.counter}`
+    const id = `run-${this.session}-${++this.counter}`
     const decisions = scoreAudience(audience, video.signals, options.seed)
     const cascade = runCascade(audience, decisions, options)
 
@@ -133,6 +146,9 @@ export class MockDataSource implements SimDataSource {
       },
       decisions,
       cascade,
+      audience,
+      video: structuredClone(video),
+      groupLabels: this.groupLabels(),
     })
     return id
   }
@@ -207,20 +223,33 @@ export class MockDataSource implements SimDataSource {
   async getReport(runId: RunId): Promise<Report> {
     const stored = this.runs.get(runId)
     if (!stored) throw new Error(`getReport: unknown run ${runId}`)
-    const video = this.videos.get(stored.summary.videoId)
-    if (!video) throw new Error(`getReport: unknown video for run ${runId}`)
-    const audience = this.audience
-    if (!audience) throw new Error('getReport: no audience loaded')
-    return buildReport(runId, video, stored.cascade.metrics, audience, this.groupLabels())
+    return buildReport(runId, stored.video, stored.cascade.metrics, stored.audience, stored.groupLabels)
   }
 
   async chat(runId: RunId, _history: ChatTurn[], message: string): Promise<string> {
     const stored = this.runs.get(runId)
     if (!stored) return 'That run is no longer loaded, so I cannot ground an answer in it.'
-    const video = this.videos.get(stored.summary.videoId)
-    const audience = this.audience
-    if (!video || !audience) return 'I am missing the video analysis for that run.'
-    return answerFromRun(message, video.signals, stored.cascade.metrics, audience, this.groupLabels())
+    return answerFromRun(message, stored.video.signals, stored.cascade.metrics, stored.audience, stored.groupLabels)
+  }
+
+  /** The mock writes every explanation at scoring time. */
+  async explainMember(runId: RunId, memberId: number): Promise<string> {
+    const decision = this.runs.get(runId)?.decisions.find((d) => d.memberId === memberId)
+    if (!decision) throw new Error(`explainMember: no decision for member ${memberId} in run ${runId}`)
+    return decision.explanation
+  }
+
+  /** The local simulation has no written comparison; ComparePanel's verdict stands alone. */
+  async compareRuns(): Promise<string | null> {
+    return null
+  }
+
+  async testIdea(): Promise<IdeaTestResult> {
+    throw new Error('Idea tests need the live backend (VITE_DATA_SOURCE=spacetime).')
+  }
+
+  async explainIdeaResident(): Promise<string> {
+    throw new Error('Idea tests need the live backend (VITE_DATA_SOURCE=spacetime).')
   }
 
   private groupLabels(): Map<string, string> {

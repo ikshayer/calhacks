@@ -4,6 +4,10 @@
 node_modules/
 .tmp/
 dist/
+out/
+.worker-token*
+cache/
 __pycache__/
 /.playwright-mcp/
 /artifacts/
+uploads/

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "createdAt": "2026-10-25T03:23:35.707Z",
+  "source": "40 reels from @bontonfarms, @grownorthtexas, @tarrantareafoodbank, @feedingamerica (Apify), scored by JEV against 50 Millbrook residents",
+  "uncalibrated": false,
+  "multipliers": {
+    "watch": 1,
+    "like": 0.1277605545359358,
+    "comment": 0.004251829053334986,
+    "share": 0.4805700714415469
+  },
+  "notes": "Observed per play: likes 3.52%, comments 0.07% (mean of per-reel ratios). JEV raw per exposure on the same reels: likes 27.56%, comments 16.92%, shares 20.81%. Share multiplier targets a declared 10% per-exposure share chance for a typical reel (no share data in the scrape). Watch-through is uncalibrated JEV output. Reference reels were described to JEV by caption only; real runs use full video summaries."
+}

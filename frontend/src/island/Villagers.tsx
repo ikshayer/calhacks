@@ -55,9 +55,12 @@ function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex
     const rigs = Array.from({ length: sim.count }, (_, index) => {
       const template = templates.get(models[index]!) ?? fallback
       const rig = createResident(template, residentPhase(sim.memberOfIndex(index), appearanceContext))
-      rig.root.position.set(sim.x[index]!, 0, sim.z[index]!)
-      rig.root.rotation.y = sim.angle[index]!
-      rig.controller.sample(0.001, sim.activity[index]!, sim.locomotionSpeed(index))
+      rig.root.position.set(sim.x[index]!, sim.y[index]!, sim.z[index]!)
+      // Heading first, then lean, so the body tips about its own right axis and
+      // leans into a ramp rather than about the world's.
+      rig.root.rotation.order = 'YXZ'
+      rig.root.rotation.set(sim.pitch[index]!, sim.angle[index]!, 0)
+      rig.controller.sample(0.001, sim.activity[index]!, sim.locomotionSpeed(index), sim.gazeOf(index))
       rig.controller.advance()
       setResidentShadows(rig.root, shadowsRef.current)
       container.add(rig.root)
@@ -82,16 +85,18 @@ function Residents({ sim, models, legacyModels, appearanceContext, selectedIndex
     const dt = paused ? 0 : Math.min(delta, 0.1)
     const rigs = rigsRef.current
     // Sample the state that governed this interval, before simulation transitions.
-    for (let i = 0; i < rigs.length; i++) rigs[i]!.controller.sample(dt, sim.activity[i]!, sim.locomotionSpeed(i))
+    for (let i = 0; i < rigs.length; i++) {
+      rigs[i]!.controller.sample(dt, sim.activity[i]!, sim.locomotionSpeed(i), sim.gazeOf(i))
+    }
     if (dt > 0 && rigs.length) sim.update(dt)
     for (let i = 0; i < rigs.length; i++) {
-      rigs[i]!.root.position.set(sim.x[i]!, 0, sim.z[i]!)
-      rigs[i]!.root.rotation.y = sim.angle[i]!
+      rigs[i]!.root.position.set(sim.x[i]!, sim.y[i]!, sim.z[i]!)
+      rigs[i]!.root.rotation.set(sim.pitch[i]!, sim.angle[i]!, 0)
     }
-    budget.step(rigs, camera, dt, sim.x, sim.z, selectedIndex)
+    budget.step(rigs, camera, dt, sim.x, sim.z, selectedIndex, sim.y)
     if (pickRef.current) {
       for (let i = 0; i < sim.count; i++) {
-        matrix.makeTranslation(sim.x[i]!, RESIDENT_HEIGHT / 2, sim.z[i]!)
+        matrix.makeTranslation(sim.x[i]!, sim.y[i]! + RESIDENT_HEIGHT / 2, sim.z[i]!)
         pickRef.current.setMatrixAt(i, matrix)
       }
       pickRef.current.instanceMatrix.needsUpdate = true

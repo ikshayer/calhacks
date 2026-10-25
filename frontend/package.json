@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test:residents": "node scripts/resident-rendering.test.mjs",
+    "test:personas": "node scripts/millbrook-personas.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4",
+    "spacetimedb": "2.13",
     "tailwind-merge": "^3.7.0",
     "three": "^0.186.1",
     "zustand": "^5.0.16"

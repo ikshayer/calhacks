@@ -5,14 +5,15 @@ import {
   selectActiveRun,
   useAppStore,
 } from '@/store/useAppStore'
-import { assignHomeTiles, buildIsland } from '@/island/scene/island'
+import { assignHomeTiles } from '@/island/scene/island'
+import { buildElevatedIsland } from '@/island/scene/ground'
 import { IslandSim } from '@/island/scene/IslandSim'
 import { IslandCanvas } from '@/island/IslandCanvas'
 import { useCascadePlayback } from '@/island/useCascadePlayback'
 import { hashSeed } from '@/lib/rng'
+import { verdictOf, type IdeaVerdict } from '@/data/ideaVerdict'
 import { Sidebar } from '@/sidebar/Sidebar'
 import { PlaybackBar } from '@/sidebar/PlaybackBar'
-import { VillagerCard } from '@/island/VillagerCard'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 /**
@@ -21,7 +22,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
  * This component owns the one piece of glue that matters — building the
  * `IslandSim` from the loaded audience and keeping it alive across runs. The
  * sim is memoised on the audience, not on the run, so starting a second run
- * does not rebuild 120 characters.
+ * does not rebuild the 50 resident characters.
  */
 export function WorkspaceRoute() {
   const profile = useAppStore((state) => state.profile)
@@ -35,6 +36,19 @@ export function WorkspaceRoute() {
   const highlightedGroupId = useAppStore((state) => state.highlightedGroupId)
   const highlightColor =
     profile?.groups.find((group) => group.id === highlightedGroupId)?.color ?? '#f2b53c'
+
+  const idea = useAppStore((state) => state.idea)
+  const ideaResult = idea?.status === 'ready' ? idea.result : undefined
+  // Stable identity: the ring components memoise on these arrays.
+  const verdicts = useMemo(() => {
+    if (!ideaResult) return undefined
+    const grouped: Record<IdeaVerdict, number[]> = { going: [], maybe: [], not: [] }
+    for (const resident of ideaResult.residents) {
+      const verdict = verdictOf(resident)
+      if (verdict) grouped[verdict].push(resident.memberId)
+    }
+    return grouped
+  }, [ideaResult])
 
   const [shadows, setShadows] = useState(true)
   // The town degrades to an empty island rather than failing the whole scene, so
@@ -50,7 +64,7 @@ export function WorkspaceRoute() {
   // The island is generated once and never regenerated: its shape is the set
   // the town is built on, and moving the coastline mid-session would relocate
   // every resident.
-  const island = useMemo(() => buildIsland(hashSeed('giving-garden-island')), [])
+  const island = useMemo(() => buildElevatedIsland(hashSeed('giving-garden-island')), [])
 
   const homesByGroup = useMemo(() => {
     const groups = profile?.groups ?? []
@@ -69,7 +83,8 @@ export function WorkspaceRoute() {
     )
   }, [audience, island, homesByGroup])
 
-  useCascadePlayback(sim, run?.rounds ?? [], run?.id ?? null)
+  const currentRun = run?.options.audienceKey === audience?.key ? run : undefined
+  useCascadePlayback(sim, currentRun?.rounds ?? [], currentRun?.id ?? null)
 
   // The island indexes villagers densely; the rest of the app speaks member ids.
   const selectedIndex = useMemo(() => {
@@ -77,16 +92,26 @@ export function WorkspaceRoute() {
     return sim.indexOfMember(selectedMemberId) ?? null
   }, [sim, selectedMemberId])
 
-  const selectedMember = useMemo(
-    () => audience?.members.find((member) => member.id === selectedMemberId) ?? null,
-    [audience, selectedMemberId],
-  )
+  // Escape leaves a member's report the same way the back row does. Keyed on
+  // the selection so an idle workspace does not hold a document listener.
+  useEffect(() => {
+    if (selectedMemberId === null) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') selectMember(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedMemberId, selectMember])
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
       <main className="relative min-h-[52vh] flex-1 lg:min-h-0">
         {audienceError ? (
-          <IslandFallback title="The audience could not be built">{audienceError}</IslandFallback>
+          <IslandFallback title="The audience could not be built" action={
+            <button onClick={() => void loadAudience()} className="mt-4 rounded-md bg-raised px-3 py-1.5 text-[13px] text-paper hover:text-sun">
+              Try again
+            </button>
+          }>{audienceError}</IslandFallback>
         ) : !sim || !audience ? (
           <IslandFallback title="Building the town…">
             Laying out streets and the social graph between {AUDIENCE_SIZE.total} residents.
@@ -115,11 +140,13 @@ export function WorkspaceRoute() {
               members={audience.members}
               appearanceContext={`${profile?.id ?? 'audience'}:${audience.version}`}
               selectedIndex={selectedIndex}
+              selectionWithoutBody={selectedMemberId !== null && selectedIndex === null}
               onSelect={(index) =>
                 selectMember(index === null ? null : sim.memberOfIndex(index))
               }
               highlightGroupId={highlightedGroupId}
               highlightColor={highlightColor}
+              verdicts={verdicts}
               shadows={shadows}
               paused={false}
               onTownError={(error) =>
@@ -136,16 +163,14 @@ export function WorkspaceRoute() {
           </div>
         )}
 
-        {sim && run && <PlaybackBar run={run} />}
-
-        {selectedMember && (
-          <VillagerCard
-            member={selectedMember}
-            decision={run?.decisions?.find((entry) => entry.memberId === selectedMember.id)}
-            group={profile?.groups.find((entry) => entry.id === selectedMember.groupId)}
-            onClose={() => selectMember(null)}
-          />
+        {idea?.status === 'running' && (
+          <div className="over-canvas absolute inset-x-3 bottom-3 rounded-lg px-3.5 py-2.5 lg:inset-x-auto lg:left-3 lg:max-w-[46ch]">
+            <p className="text-[12.5px] font-medium text-sun">Testing your idea on the town</p>
+            <p className="mt-1 text-[11.5px] leading-snug text-muted">{idea.stage}</p>
+          </div>
         )}
+
+        {sim && currentRun && !idea && <PlaybackBar run={currentRun} />}
       </main>
 
       <Sidebar

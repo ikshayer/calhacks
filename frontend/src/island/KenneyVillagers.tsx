@@ -61,7 +61,7 @@ export function KenneyVillagers({
       const gltf = byPath.get(`/models/characters/${stem}.glb`) ?? (gltfs[0] as GLTF)
       const rig = createRig(gltf, material, true)
       rig.root.scale.setScalar(VILLAGER_SCALE)
-      rig.root.position.set(sim.x[i] as number, 0, sim.z[i] as number)
+      rig.root.position.set(sim.x[i] as number, sim.y[i] as number, sim.z[i] as number)
       container.add(rig.root)
       rigs.push(rig)
     }
@@ -115,17 +115,17 @@ export function KenneyVillagers({
     const rigs = rigsRef.current
     for (let i = 0; i < rigs.length; i++) {
       const rig = rigs[i] as VillagerRig
-      rig.root.position.set(sim.x[i] as number, 0, sim.z[i] as number)
+      rig.root.position.set(sim.x[i] as number, sim.y[i] as number, sim.z[i] as number)
       rig.root.rotation.y = sim.angle[i] as number
       playClip(rig, clipForActivity(sim.activity[i] as Activity))
     }
 
-    budget.step(rigs, camera, paused ? 0 : dt, sim.x, sim.z, selectedIndex)
+    budget.step(rigs, camera, paused ? 0 : dt, sim.x, sim.z, selectedIndex, sim.y)
 
     const pick = pickRef.current
     if (pick) {
       for (let i = 0; i < sim.count; i++) {
-        matrix.makeTranslation(sim.x[i] as number, 0.95, sim.z[i] as number)
+        matrix.makeTranslation(sim.x[i] as number, sim.y[i]! + 0.95, sim.z[i] as number)
         pick.setMatrixAt(i, matrix)
       }
       pick.instanceMatrix.needsUpdate = true

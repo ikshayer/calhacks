@@ -1,8 +1,14 @@
 import * as THREE from 'three'
 import { TILE, GRID, Tile, tileToWorld, type Island, type Plot } from './scene/island.ts'
 import { BUILDING_PROFILES, fitBuilding, staticBounds, placedStaticMatrix, remapBuildingY, type BuildingFit, type StaticPart } from './staticTown.ts'
+import { continuousGroundSpan, groundHeight, groundTile, surfaceHeight } from './scene/ground.ts'
+import { walkCorridors } from './walkCorridors.ts'
 
-export interface RenderPlot extends Plot { sourceIndex: number; style: string | null; theme: 'home' | 'cafe' | 'bakery' | 'market' | 'harbour'; relocated: boolean }
+export interface RenderPlot extends Plot {
+  sourceIndex: number; style: string | null; theme: 'home' | 'cafe' | 'bakery' | 'market' | 'harbour'; relocated: boolean
+  /** A longer garden approach when the nearest street became the side of a ramp. */
+  approach?: number
+}
 export interface BuildingStyle { key: string; model: string; fit: BuildingFit; bounds: THREE.Box3; scope: 'land' | 'harbor' }
 export interface ArchitectureBox { matrix: THREE.Matrix4; color: string }
 export interface ArchitectureSign { matrix: THREE.Matrix4; theme: RenderPlot['theme'] }
@@ -43,6 +49,31 @@ export function planTown(placements: readonly Plot[], island: Island, assets: Ma
     styles.set(key, { key, model: plot.model, fit, bounds, scope })
   }
 
+  // Neighboring low homes face the low cross street rather than a ramp's side
+  // retaining wall. Only render orientation changes; source lots/designs stay intact.
+  if (island.surfaces) for (const plot of plots.filter(plot => plot.style && styles.get(plot.style)!.scope === 'land')) {
+    const door = architectureFor(plot, styles.get(plot.style!)!).door
+    const clearApproach = (angle: number, length: number) => {
+      const sin = Math.sin(angle), cos = Math.cos(angle)
+      const x = plot.x + cos * door.x + sin * length
+      const z = plot.z - sin * door.x + cos * length
+      if (![Tile.Road, Tile.Plaza, Tile.Dock].includes(islandTileAt(island, x, z) as 3 | 4 | 5)) return false
+      return [-0.80, 0, 0.80].every(side => {
+        const sx = plot.x + cos * (door.x + side) + sin * (door.z + 0.10)
+        const sz = plot.z - sin * (door.x + side) + cos * (door.z + 0.10)
+        const ex = plot.x + cos * (door.x + side) + sin * length
+        const ez = plot.z - sin * (door.x + side) + cos * length
+        return Math.abs(groundHeight(island, sx, sz) - (plot.y ?? 0)) < 1e-5 && continuousGroundSpan(island, sx, sz, ex, ez)
+      })
+    }
+    if (clearApproach(plot.rotation, TILE * 1.5)) continue
+    const candidates = [TILE * 1.5, TILE * 2.5].flatMap(length => [plot.rotation, 0, Math.PI, -Math.PI / 2, Math.PI / 2]
+      .map(rotation => ({ rotation, length })))
+    const chosen = candidates.find(candidate => clearApproach(candidate.rotation, candidate.length))
+    if (!chosen) throw new Error(`No continuous ground approach for building ${plot.sourceIndex}`)
+    plot.rotation = chosen.rotation; plot.approach = chosen.length
+  }
+
   const worldBounds = (plot: RenderPlot) => {
     if (!plot.style) return footprint(rawBounds.get(plot.model)!, plot)
     const bounds = architectureFor(plot, styles.get(plot.style)!).totalBounds
@@ -60,6 +91,7 @@ export function planTown(placements: readonly Plot[], island: Island, assets: Ma
   const props = plots.filter((plot) => !plot.style && !plot.model.includes('/building'))
   const changedProps = new Set<RenderPlot>()
   const isWalking = (kind: number) => kind === Tile.Road || kind === Tile.Plaza || kind === Tile.Dock
+  const corridors = island.connectors?.length ? walkCorridors(island) : []
 
   for (const [harborIndex, plot] of harbor.entries()) {
     plot.theme = harborIndex === 0 ? 'harbour' : 'home'
@@ -71,9 +103,12 @@ export function planTown(placements: readonly Plot[], island: Island, assets: Ma
       const direction = approaches.sort((a, b) =>
         Math.hypot(x + a[0]! * TILE - plot.x, z + a[1]! * TILE - plot.z) -
         Math.hypot(x + b[0]! * TILE - plot.x, z + b[1]! * TILE - plot.z))[0]!
-      const candidate = { ...plot, x, z, rotation: Math.atan2(direction[0]!, direction[1]!) }
+      const candidate = { ...plot, x, z, y: groundHeight(island, x, z), rotation: Math.atan2(direction[0]!, direction[1]!) }
       const bounds = worldBounds(candidate).expandByScalar(0.16)
       if (blockedBuildings.some((other) => other.intersectsBox(bounds))) return []
+      if (corridors.some(other => other.intersectsBox(bounds))) return []
+      if ([bounds.min.x, bounds.max.x].some(px => [bounds.min.z, bounds.max.z].some(pz =>
+        Math.abs(groundHeight(island, px, pz) - candidate.y) > 0.04))) return []
       const blockingProps = props.filter((other) => worldBounds(other).expandByScalar(0.12).intersectsBox(bounds))
       return [{ candidate, bounds, blockingProps, score: Math.hypot(x - plot.x, z - plot.z) + blockingProps.length * 3 }]
     }).sort((a, b) => a.score - b.score)
@@ -89,6 +124,7 @@ export function planTown(placements: readonly Plot[], island: Island, assets: Ma
     const candidates = Array.from(island.tiles).flatMap((kind, index) => {
       if (kind !== Tile.Grass && kind !== Tile.Sand) return []
       const candidate = { ...prop, ...tileToWorld(index) }
+      if (island.surfaces) candidate.y = groundHeight(island, candidate.x, candidate.z)
       const bounds = worldBounds(candidate).expandByScalar(0.12)
       if (blockedBuildings.some((other) => other.intersectsBox(bounds))) return []
       if (props.some((other) => other !== prop && worldBounds(other).expandByScalar(0.12).intersectsBox(bounds))) return []
@@ -106,10 +142,10 @@ export function planTown(placements: readonly Plot[], island: Island, assets: Ma
 /** Garden flowers, offset per lot so neighbouring beds do not repeat the same run. */
 const BLOOM_COLORS = ['#d9654e', '#e8b84b', '#c9709e', '#e07f4a']
 
-export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
+export function architectureFor(plot: RenderPlot, style: BuildingStyle, island?: Island) {
   const boxes: ArchitectureBox[] = []
   const signs: ArchitectureSign[] = []
-  const rotation = new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, 0, plot.z)
+  const rotation = new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, plot.y ?? 0, plot.z)
   const add = (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) => {
     boxes.push({ matrix: rotation.clone().multiply(new THREE.Matrix4().makeScale(width, height, depth).setPosition(x, y, z)), color })
   }
@@ -140,7 +176,7 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
   add(x, 1.70, z + 0.028, 0.85, 0.76, 0.018, '#8cb2b2')
   const edge = style.scope === 'land' ? TILE : TILE / 2 - 0.12
   const pathStart = z + 0.10
-  if (edge > pathStart) add(x, 0.018, (pathStart + edge) / 2, 1.55, 0.024, edge - pathStart, '#d4bc96')
+  if (edge > pathStart && !island?.surfaces) add(x, 0.018, (pathStart + edge) / 2, 1.55, 0.024, edge - pathStart, '#d4bc96')
 
   // Keep the kit's roof silhouette. The overall model bounds include porches and
   // setbacks, so a rectangular fascia derived from them floats away from the roof.
@@ -202,4 +238,46 @@ export function architectureFor(plot: RenderPlot, style: BuildingStyle) {
   const unitBox = new THREE.Box3(new THREE.Vector3(-0.5, -0.5, -0.5), new THREE.Vector3(0.5, 0.5, 0.5))
   for (const box of boxes) totalBounds.union(unitBox.clone().applyMatrix4(box.matrix))
   return { boxes, signs, door: { x, z, width: doorWidth, height: doorHeight }, footprint: bounds, totalBounds }
+}
+
+/** Flush paving follows the whole door approach, including the graded front gardens. */
+export function entrancePaving(plot: RenderPlot, style: BuildingStyle, island: Island): ArchitectureBox[] {
+  if (!island.surfaces) return []
+  const door = architectureFor(plot, style).door
+  const end = plot.approach ?? (style.scope === 'land' ? TILE * 1.5 : TILE)
+  const start = door.z + 0.10
+  // Slabs end at tile boundaries: no slab can bridge a flat/ramp grade break.
+  const boundaries = [start, end]
+  const sin = Math.sin(plot.rotation), cos = Math.cos(plot.rotation)
+  for (const [origin, direction] of [[plot.x + cos * door.x, sin], [plot.z - sin * door.x, cos]]) {
+    if (Math.abs(direction!) < 0.5) continue
+    for (let gridLine = 0; gridLine <= GRID; gridLine++) {
+      const local = ((gridLine - GRID / 2) * TILE - origin!) / direction!
+      if (local > start + 1e-7 && local < end - 1e-7) boundaries.push(local)
+    }
+  }
+  boundaries.sort((a, b) => a - b)
+  const slabs: [number, number][] = []
+  for (let at = 1; at < boundaries.length; at++) {
+    const a = boundaries[at - 1]!, b = boundaries[at]!
+    const count = Math.ceil((b - a) / 0.25)
+    for (let i = 0; i < count; i++) slabs.push([a + (b - a) * i / count, a + (b - a) * (i + 1) / count])
+  }
+  const base = new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, 0, plot.z)
+  const boxes: ArchitectureBox[] = []
+  for (const [a, b] of slabs) {
+    const length = b - a
+    const matrix = base.clone().multiply(new THREE.Matrix4().makeScale(1.55, 0.024, length)
+      .setPosition(door.x, 0, (a + b) / 2))
+    const e = matrix.elements, x = e[12]!, z = e[14]!, tile = groundTile(x, z)
+    // Sample inside the same triangle/tile at the centre: horizontal paving becomes a graded slab.
+    const h = groundHeight(island, x, z)
+    const epsilon = 0.001
+    const sample = (px: number, pz: number) => surfaceHeight(island, tile, px, pz)
+    const sx = (sample(x + epsilon, z) - sample(x - epsilon, z)) / (2 * epsilon)
+    const sz = (sample(x, z + epsilon) - sample(x, z - epsilon)) / (2 * epsilon)
+    e[1] = e[0]! * sx + e[2]! * sz; e[9] = e[8]! * sx + e[10]! * sz; e[13] = h + 0.018
+    boxes.push({ matrix, color: '#d4bc96' })
+  }
+  return boxes
 }

@@ -1,14 +1,18 @@
-import { Suspense, useMemo } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { AudienceMember } from '@/data/types'
+import { CameraRig } from './CameraRig'
 import { Terrain } from './Terrain'
 import { Town } from './Town'
 import { Villagers } from './Villagers'
 import { AmbientChatter } from './fx/AmbientChatter'
 import { GroupHighlight } from './fx/GroupHighlight'
+import { VerdictRings } from './fx/VerdictRings'
+import { VERDICT_STYLE, type IdeaVerdict } from '@/data/ideaVerdict'
 import { ISLAND_SPACING, type Island } from './scene/island'
 import type { IslandSim } from './scene/IslandSim'
 import { residentAppearance, RESIDENT_IDS } from './residentAppearance'
@@ -20,10 +24,14 @@ export interface IslandCanvasProps {
   members: AudienceMember[]
   appearanceContext: string
   selectedIndex: number | null
+  /** Someone is selected who has no body on the island, so the camera holds. */
+  selectionWithoutBody?: boolean
   onSelect(index: number | null): void
   /** Group to ring on the ground, or null. Driven by the sidebar. */
   highlightGroupId: string | null
   highlightColor: string
+  /** Member ids to ring by idea verdict; the static verdict colours are used. */
+  verdicts?: Record<IdeaVerdict, number[]>
   /** Dropped first when frames get expensive. */
   shadows: boolean
   paused: boolean
@@ -73,9 +81,11 @@ export function IslandCanvas({
   members,
   appearanceContext,
   selectedIndex,
+  selectionWithoutBody,
   onSelect,
   highlightGroupId,
   highlightColor,
+  verdicts,
   shadows,
   paused,
   onTownError,
@@ -99,6 +109,8 @@ export function IslandCanvas({
     })
   }, [members, sim, appearanceContext])
 
+  const controlsRef = useRef<OrbitControlsImpl>(null)
+
   return (
     <Canvas
       shadows={shadows}
@@ -106,6 +118,8 @@ export function IslandCanvas({
       dpr={[1, 1.6]}
       camera={{ position: [...ISLAND_VIEW.position], fov: ISLAND_VIEW.fov, near: 1, far: 900 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
+      // A click that hits no resident clears the selection, which releases the follow camera.
+      onPointerMissed={() => onSelect(null)}
       onCreated={({ gl, scene }) => {
         // ACES filmic rolls the strong orange key off gracefully instead of
         // clipping every sunlit roof to white.
@@ -154,6 +168,13 @@ export function IslandCanvas({
         {highlightGroupId && (
           <GroupHighlight sim={sim} groupId={highlightGroupId} color={highlightColor} />
         )}
+        {verdicts && (
+          <>
+            <VerdictRings sim={sim} memberIds={verdicts.going} color={VERDICT_STYLE.going.color} />
+            <VerdictRings sim={sim} memberIds={verdicts.maybe} color={VERDICT_STYLE.maybe.color} />
+            <VerdictRings sim={sim} memberIds={verdicts.not} color={VERDICT_STYLE.not.color} />
+          </>
+        )}
       </Suspense>
 
       {/*
@@ -167,7 +188,10 @@ export function IslandCanvas({
         <Vignette offset={0.26} darkness={0.42} />
       </EffectComposer>
 
+      <CameraRig sim={sim} followIndex={selectedIndex} hold={selectionWithoutBody} controls={controlsRef} />
+
       <OrbitControls
+        ref={controlsRef}
         target={[...ISLAND_VIEW.target]}
         minDistance={ISLAND_VIEW.minDistance}
         maxDistance={ISLAND_VIEW.maxDistance}

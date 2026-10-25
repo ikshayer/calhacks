@@ -1,0 +1,15 @@
+{
+  "name": "millbrook-persona-simulation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node --experimental-strip-types src/index.ts",
+    "validate": "node --experimental-strip-types src/index.ts --validate",
+    "simulate": "node --experimental-strip-types src/index.ts --simulate",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

@@ -3,6 +3,8 @@ import type {
   ContentSignals,
   ChatTurn,
   CompanyProfile,
+  IdeaTestInput,
+  IdeaTestResult,
   Decision,
   Report,
   RunEvent,
@@ -71,4 +73,30 @@ export interface SimDataSource {
 
   /** Follow-up chat, grounded in the profile, the upload and the run results. */
   chat(runId: RunId, history: ChatTurn[], message: string): Promise<string>
+
+  /**
+   * Why one simulated member would or would not engage. The live backend writes
+   * it on demand (Claude) the first time a villager is opened, then caches it.
+   */
+  explainMember(runId: RunId, memberId: number): Promise<string>
+
+  /**
+   * A plain-language account of why one version did better, or why the result
+   * is too close to call. `null` when the driver has no written comparison.
+   * The verdict itself is computed in ComparePanel from the run spreads.
+   */
+  compareRuns(baseRunId: RunId, revisedRunId: RunId): Promise<string | null>
+
+  /**
+   * Ask the simulated town about an idea that has no video yet. `onProgress`
+   * receives the worker's stage text while it runs; the promise resolves with
+   * the finished test or rejects with the worker's error.
+   */
+  testIdea(input: IdeaTestInput, onProgress: (stage: string) => void): Promise<IdeaTestResult>
+
+  /**
+   * Why one resident would or would not go for a tested idea. The live backend
+   * writes it on demand the first time it is asked for, then caches it.
+   */
+  explainIdeaResident(ideaId: string, memberId: number): Promise<string>
 }

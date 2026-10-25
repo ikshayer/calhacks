@@ -1,7 +1,9 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
+// The island declares the footprint, so navigation and geometry agree on it.
+import { FOUNTAIN_RADIUS } from './scene/island.ts'
 
-export const FOUNTAIN_RADIUS = 1.65
+export { FOUNTAIN_RADIUS }
 export const FOUNTAIN_POOL_Y = 0.49
 
 /** Carved basin and upper bowl share the original fountain's ground footprint. */

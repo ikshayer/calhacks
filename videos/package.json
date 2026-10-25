@@ -1,0 +1,22 @@
+{
+  "name": "campaign-videos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "voice": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tts.ps1",
+    "render:original": "remotion render src/index.ts original out/original.mp4",
+    "render:revised": "remotion render src/index.ts revised out/revised.mp4",
+    "render": "npm run render:original && npm run render:revised"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.538",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.538"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.6.0"
+  }
+}

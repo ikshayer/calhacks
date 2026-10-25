@@ -1,19 +1,11 @@
 import { useState } from 'react'
 import { useReducedMotion } from 'motion/react'
 import { useAuth } from '@/auth/AuthProvider'
+import { themeHex } from '@/lib/themeHex'
 import { Button, Field, Input } from '@/components/ui'
 import DotGrid from '@/components/reactbits/DotGrid'
 import RotatingText from '@/components/reactbits/RotatingText'
-
-/**
- * DotGrid parses plain hex only and cannot see CSS variables, so the garden
- * tokens are read off the root once. The fallbacks match index.css, so a theme
- * that has not emitted the variable still lands on the right colour.
- */
-function themeHex(name: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) ? value : fallback
-}
+import { MILLBROOK_SIZE } from '@/data/millbrook'
 
 /** What the audience might do with the video; the headline cycles through them. */
 const VERDICTS = ['shares it', 'skips it', 'passes it on']
@@ -173,7 +165,7 @@ function Marquee() {
       <dl className="relative flex gap-9 text-[13px]">
         <div>
           <dt className="text-faint">Audience</dt>
-          <dd className="display tnum mt-0.5 text-lg text-paper">500 members</dd>
+          <dd className="display tnum mt-0.5 text-lg text-paper">{MILLBROOK_SIZE.total} residents</dd>
         </div>
         <div>
           <dt className="text-faint">Sharing rounds</dt>

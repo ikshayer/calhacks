@@ -3,6 +3,7 @@ import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js'
 import { cloneResident, disposeResidentSkeletons, prepareResidentTemplate } from './residentRendering.ts'
 import { SharedResource } from './SharedResource.ts'
 import { ResidentController } from './ResidentController.ts'
+import { createPoseOverlay } from './residentPose.ts'
 import { RESIDENT_HEIGHT, RESIDENT_IDS } from './residentAppearance.ts'
 
 export interface ResidentTemplate {
@@ -77,7 +78,10 @@ export function createResident(template: ResidentTemplate, phase: number) {
   normalized.add(model)
   const root = new THREE.Group()
   root.add(normalized)
-  const controller = new ResidentController(model, template.gltf.animations, template.baseSpeed, phase)
+  // Phone, nods and gaze are rotated onto the clips rather than authored as
+  // extra actions; a design missing the bones simply plays the clips plain.
+  const controller = new ResidentController(model, template.gltf.animations, template.baseSpeed, phase,
+    { pose: createPoseOverlay(model, phase) })
   return { root, model, controller, owed: 0,
     get urgent() { return controller.urgent },
     advance() { controller.advance() },

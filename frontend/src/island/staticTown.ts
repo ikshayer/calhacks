@@ -37,8 +37,8 @@ export function staticBounds(parts: readonly StaticPart[]): THREE.Box3 {
   return result
 }
 
-export function placedStaticMatrix(placement: { x: number; z: number; rotation: number; scale: number }, source: THREE.Matrix4): THREE.Matrix4 {
-  return new THREE.Matrix4().compose(new THREE.Vector3(placement.x, 0, placement.z),
+export function placedStaticMatrix(placement: { x: number; y?: number; z: number; rotation: number; scale: number }, source: THREE.Matrix4): THREE.Matrix4 {
+  return new THREE.Matrix4().compose(new THREE.Vector3(placement.x, placement.y ?? 0, placement.z),
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), placement.rotation),
     new THREE.Vector3().setScalar(placement.scale)).multiply(source)
 }

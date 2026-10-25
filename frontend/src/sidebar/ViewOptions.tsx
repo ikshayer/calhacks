@@ -51,9 +51,9 @@ export function ViewOptions({
       </dl>
 
       <p className="mt-3 text-[11px] leading-relaxed text-faint">
-        The town is a readable sample of the audience, picked proportionally from every group. All{' '}
-        {AUDIENCE_SIZE.total} members are simulated and counted in the results, and all of them
-        appear in the network view.
+        All {AUDIENCE_SIZE.total} fictional Millbrook residents live in town, are simulated and
+        appear in the network view. Audience groups follow your onboarding shares, rounded to
+        whole people.
       </p>
       <p className="mt-2 text-[11px] leading-relaxed text-faint">
         Residents chat among themselves for atmosphere. That small talk is decoration — only the

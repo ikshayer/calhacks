@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { EmptyState, Section } from '@/components/ui'
 import type { RunMetrics } from '@/data/types'
 import type { RunState } from '@/store/useAppStore'
+import { sameRunAudience } from '@/data/runCompatibility'
 
 /**
  * Original against revision.
@@ -43,10 +45,7 @@ export function ComparePanel() {
   const leftSpread = left.metrics.spread
   const rightSpread = right.metrics.spread
 
-  const sameAudience =
-    left.options.audienceVersion === right.options.audienceVersion &&
-    left.options.seed === right.options.seed &&
-    left.options.seedExposure === right.options.seedExposure
+  const sameAudience = sameRunAudience(left.options, right.options)
 
   // Declare a winner only when each run's typical result sits outside the
   // other's P10-P90 band, in both directions.
@@ -59,6 +58,7 @@ export function ComparePanel() {
   const separated = (a: RunMetrics['spread'], b: RunMetrics['spread']) =>
     a.p50 > b.p90 || a.p50 < b.p10
   const decisive =
+    sameAudience &&
     leftSpread.p50 !== rightSpread.p50 &&
     separated(leftSpread, rightSpread) &&
     separated(rightSpread, leftSpread)
@@ -94,7 +94,15 @@ export function ComparePanel() {
             (winner ? 'border-sun/30 bg-sun/[0.07]' : 'border-line bg-ink')
           }
         >
-          {winner ? (
+          {!sameAudience ? (
+            <>
+              <p className="display text-[14px] text-paper">Different simulation settings</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+                These results cannot establish a winner. Run both versions against the same
+                Millbrook audience and exposure settings to compare them.
+              </p>
+            </>
+          ) : winner ? (
             <>
               <p className="display text-[14px] text-sun">{winner.label} does better</p>
               <p className="mt-1 text-[12px] leading-relaxed text-muted">
@@ -115,10 +123,19 @@ export function ComparePanel() {
           )}
         </div>
 
+        {sameAudience && (
+          // Runs are stored in creation order, so the earlier one is the original.
+          <WrittenComparison
+            baseRunId={complete.indexOf(left) < complete.indexOf(right) ? left.id : right.id}
+            revisedRunId={complete.indexOf(left) < complete.indexOf(right) ? right.id : left.id}
+          />
+        )}
+
         {!sameAudience && (
           <p className="mt-3 rounded-lg border border-bloom/30 bg-bloom/[0.07] px-3 py-2.5 text-[11.5px] leading-relaxed text-muted">
-            These runs used different audience or exposure settings, so the comparison is not
-            like-for-like. Re-run them with the same settings before trusting the gap.
+            {!left.options.audienceKey || !right.options.audienceKey
+              ? 'A saved run belongs to the previous audience. Its original results remain available.'
+              : 'These runs used different audience or exposure settings.'}
           </p>
         )}
       </Section>
@@ -152,13 +169,54 @@ export function ComparePanel() {
   )
 }
 
+/**
+ * The live backend's plain-language account of the difference (Claude, grounded
+ * in both videos and the matched-member deltas). The mock has none and renders nothing.
+ */
+function WrittenComparison({ baseRunId, revisedRunId }: { baseRunId: string; revisedRunId: string }) {
+  const source = useAppStore((state) => state.source)
+  const [result, setResult] = useState<{ key: string; text: string | null; error?: string } | null>(null)
+  const key = `${baseRunId}:${revisedRunId}`
+
+  useEffect(() => {
+    let live = true
+    source
+      .compareRuns(baseRunId, revisedRunId)
+      .then((text) => {
+        if (live) setResult({ key, text })
+      })
+      .catch((cause: unknown) => {
+        if (live) setResult({ key, text: null, error: cause instanceof Error ? cause.message : 'The comparison could not be written.' })
+      })
+    return () => {
+      live = false
+    }
+  }, [source, baseRunId, revisedRunId, key])
+
+  const current = result?.key === key ? result : null
+  if (current?.error) return <p className="mt-3 text-[12px] leading-relaxed text-bloom">{current.error}</p>
+  if (!current) {
+    return source.kind === 'spacetime' ? (
+      <p className="mt-3 text-[12px] leading-relaxed text-faint">Writing up the difference…</p>
+    ) : null
+  }
+  if (!current.text) return null
+  return (
+    <div className="mt-3">
+      <p className="text-[12.5px] leading-relaxed text-muted">{current.text}</p>
+      <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+        Written by Claude from the two analyses and the simulated results.
+      </p>
+    </div>
+  )
+}
+
 function ComparisonRow({ label, a, b }: { label: string; a: number; b: number }) {
-  const better = a === b ? null : a > b ? 'a' : 'b'
   return (
     <tr className="border-t border-line">
       <td className="py-1.5 text-muted">{label}</td>
-      <td className={'py-1.5 text-right ' + (better === 'a' ? 'text-sun' : 'text-paper')}>{a}</td>
-      <td className={'py-1.5 text-right ' + (better === 'b' ? 'text-sun' : 'text-paper')}>{b}</td>
+      <td className="py-1.5 text-right text-paper">{a}</td>
+      <td className="py-1.5 text-right text-paper">{b}</td>
     </tr>
   )
 }
