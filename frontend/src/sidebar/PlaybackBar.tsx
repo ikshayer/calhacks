@@ -30,6 +30,21 @@ export function PlaybackBar({ run }: { run: RunState }) {
     )
   }
 
+  // A campaign reopened from history keeps its metrics and its report, but the
+  // round log is too large to persist, so there is nothing to replay. Saying so
+  // is better than offering a scrubber that cannot move.
+  if (run.status === 'complete' && received === 0) {
+    return (
+      <div className="over-canvas absolute bottom-5 left-5 max-w-[42ch] rounded-xl px-4 py-3">
+        <p className="display text-[14px] text-paper">Cascade not stored</p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+          This run was restored from history, so the round-by-round spread cannot be replayed. Its
+          report and totals are unchanged.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="over-canvas absolute bottom-5 left-5 rounded-xl px-4 py-3">
       <div className="flex items-center gap-3">

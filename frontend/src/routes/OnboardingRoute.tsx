@@ -6,6 +6,7 @@ import type { CompanyProfile } from '@/data/types'
 import { emptyProfile, normaliseShares } from '@/onboarding/suggestAudience'
 import { Button } from '@/components/ui'
 import DotGrid from '@/components/reactbits/DotGrid'
+import { themeHex } from '@/lib/themeHex'
 import { CompanyStep } from '@/onboarding/steps/CompanyStep'
 import { AudienceStep } from '@/onboarding/steps/AudienceStep'
 import { ObjectiveStep } from '@/onboarding/steps/ObjectiveStep'
@@ -15,15 +16,6 @@ const STEPS = [
   { id: 'audience', title: 'Who you are reaching', blurb: 'Confirm or change the suggested groups.' },
   { id: 'objective', title: 'What you are optimising', blurb: 'And how you want to sound.' },
 ] as const
-
-/**
- * DotGrid parses plain hex only and cannot see CSS variables, so the garden
- * tokens are read off the root once, with the index.css values as fallback.
- */
-function themeHex(name: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) ? value : fallback
-}
 
 /**
  * Onboarding.
@@ -65,7 +57,7 @@ export function OnboardingRoute() {
       // Bumped so a run can declare which audience definition it used.
       audienceVersion: (existing?.audienceVersion ?? 0) + 1,
     })
-    navigate('/workspace', { replace: true })
+    navigate('/campaigns', { replace: true })
   }
 
   const current = STEPS[step] ?? STEPS[0]
@@ -159,7 +151,7 @@ export function OnboardingRoute() {
             </Button>
           ) : (
             <Button onClick={finish} disabled={!canAdvance}>
-              Open the town
+              Continue
             </Button>
           )}
         </footer>

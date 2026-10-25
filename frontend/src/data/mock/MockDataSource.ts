@@ -53,6 +53,15 @@ export class MockDataSource implements SimDataSource {
   private readonly videos = new Map<string, VideoAnalysis>()
   private readonly runs = new Map<RunId, StoredRun>()
   private counter = 0
+  /**
+   * Distinguishes ids minted in this page load from ids restored from storage.
+   *
+   * Campaigns and their runs are persisted, but this counter restarts at zero on
+   * every load, so a bare `video-1` after a reload would collide with the
+   * `video-1` already sitting in a restored campaign and silently overwrite it.
+   * A live backend mints globally unique ids; the mock has to fake that.
+   */
+  private readonly session = Math.random().toString(36).slice(2, 8)
 
   constructor(size: AudienceSize = { total: 500, onIsland: 120 }) {
     this.size = size
@@ -74,7 +83,7 @@ export class MockDataSource implements SimDataSource {
   }
 
   async analyseVideo(campaignId: string, input: VideoInput, label: string): Promise<VideoAnalysis> {
-    const id = `video-${++this.counter}`
+    const id = `video-${this.session}-${++this.counter}`
     const signals = deriveSignals(input)
     const analysis: VideoAnalysis = {
       id,
@@ -117,7 +126,7 @@ export class MockDataSource implements SimDataSource {
     const video = this.videos.get(videoId)
     if (!video) throw new Error(`startRun: unknown video ${videoId}`)
 
-    const id = `run-${++this.counter}`
+    const id = `run-${this.session}-${++this.counter}`
     const decisions = scoreAudience(audience, video.signals, options.seed)
     const cascade = runCascade(audience, decisions, options)
 

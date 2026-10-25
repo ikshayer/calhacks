@@ -13,7 +13,6 @@ import { useCascadePlayback } from '@/island/useCascadePlayback'
 import { hashSeed } from '@/lib/rng'
 import { Sidebar } from '@/sidebar/Sidebar'
 import { PlaybackBar } from '@/sidebar/PlaybackBar'
-import { VillagerCard } from '@/island/VillagerCard'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 /**
@@ -78,10 +77,16 @@ export function WorkspaceRoute() {
     return sim.indexOfMember(selectedMemberId) ?? null
   }, [sim, selectedMemberId])
 
-  const selectedMember = useMemo(
-    () => audience?.members.find((member) => member.id === selectedMemberId) ?? null,
-    [audience, selectedMemberId],
-  )
+  // Escape leaves a member's report the same way the back row does. Keyed on
+  // the selection so an idle workspace does not hold a document listener.
+  useEffect(() => {
+    if (selectedMemberId === null) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') selectMember(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedMemberId, selectMember])
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
@@ -116,6 +121,7 @@ export function WorkspaceRoute() {
               members={audience.members}
               appearanceContext={`${profile?.id ?? 'audience'}:${audience.version}`}
               selectedIndex={selectedIndex}
+              selectionWithoutBody={selectedMemberId !== null && selectedIndex === null}
               onSelect={(index) =>
                 selectMember(index === null ? null : sim.memberOfIndex(index))
               }
@@ -138,15 +144,6 @@ export function WorkspaceRoute() {
         )}
 
         {sim && run && <PlaybackBar run={run} />}
-
-        {selectedMember && (
-          <VillagerCard
-            member={selectedMember}
-            decision={run?.decisions?.find((entry) => entry.memberId === selectedMember.id)}
-            group={profile?.groups.find((entry) => entry.id === selectedMember.groupId)}
-            onClose={() => selectMember(null)}
-          />
-        )}
       </main>
 
       <Sidebar

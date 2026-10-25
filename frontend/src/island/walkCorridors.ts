@@ -1,8 +1,9 @@
 import * as THREE from 'three'
-import { TILE, tileToWorld, type Island } from './scene/island.ts'
+import { WALK_CLEARANCE, tileToWorld, type Island } from './scene/island.ts'
 
-/** Every possible signed lane, body clearance, and junction turn. Altitude independent. */
-export const WALK_CLEARANCE = TILE * 0.26 + 0.48
+export { WALK_CLEARANCE } from './scene/island.ts'
+
+/** Boxes covering every walking lane, for landscaping to keep clear of. */
 export function walkCorridors(island: Island): THREE.Box3[] {
   return island.walkable.flatMap((tile, slot) => {
     const from = tileToWorld(tile)

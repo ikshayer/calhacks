@@ -1,9 +1,11 @@
-import { Suspense, useMemo } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { AudienceMember } from '@/data/types'
+import { CameraRig } from './CameraRig'
 import { Terrain } from './Terrain'
 import { Town } from './Town'
 import { Villagers } from './Villagers'
@@ -20,6 +22,8 @@ export interface IslandCanvasProps {
   members: AudienceMember[]
   appearanceContext: string
   selectedIndex: number | null
+  /** Someone is selected who has no body on the island, so the camera holds. */
+  selectionWithoutBody?: boolean
   onSelect(index: number | null): void
   /** Group to ring on the ground, or null. Driven by the sidebar. */
   highlightGroupId: string | null
@@ -73,6 +77,7 @@ export function IslandCanvas({
   members,
   appearanceContext,
   selectedIndex,
+  selectionWithoutBody,
   onSelect,
   highlightGroupId,
   highlightColor,
@@ -99,6 +104,8 @@ export function IslandCanvas({
     })
   }, [members, sim, appearanceContext])
 
+  const controlsRef = useRef<OrbitControlsImpl>(null)
+
   return (
     <Canvas
       shadows={shadows}
@@ -106,6 +113,8 @@ export function IslandCanvas({
       dpr={[1, 1.6]}
       camera={{ position: [...ISLAND_VIEW.position], fov: ISLAND_VIEW.fov, near: 1, far: 900 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
+      // A click that hits no resident clears the selection, which releases the follow camera.
+      onPointerMissed={() => onSelect(null)}
       onCreated={({ gl, scene }) => {
         // ACES filmic rolls the strong orange key off gracefully instead of
         // clipping every sunlit roof to white.
@@ -167,7 +176,10 @@ export function IslandCanvas({
         <Vignette offset={0.26} darkness={0.42} />
       </EffectComposer>
 
+      <CameraRig sim={sim} followIndex={selectedIndex} hold={selectionWithoutBody} controls={controlsRef} />
+
       <OrbitControls
+        ref={controlsRef}
         target={[...ISLAND_VIEW.target]}
         minDistance={ISLAND_VIEW.minDistance}
         maxDistance={ISLAND_VIEW.maxDistance}

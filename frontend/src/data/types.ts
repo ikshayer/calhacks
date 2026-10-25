@@ -128,6 +128,49 @@ export interface VideoAnalysis {
 }
 
 // ---------------------------------------------------------------------------
+// Campaign (one uploaded video and everything simulated against it)
+// ---------------------------------------------------------------------------
+
+export type CampaignId = string
+
+/**
+ * One campaign in the history list.
+ *
+ * A campaign outlives the page: the metadata, signals and run results are
+ * persisted, but the video file itself is not — browsers cannot hand a `File`
+ * back after a reload. `posterDataUrl` is a single captured frame so a restored
+ * campaign still has a face in the list, and `videoAvailable` tells the UI
+ * whether the player can be shown or the user has to re-attach the file.
+ */
+export interface Campaign {
+  id: CampaignId
+  profileId: string
+  title: string
+  /** Epoch ms. Sorted newest-first in the history list. */
+  createdAt: number
+  videoId: string
+  videoName: string
+  durationSec: number
+  /** JPEG data URL of one frame, ~320px wide. Absent if capture failed. */
+  posterDataUrl?: string
+  /** False after a reload: metadata survived, the file did not. */
+  videoAvailable: boolean
+  signals: ContentSignals
+  summary: string
+  /** Newest last. */
+  runIds: RunId[]
+  /** Headline numbers from the most recent complete run, for the history card. */
+  headline?: {
+    runId: RunId
+    uniqueExposed: number
+    likes: number
+    comments: number
+    shares: number
+    coverage: number
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Simulation
 // ---------------------------------------------------------------------------
 
@@ -207,7 +250,7 @@ export type RunStatus = 'idle' | 'scoring' | 'cascading' | 'complete' | 'failed'
 
 export interface RunSummary {
   id: RunId
-  campaignId: string
+  campaignId: CampaignId
   videoId: string
   label: string
   options: RunOptions

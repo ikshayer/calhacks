@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { createRng } from '@/lib/rng'
-import { Activity, type IslandSim } from '../scene/IslandSim'
+import { isCascadeActivity, type Activity, type IslandSim } from '../scene/IslandSim'
 
 /**
  * Small talk.
@@ -140,7 +140,7 @@ export function AmbientChatter({ sim, paused }: { sim: IslandSim; paused: boolea
         bubble.remaining -= dt
         // Drop a bubble the moment its owner is reached by the video, so the
         // reaction emoji is never competing with small talk.
-        const busy = (sim.activity[bubble.villager] as Activity) >= Activity.OnPhone
+        const busy = isCascadeActivity(sim.activity[bubble.villager] as Activity)
         if (bubble.remaining <= 0 || busy) bubbles.current.splice(i, 1)
       }
 
@@ -150,7 +150,7 @@ export function AmbientChatter({ sim, paused }: { sim: IslandSim; paused: boolea
         const villager = rng.int(0, sim.count - 1)
         const activity = sim.activity[villager] as Activity
         const alreadyTalking = bubbles.current.some((b) => b.villager === villager)
-        if (activity < Activity.OnPhone && !alreadyTalking) {
+        if (!isCascadeActivity(activity) && !alreadyTalking) {
           bubbles.current.push({
             villager,
             texture: rng.int(0, textures.length - 1),

@@ -1,5 +1,10 @@
-import { useState } from 'react'
-import { useAppStore, selectActiveRun, selectActiveVideo } from '@/store/useAppStore'
+import { useMemo, useState } from 'react'
+import {
+  useAppStore,
+  selectActiveCampaign,
+  selectActiveRun,
+  selectActiveVideo,
+} from '@/store/useAppStore'
 import { Button, Section } from '@/components/ui'
 
 /**
@@ -13,19 +18,34 @@ export function RunPanel() {
   const video = useAppStore(selectActiveVideo)
   const audience = useAppStore((state) => state.audience)
   const runs = useAppStore((state) => state.runs)
+  const campaign = useAppStore(selectActiveCampaign)
   const activeRun = useAppStore(selectActiveRun)
   const startRun = useAppStore((state) => state.startRun)
   const setActiveRun = useAppStore((state) => state.setActiveRun)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const ordered = Object.values(runs)
-  const ready = Boolean(video && audience)
+  // `runs` holds every campaign's runs once history is restored, so the
+  // switcher has to be scoped: offering someone another campaign's runs here
+  // would let them compare two videos while the panel claims the comparison is
+  // like-for-like.
+  const ordered = useMemo(
+    () => Object.values(runs).filter((run) => run.campaignId === campaign?.id),
+    [runs, campaign?.id],
+  )
+  // A campaign restored from history has no file behind it, and the source
+  // forgot the video with the page: starting a run would throw.
+  const needsVideo = campaign?.videoAvailable === false
+  const ready = Boolean(video && audience) && !needsVideo
 
   const begin = async () => {
     setBusy(true)
+    setError(null)
     try {
       const label = ordered.length === 0 ? 'Original' : `Version ${ordered.length + 1}`
       await startRun(label)
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'The run could not be started.')
     } finally {
       setBusy(false)
     }
@@ -55,7 +75,15 @@ export function RunPanel() {
 
       {!ready && (
         <p className="mt-2.5 text-[12px] leading-relaxed text-faint">
-          Upload a video first. The audience is already built and waiting.
+          {needsVideo
+            ? 'Re-attach the video above to run this campaign again. The saved report stays readable either way.'
+            : 'Upload a video first. The audience is already built and waiting.'}
+        </p>
+      )}
+
+      {error && (
+        <p role="alert" className="mt-2.5 text-[12.5px] leading-snug text-bloom">
+          {error}
         </p>
       )}
 
