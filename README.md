@@ -1,3 +1,6 @@
+![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
+![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
+
 # Simthetic — find out who shares it before you post it
 
 Upload a campaign video and watch a town of 300 simulated residents decide, person
@@ -188,6 +191,14 @@ resubmitted behind your back.
 
 Three Python uAgents make the same pipeline reachable from an ASI:One chat. They only
 parse the request and call `start_run`; no scoring or key handling moves into them.
+
+| Agent | Role | Address |
+|---|---|---|
+| `reels-orchestrator` | Public. Agent Chat Protocol over an Agentverse mailbox; parses the chat, drives the others, streams progress | `agent1q2mslcxwezpm5j7y7tyes754pagc3mv4qd3ampfhcm92rx63w3y62qz9vjg` |
+| `reel-ingest` | Private. Resolves what to test; scrapes a pasted reel with Apify for context | `agent1qderhnzcjcszmv60xhv9c6rlr29rtnwkq7d2v5w3nwh6gql30hvdvz8jlsq` |
+| `reel-simulation` | Private. Calls the `start_run` reducer, polls progress, reads the report | `agent1q2xe9930mrh94vryadcu99yrcz6dltmxflu7tmmxv0xu277a3zhqvucddh9` |
+
+Try it in ASI:One: open the [orchestrator's Agentverse profile](https://agentverse.ai/agents/details/agent1q2mslcxwezpm5j7y7tyes754pagc3mv4qd3ampfhcm92rx63w3y62qz9vjg/profile) (handle `reel-rehearsal`), choose **Chat with Agent**, and send `test demo`.
 
 ```bash
 cd agents
