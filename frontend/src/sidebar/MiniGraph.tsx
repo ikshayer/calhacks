@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { AUDIENCE_SIZE, selectActiveRun, useAppStore } from '@/store/useAppStore'
+import { selectActiveRun, useAppStore } from '@/store/useAppStore'
 import { createRng } from '@/lib/rng'
 import { Section } from '@/components/ui'
 
@@ -17,10 +17,8 @@ interface Node {
  * The cascade as a network, drawn on a 2D canvas.
  *
  * The island shows what the cascade feels like; this shows what it *is* — every
- * one of the 500 members, the links between them, and the edges that actually
- * carried a share. It is the view that makes clear the spread is a graph
- * traversal and not a number going up, including for the members who have no
- * body on the island.
+ * resident, the family and friendship links between them, and the edges that
+ * actually carried a share.
  *
  * Plain Canvas 2D with a deterministic layout: a force-directed graph library
  * would cost more and say less at this size.
@@ -82,7 +80,7 @@ export function MiniGraph() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, WIDTH, HEIGHT)
 
-    const visible = (run?.rounds ?? []).slice(0, round)
+    const visible = (run && run.options.audienceKey === audience.key ? run.rounds : []).slice(0, round)
     const exposedAt = new Map<number, number>()
     const sharedEdges: [number, number][] = []
     for (const event of visible) {
@@ -126,11 +124,11 @@ export function MiniGraph() {
       ctx.fillStyle = reached ? node.color : 'rgba(107,120,114,0.5)'
       ctx.fill()
     })
-  }, [nodes, audience, run?.rounds, round])
+  }, [nodes, audience, run, round])
 
   if (!nodes) return null
 
-  const sharesSoFar = (run?.rounds ?? [])
+  const sharesSoFar = (run && run.options.audienceKey === audience?.key ? run.rounds : [])
     .slice(0, round)
     .reduce((sum, event) => sum + event.shares.reduce((inner, s) => inner + s.to.length, 0), 0)
 
@@ -152,8 +150,7 @@ export function MiniGraph() {
       />
       <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
         All {audience?.members.length ?? 0} members, grouped into clusters. Gold lines are shares
-        that reached someone new. Only {AUDIENCE_SIZE.onIsland} of them walk around town; the rest
-        are simulated and counted here all the same.
+        that reached someone new. All {audience?.members.length ?? 0} residents walk around town.
       </p>
     </Section>
   )

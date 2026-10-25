@@ -35,6 +35,20 @@ export const models = {
     usdPerInputToken: 0.1 / 1_000_000,
     usdPerOutputToken: 0.5 / 1_000_000,
   },
+  ideaParse: {
+    id: 'claude-haiku-5-5',
+    effort: 'low',
+    maxTokens: 2000,
+    usdPerInputToken: 0.1 / 1_000_000,
+    usdPerOutputToken: 0.5 / 1_000_000,
+  },
+  ideaAnalysis: {
+    id: 'claude-haiku-5-5',
+    effort: 'medium',
+    maxTokens: 8000,
+    usdPerInputToken: 0.1 / 1_000_000,
+    usdPerOutputToken: 0.5 / 1_000_000,
+  },
   /** Local Whisper via transformers.js (ONNX); no API key. */
   transcription: { id: 'Xenova/whisper-base.en' },
 } as const;

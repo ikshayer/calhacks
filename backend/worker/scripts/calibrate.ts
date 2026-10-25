@@ -13,15 +13,15 @@
  * Writes calibration.json. Run from backend/worker:
  *   npx tsx --env-file=../../.env --tsconfig ../../frontend/tsconfig.app.json scripts/calibrate.ts bontonfarms,grownorthtexas,...
  */
-import { writeFileSync } from 'node:fs';
-import { generateAudience } from '../../../frontend/src/data/mock/personas.ts';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { buildMillbrookAudience, validateMillbrookWorld } from '../../../frontend/src/data/millbrook.ts';
+import { predictionProfile } from '../../../frontend/src/data/predictionProfile.ts';
 import { emptyProfile, suggestedGroups } from '../../../frontend/src/onboarding/suggestAudience.ts';
 import type { CompanyProfile } from '../../../frontend/src/data/types.ts';
 import { scrapeReels, type Reel } from '../src/apify.ts';
 import { scoreMember, type JevState, type Signal } from '../src/jev.ts';
 
 const SHARE_TARGET = 0.1;
-const MEMBERS = 50;
 const REELS_PER_ACCOUNT = 10;
 const CONCURRENCY = 16;
 const USD_PER_INPUT_TOKEN = 0.042 / 1_000_000;
@@ -36,7 +36,17 @@ if (!apiKey) throw new Error('Missing JEV_API_KEY in .env');
 
 const groups = suggestedGroups();
 const profile: CompanyProfile = { ...emptyProfile(), id: 'calibration', name: 'calibration', groups };
-const audience = generateAudience(profile, { total: MEMBERS, onIsland: 0 }, 42);
+// The same 50 Millbrook residents the app simulates, with the same profile JEV sees in a live run.
+const world: unknown = JSON.parse(readFileSync(new URL('../../../frontend/public/millbrook-50/data/personas.json', import.meta.url), 'utf8'));
+validateMillbrookWorld(world);
+const audience = buildMillbrookAudience(world, profile);
+const profiles = audience.members.map((m) => {
+  const json = predictionProfile(m);
+  if (!json) return undefined;
+  const parsed: unknown = JSON.parse(json);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error(`member ${m.id} profile is not an object`);
+  return Object.fromEntries(Object.entries(parsed));
+});
 const groupById = new Map(groups.map((g) => [g.id, g]));
 
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -64,6 +74,7 @@ function stateFor(memberIndex: number, reel: Reel): JevState {
       habits: member.persona,
       responds_to: member.hotButtons,
       turned_off_by: member.ignores,
+      ...(profiles[memberIndex] ? { profile: profiles[memberIndex] } : {}),
     },
     reel: {
       account: `@${reel.ownerUsername}`,
@@ -113,7 +124,7 @@ const multipliers: Record<Signal, number> = {
 const calibration = {
   version: 1,
   createdAt: new Date().toISOString(),
-  source: `${reels.length} reels from ${accounts.map((a) => `@${a}`).join(', ')} (Apify), scored by JEV against ${MEMBERS} sample members`,
+  source: `${reels.length} reels from ${accounts.map((a) => `@${a}`).join(', ')} (Apify), scored by JEV against ${audience.members.length} Millbrook residents`,
   uncalibrated: false,
   multipliers,
   notes:

@@ -50,12 +50,14 @@ import SendChatMessageReducer from "./send_chat_message_reducer";
 import SetChatReplyReducer from "./set_chat_reply_reducer";
 import SetComparisonSummaryReducer from "./set_comparison_summary_reducer";
 import SetExplanationReducer from "./set_explanation_reducer";
+import SetIdeaResultReducer from "./set_idea_result_reducer";
 import SetJobStageReducer from "./set_job_stage_reducer";
 import SetReelRelevanceReducer from "./set_reel_relevance_reducer";
 import SetReportReducer from "./set_report_reducer";
 import SetVideoAnalysisReducer from "./set_video_analysis_reducer";
 import SetWorkerSecretReducer from "./set_worker_secret_reducer";
 import StartRunReducer from "./start_run_reducer";
+import TestIdeaReducer from "./test_idea_reducer";
 import UpsertProfileReducer from "./upsert_profile_reducer";
 import UpsertReferenceReelsReducer from "./upsert_reference_reels_reducer";
 import WriteDecisionsReducer from "./write_decisions_reducer";
@@ -69,6 +71,7 @@ import ChatMessageRow from "./chat_message_table";
 import CompanyProfileRow from "./company_profile_table";
 import ComparisonRow from "./comparison_table";
 import DecisionRow from "./decision_table";
+import IdeaTestRow from "./idea_test_table";
 import JobRow from "./job_table";
 import ReferenceReelRow from "./reference_reel_table";
 import ReportRow from "./report_table";
@@ -168,6 +171,20 @@ const tablesSchema = __schema({
       { name: 'decision_row_id_key', constraint: 'unique', columns: ['rowId'] },
     ],
   }, DecisionRow),
+  ideaTest: __table({
+    name: 'idea_test',
+    indexes: [
+      { accessor: 'id', name: 'idea_test_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'owner', name: 'idea_test_owner_idx_btree', algorithm: 'btree', columns: [
+        'owner',
+      ] },
+    ],
+    constraints: [
+      { name: 'idea_test_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, IdeaTestRow),
   job: __table({
     name: 'job',
     indexes: [
@@ -298,12 +315,14 @@ const reducersSchema = __reducers(
   __reducerSchema("set_chat_reply", SetChatReplyReducer),
   __reducerSchema("set_comparison_summary", SetComparisonSummaryReducer),
   __reducerSchema("set_explanation", SetExplanationReducer),
+  __reducerSchema("set_idea_result", SetIdeaResultReducer),
   __reducerSchema("set_job_stage", SetJobStageReducer),
   __reducerSchema("set_reel_relevance", SetReelRelevanceReducer),
   __reducerSchema("set_report", SetReportReducer),
   __reducerSchema("set_video_analysis", SetVideoAnalysisReducer),
   __reducerSchema("set_worker_secret", SetWorkerSecretReducer),
   __reducerSchema("start_run", StartRunReducer),
+  __reducerSchema("test_idea", TestIdeaReducer),
   __reducerSchema("upsert_profile", UpsertProfileReducer),
   __reducerSchema("upsert_reference_reels", UpsertReferenceReelsReducer),
   __reducerSchema("write_decisions", WriteDecisionsReducer),

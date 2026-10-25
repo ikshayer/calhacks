@@ -21,6 +21,8 @@ export interface MemberEvidence {
   persona: string;
   hotButtons: string[];
   ignores: string[];
+  /** Resident profile JSON (Millbrook), '' for generated audiences. */
+  profileJson: string;
   pWatch: number;
   pShare: number;
 }
@@ -83,6 +85,7 @@ export function buildGrounding(conn: DbConnection, runId: bigint): Grounding {
       persona: m.persona,
       hotButtons: m.hotButtons,
       ignores: m.ignores,
+      profileJson: m.profileJson,
       pWatch: d.pWatch,
       pShare: d.pShare,
     });
@@ -148,7 +151,7 @@ export function groundingText(g: Grounding): string {
       `  ${grp.label}:`,
       ...[...grp.likeliest.map((e) => ['most likely to share', e] as const), ...grp.leastLikely.map((e) => ['least likely to share', e] as const)].map(
         ([side, e]) =>
-          `    ${side}: ${e.name} (P(watch) ${e.pWatch.toFixed(2)}, P(share) ${e.pShare.toFixed(3)}). ${e.persona} Cares about: ${e.hotButtons.join(', ')}. Ignores: ${e.ignores.join(', ')}.`,
+          `    ${side}: ${e.name} (P(watch) ${e.pWatch.toFixed(2)}, P(share) ${e.pShare.toFixed(3)}). ${e.persona} Cares about: ${e.hotButtons.join(', ') || 'see profile'}. Ignores: ${e.ignores.join(', ') || 'see profile'}.${e.profileJson ? ` Profile: ${e.profileJson}` : ''}`,
       ),
     ]),
     '',

@@ -1,4 +1,3 @@
-import { hashSeed } from '@/lib/rng'
 import type { SimDataSource } from '@/data/SimDataSource'
 import type {
   Audience,
@@ -6,6 +5,8 @@ import type {
   CompanyProfile,
   ContentSignals,
   Decision,
+  IdeaTestInput,
+  IdeaTestResult,
   Report,
   RoundEvent,
   RunEvent,
@@ -17,10 +18,13 @@ import type {
   VideoAnalysis,
   VideoInput,
 } from '@/data/types'
-import { generateAudience, type AudienceSize } from '@/data/mock/personas'
+import { buildMillbrookAudience, fetchMillbrookWorld } from '@/data/millbrook'
+import { predictionProfile } from '@/data/predictionProfile'
+import type { MillbrookWorld } from '@/data/millbrookTypes'
 import { DbConnection } from '@/module_bindings'
 import type {
   Decision as DecisionRow,
+  IdeaTest as IdeaTestRow,
   Report as ReportRow,
   RoundEvent as RoundEventRow,
   Run as RunRow,
@@ -41,7 +45,7 @@ export const DEMO_VIDEOS = [
 const DEFAULT_UPLOAD_URL = 'http://127.0.0.1:8787'
 
 /** How long to wait for the worker before giving up on a step, in milliseconds. */
-const WAIT = { analysis: 120_000, report: 120_000, reply: 60_000, explanation: 60_000, comparison: 60_000 }
+const WAIT = { analysis: 120_000, report: 120_000, reply: 60_000, explanation: 60_000, comparison: 60_000, ideaTest: 180_000 }
 
 const TABLES = [
   'company_profile',
@@ -53,6 +57,7 @@ const TABLES = [
   'chat_message',
   'job',
   'comparison',
+  'idea_test',
 ] as const
 
 /**
@@ -69,22 +74,20 @@ export class SpacetimeDataSource implements SimDataSource {
 
   private readonly host: string
   private readonly database: string
-  private readonly size: AudienceSize
   private connection?: Promise<DbConnection>
   private identityHex = ''
   private readonly listeners = new Set<() => void>()
 
+  private world?: Promise<MillbrookWorld>
   private audience?: Audience
-  private audienceKey = ''
   /** The onboarding profile id is a constant, so it is scoped to this browser's identity on the shared database. */
   private remoteProfileId = ''
 
   private readonly uploadUrl: string
 
-  constructor(host: string, database: string, size: AudienceSize, uploadUrl = DEFAULT_UPLOAD_URL) {
+  constructor(host: string, database: string, uploadUrl = DEFAULT_UPLOAD_URL) {
     this.host = host
     this.database = database
-    this.size = size
     this.uploadUrl = uploadUrl.replace(/\/+$/, '')
     this.label = `Live backend (SpacetimeDB ${database})`
   }
@@ -95,13 +98,13 @@ export class SpacetimeDataSource implements SimDataSource {
 
   async loadAudience(profile: CompanyProfile): Promise<Audience> {
     const conn = await this.connect()
-    const key = `${profile.id}:${profile.audienceVersion}:${profile.groups
-      .map((g) => `${g.id}@${g.share.toFixed(4)}`)
-      .join(',')}`
-    if (this.audience && this.audienceKey === key) return this.audience
-
-    // Same seeded generator as the mock, so the audience is identical across drivers.
-    const audience = generateAudience(profile, this.size, hashSeed(key))
+    // The same 50 Millbrook residents as the mock, so the audience is identical across drivers.
+    this.world ??= fetchMillbrookWorld().catch((cause: unknown) => {
+      this.world = undefined
+      throw cause
+    })
+    const audience = buildMillbrookAudience(await this.world, structuredClone(profile))
+    if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     const profileId = `${profile.id}-${this.identityHex.slice(0, 16)}`
     const isNew = !conn.db.companyProfile.id.find(profileId)
 
@@ -132,6 +135,7 @@ export class SpacetimeDataSource implements SimDataSource {
         model: m.model,
         accessory: m.accessory,
         onIsland: m.onIsland,
+        profileJson: predictionProfile(m),
       })),
       edges: audience.edges,
     })
@@ -140,7 +144,6 @@ export class SpacetimeDataSource implements SimDataSource {
 
     this.remoteProfileId = profileId
     this.audience = audience
-    this.audienceKey = key
     return audience
   }
 
@@ -328,6 +331,36 @@ export class SpacetimeDataSource implements SimDataSource {
     return row.summary
   }
 
+  async testIdea(input: IdeaTestInput, onProgress: (stage: string) => void): Promise<IdeaTestResult> {
+    const conn = await this.connect()
+    const profileId = this.profileId()
+    const mine = (row: IdeaTestRow) =>
+      row.profileId === profileId && row.owner.toHexString() === this.identityHex && row.prompt === input.prompt
+    const before = [...conn.db.ideaTest.iter()].reduce((max, row) => (mine(row) && row.id > max ? row.id : max), 0n)
+    await conn.reducers.testIdea({
+      profileId,
+      prompt: input.prompt,
+      budgetUsd: input.budgetUsd,
+      options: input.options,
+    })
+    const find = () =>
+      [...conn.db.ideaTest.iter()].filter((row) => mine(row) && row.id > before).sort((a, b) => (a.id < b.id ? 1 : -1))[0]
+    let lastStage = ''
+    const row = await this.waitFor(WAIT.ideaTest, 'the idea test', () => {
+      const r = find()
+      if (!r) return undefined
+      if (r.status === 'failed') throw new Error(`The idea test failed: ${r.error ?? 'unknown error'}`)
+      if (r.status === 'ready') return r
+      const stage = [...conn.db.job.iter()].find((j) => j.kind === 'test_idea' && j.targetId === r.id.toString())?.stage ?? ''
+      if (stage && stage !== lastStage) {
+        lastStage = stage
+        onProgress(stage)
+      }
+      return undefined
+    })
+    return toIdeaTest(row)
+  }
+
   // -------------------------------------------------------------------------
   // Connection and waiting
   // -------------------------------------------------------------------------
@@ -390,6 +423,8 @@ export class SpacetimeDataSource implements SimDataSource {
           conn.db.job.onUpdate(notify)
           conn.db.comparison.onInsert(notify)
           conn.db.comparison.onUpdate(notify)
+          conn.db.ideaTest.onInsert(notify)
+          conn.db.ideaTest.onUpdate(notify)
           conn
             .subscriptionBuilder()
             .onApplied(() => resolve(conn))
@@ -572,5 +607,24 @@ function writeStorage(key: string, value: string): void {
     localStorage.setItem(key, value)
   } catch (error) {
     console.warn('Could not store the SpacetimeDB token; a reload will use a new identity.', error)
+  }
+}
+
+function toIdeaTest(row: IdeaTestRow): IdeaTestResult {
+  if (row.status !== 'running' && row.status !== 'ready' && row.status !== 'failed') {
+    throw new Error(`Unknown idea test status "${row.status}".`)
+  }
+  return {
+    id: row.id.toString(),
+    status: row.status,
+    prompt: row.prompt,
+    idea: row.idea,
+    targetLabel: row.targetLabel,
+    minAge: row.minAge,
+    maxAge: row.maxAge,
+    residents: row.residents,
+    metrics: row.metrics,
+    analysis: row.analysis,
+    error: row.error,
   }
 }

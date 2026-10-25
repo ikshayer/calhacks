@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei'
 import type { GLTF } from 'three-stdlib'
 import { islandModelKeys, type Island, type Plot } from './scene/island'
 import { collectStaticParts, placedStaticMatrix, prepareBuilding, type PixelSampler, type StaticPart } from './staticTown'
-import { architectureFor, planTown } from './townArchitecture'
+import { architectureFor, entrancePaving, planTown } from './townArchitecture'
 import { planLandscape } from './landscapePlanning'
 import { createFoliageMaterial, type FoliageMode } from './foliageMaterial'
 import { createLeafCardBatch, isFoliageColor, leafSurfaces, sampleLeafCards, type LeafCard } from './leafCards'
@@ -144,7 +144,7 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
                 const rgb = sample(u, v)
                 const color = new THREE.Color().setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace).multiply(tint)
                 return isFoliageColor(color) ? color : null
-              }, mode === 'garden' ? 1.5 : Infinity)
+              }, mode === 'garden' ? (plot.y ?? 0) + 1.5 : Infinity)
               leafCards.push(...sampleLeafCards(surfaces, `${plot.sourceIndex}:${part.name}`, mode === 'canopy' ? 'tree' : 'bush',
                 mode === 'canopy' ? treeBlocked : gardenBlocked))
             }
@@ -152,8 +152,8 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
         }
       }
       const buildings = plan.plots.filter((plot) => plot.style).map((plot) => ({ plot,
-        style: plan.styles.get(plot.style!)!, detail: architectureFor(plot, plan.styles.get(plot.style!)!) }))
-      const boxes = [...buildings.flatMap((building) => building.detail.boxes),
+        style: plan.styles.get(plot.style!)!, detail: architectureFor(plot, plan.styles.get(plot.style!)!, island) }))
+      const boxes = [...buildings.flatMap((building) => [...building.detail.boxes, ...entrancePaving(building.plot, building.style, island)]),
         ...landscape.parts.filter(part => part.shape === 'box')]
       const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
       const boxMaterial = new THREE.MeshLambertMaterial()

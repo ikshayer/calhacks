@@ -74,6 +74,8 @@ export const MemberInput = t.object('MemberInput', {
   model: t.string(),
   accessory: t.option(t.string()),
   onIsland: t.bool(),
+  /** Full resident profile as JSON (Millbrook: personality, values, goals, …). '' for generated audiences. */
+  profileJson: t.string(),
 });
 
 export const EdgeInput = t.object('EdgeInput', { a: t.u32(), b: t.u32() });
@@ -141,6 +143,58 @@ export const ReferenceExample = t.object('ReferenceExample', {
 });
 
 // ---------------------------------------------------------------------------
+// Idea test: "would people come?" without a video
+// ---------------------------------------------------------------------------
+
+/** One campaign alternative the user is weighing, e.g. { name: 'Campus flyers', costUsd: 50 }. */
+export const CampaignOption = t.object('CampaignOption', { name: t.string(), costUsd: t.f64() });
+
+/** One resident's simulated intent for the idea. Probabilities are raw JEV P(yes); not calibrated (no real data for ideas). */
+export const IdeaResident = t.object('IdeaResident', {
+  memberId: t.u32(),
+  name: t.string(),
+  age: t.u32(),
+  groupId: t.string(),
+  /** True when the resident matches the audience the prompt asked about (e.g. ages 18-21). */
+  inTarget: t.bool(),
+  pVisit: t.f64(),
+  pReturn: t.f64(),
+  pShare: t.f64(),
+  /** P(notices and acts on) each CampaignOption, same order as idea_test.options. */
+  optionInterest: t.array(t.f64()),
+  /** One short reason, written by Claude, for the residents the analyst cites; '' otherwise. */
+  reason: t.string(),
+  missing: t.bool(),
+});
+
+/** Totals computed in code from IdeaResident rows, never by a model. */
+export const IdeaMetrics = t.object('IdeaMetrics', {
+  scored: t.u32(),
+  inTarget: t.u32(),
+  /** Residents with pVisit >= 0.5. */
+  interested: t.u32(),
+  interestedInTarget: t.u32(),
+  /** Sum of pVisit: simulated visits if every resident heard about it once. Not a forecast. */
+  expectedVisits: t.f64(),
+  expectedShares: t.f64(),
+  /** Per option: sum of optionInterest × pVisit (simulated visits that option would drive). */
+  optionVisits: t.array(t.f64()),
+});
+
+/** The Campaign Strategy Analyst's write-up (Claude). Observations, assumptions and recommendations stay separate. */
+export const IdeaAnalysis = t.object('IdeaAnalysis', {
+  recommendedCampaign: t.string(),
+  evidence: t.array(t.string()),
+  segments: t.array(t.string()),
+  objections: t.array(t.string()),
+  budgetAllocation: t.string(),
+  experiment: t.string(),
+  successMetric: t.string(),
+  assumptions: t.array(t.string()),
+  limitations: t.array(t.string()),
+});
+
+// ---------------------------------------------------------------------------
 // Tables
 // ---------------------------------------------------------------------------
 
@@ -192,6 +246,8 @@ const audienceMember = table(
     model: t.string(),
     accessory: t.option(t.string()),
     onIsland: t.bool(),
+    /** See MemberInput.profileJson. Appended with a default so existing databases migrate. */
+    profileJson: t.string().default(''),
   }
 );
 
@@ -425,6 +481,29 @@ const comparison = table({ name: 'comparison', public: true }, {
   updatedAt: t.timestamp(),
 });
 
+/** An idea tested against the residents without a video. The worker parses, scores and analyses it. */
+const ideaTest = table({ name: 'idea_test', public: true }, {
+  id: t.u64().primaryKey().autoInc(),
+  owner: t.identity().index('btree'),
+  profileId: t.string(),
+  prompt: t.string(),
+  budgetUsd: t.option(t.f64()),
+  options: t.array(CampaignOption),
+  /** 'running' | 'ready' | 'failed'. Live progress is on the job's stage. */
+  status: t.string(),
+  /** Parsed by Claude from the prompt: what is being tested and for whom. */
+  idea: t.string(),
+  targetLabel: t.string(),
+  minAge: t.option(t.u32()),
+  maxAge: t.option(t.u32()),
+  residents: t.array(IdeaResident),
+  metrics: t.option(IdeaMetrics),
+  analysis: t.option(IdeaAnalysis),
+  error: t.option(t.string()),
+  createdAt: t.timestamp(),
+  updatedAt: t.timestamp(),
+});
+
 const spacetimedb = schema({
   comparison,
   admin,
@@ -441,5 +520,6 @@ const spacetimedb = schema({
   referenceReel,
   report,
   chatMessage,
+  ideaTest,
 });
 export default spacetimedb;

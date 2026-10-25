@@ -1,6 +1,35 @@
 import * as THREE from 'three'
+import type { ResidentPose } from './residentPose.ts'
 
-export interface AnimationSample { dt: number; activity: number; speed: number }
+export interface AnimationSample { dt: number; activity: number; speed: number; gaze: number }
+
+/**
+ * The clips an activity plays: one to stand or walk on, and optionally a
+ * gesture played through once on entry before settling onto the base.
+ */
+export interface ActivityClips { base: string; gesture?: string }
+
+/**
+ * Activity numbers mirror IslandSim's, which is why they appear here as plain
+ * numbers: this controller is deliberately constructible without the
+ * simulation, so it can be exercised on its own.
+ */
+const DEFAULT_CLIPS: Record<number, ActivityClips> = {
+  0: { base: 'test_walk' },
+  4: { base: 'test_Idle', gesture: 'test_wave' },
+  6: { base: 'test_look_around' },
+}
+const STANDING: ActivityClips = { base: 'test_Idle' }
+
+export const defaultActivityClips = (activity: number): ActivityClips =>
+  DEFAULT_CLIPS[activity] ?? STANDING
+
+export interface ResidentControllerOptions {
+  /** Which clips each activity plays. Defaults to the table above. */
+  clips?: (activity: number) => ActivityClips
+  /** Gestures layered over the clips — the phone, nods, gaze. Optional. */
+  pose?: ResidentPose | null
+}
 /** Activity numbers mirror IslandSim; this controller has no simulation/data dependency. */
 export class ResidentController {
   readonly mixer: THREE.AnimationMixer
@@ -16,10 +45,21 @@ export class ResidentController {
   private samples: AnimationSample[] = []
   private activity = -1
   private gestureElapsed = 0
+  /** Time spent in the current activity, which the gestures are timed against. */
+  private activityElapsed = 0
+  private gaze = 0
   private pendingActivity = -1
+  private readonly plan: (activity: number) => ActivityClips
+  private readonly pose: ResidentPose | null
   urgent = true
 
-  constructor(root: THREE.Object3D, clips: THREE.AnimationClip[], baseSpeed: number, phase: number) {
+  constructor(
+    root: THREE.Object3D,
+    clips: THREE.AnimationClip[],
+    baseSpeed: number,
+    phase: number,
+    options: ResidentControllerOptions = {},
+  ) {
     if (!(baseSpeed > 0) || !Number.isFinite(baseSpeed)) throw new Error('Resident stride speed must be positive')
     for (const required of ['test_Idle', 'test_walk', 'test_wave']) {
       if (!clips.some((clip) => clip.name === required)) throw new Error(`Resident clip missing: ${required}`)
@@ -27,48 +67,65 @@ export class ResidentController {
     this.root = root
     this.phase = phase
     this.baseSpeed = baseSpeed
+    this.plan = options.clips ?? defaultActivityClips
+    this.pose = options.pose ?? null
     this.mixer = new THREE.AnimationMixer(root)
     for (const clip of clips) this.actions.set(clip.name, this.mixer.clipAction(clip))
     this.select('test_Idle', true)
   }
 
   /** Queue historical state with its elapsed time, so skipped frames cannot replay new state over old debt. */
-  sample(dt: number, activity: number, speed: number): void {
+  sample(dt: number, activity: number, speed: number, gaze = 0): void {
     if (dt <= 0) return
     if (activity !== this.pendingActivity) this.urgent = true
     this.pendingActivity = activity
+    // Gaze is a pose, not a clip: the latest value is what gets drawn, so it
+    // does not split a sample that could otherwise be merged.
+    this.gaze = gaze
     const previous = this.samples.at(-1)
     if (previous?.activity === activity && previous.speed === speed) previous.dt += dt
-    else this.samples.push({ dt, activity, speed })
+    else this.samples.push({ dt, activity, speed, gaze })
   }
 
   advance(): void {
+    let covered = 0
     for (const sample of this.samples) {
+      const plan = this.plan(sample.activity)
       if (sample.activity !== this.activity) {
         this.activity = sample.activity
         this.gestureElapsed = 0
-        this.select(this.activity === 0 ? 'test_walk' : this.activity === 4 ? 'test_wave' : 'test_Idle')
+        this.activityElapsed = 0
+        this.select(plan.gesture ?? plan.base, false, plan.gesture !== undefined)
       }
       let remaining = sample.dt
-      // Sharing waves once on entry. Watches, phone and dismissal retain neutral Idle.
-      const waveDuration = this.actions.get('test_wave')!.getClip().duration
-      if (this.activity === 4 && this.gestureElapsed < waveDuration) {
-        const gestureTime = Math.min(remaining, waveDuration - this.gestureElapsed)
+      // A gesture plays through once on entry, then settles onto the base clip.
+      const gesture = plan.gesture ? this.actions.get(plan.gesture) : undefined
+      if (gesture && this.gestureElapsed < gesture.getClip().duration) {
+        const duration = gesture.getClip().duration
+        const gestureTime = Math.min(remaining, duration - this.gestureElapsed)
         this.step(gestureTime, sample.speed)
         this.gestureElapsed += gestureTime
         remaining -= gestureTime
-        if (this.gestureElapsed >= waveDuration) this.select('test_Idle')
+        if (this.gestureElapsed >= duration) this.select(plan.base)
       }
       if (remaining > 0) this.step(remaining, sample.speed)
+      covered += sample.dt
+      this.activityElapsed += sample.dt
     }
     this.samples.length = 0
     this.urgent = !!this.transition
+    // After the mixer, which overwrites bone orientations on every update.
+    if (covered > 0) this.pose?.apply(covered, this.activity, this.activityElapsed, this.gaze)
   }
 
-  private select(name: string, immediate = false): void {
+  /** `once` plays the clip through a single time and holds its last pose. */
+  private select(requested: string, immediate = false, once = false): void {
+    // An export without one of the optional clips falls back to standing
+    // rather than failing inside a frame.
+    const name = this.actions.has(requested) ? requested : 'test_Idle'
     const next = this.actions.get(name)!
     if (next === this.selected) return
-    if (name === 'test_wave') {
+    if (once) {
       const weight = this.active.has(next) ? next.getEffectiveWeight() : 0
       next.reset().setEffectiveWeight(weight).play()
       next.setLoop(THREE.LoopOnce, 1)

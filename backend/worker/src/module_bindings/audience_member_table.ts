@@ -24,4 +24,5 @@ export default __t.row({
   model: __t.string(),
   accessory: __t.option(__t.string()),
   onIsland: __t.bool().name("on_island"),
+  profileJson: __t.string().name("profile_json"),
 });

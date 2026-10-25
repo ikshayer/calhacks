@@ -51,6 +51,7 @@ export class AnimationBudget {
     x: Float32Array,
     z: Float32Array,
     selectedIndex: number | null = null,
+    y?: Float32Array,
   ): void {
     this.frame++
     this.lastUpdated = 0
@@ -72,7 +73,7 @@ export class AnimationBudget {
 
       const px = x[i] as number
       const pz = z[i] as number
-      this.probe.center.set(px, 1.2, pz)
+      this.probe.center.set(px, (y?.[i] ?? 0) + 1.2, pz)
 
       let stride: number
       if (!this.frustum.intersectsSphere(this.probe)) {

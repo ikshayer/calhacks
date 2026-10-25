@@ -34,7 +34,8 @@ export function GroupsPanel() {
     const exposed = new Map<string, number>()
     const acted = new Map<string, number>()
 
-    for (const event of (run?.rounds ?? []).slice(0, round)) {
+    const rounds = run && run.options.audienceKey === audience.key ? run.rounds : []
+    for (const event of rounds.slice(0, round)) {
       for (const id of event.exposed) {
         const groupId = groupOf.get(id)
         if (groupId) exposed.set(groupId, (exposed.get(groupId) ?? 0) + 1)
@@ -56,7 +57,7 @@ export function GroupsPanel() {
         penetration: size > 0 ? seen / size : 0,
       }
     })
-  }, [profile?.groups, audience, run?.rounds, round])
+  }, [profile?.groups, audience, run, round])
 
   if (rows.length === 0) return null
 

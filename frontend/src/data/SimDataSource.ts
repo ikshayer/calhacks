@@ -3,6 +3,8 @@ import type {
   ContentSignals,
   ChatTurn,
   CompanyProfile,
+  IdeaTestInput,
+  IdeaTestResult,
   Decision,
   Report,
   RunEvent,
@@ -84,4 +86,11 @@ export interface SimDataSource {
    * The verdict itself is computed in ComparePanel from the run spreads.
    */
   compareRuns(baseRunId: RunId, revisedRunId: RunId): Promise<string | null>
+
+  /**
+   * Ask the simulated town about an idea that has no video yet. `onProgress`
+   * receives the worker's stage text while it runs; the promise resolves with
+   * the finished test or rejects with the worker's error.
+   */
+  testIdea(input: IdeaTestInput, onProgress: (stage: string) => void): Promise<IdeaTestResult>
 }

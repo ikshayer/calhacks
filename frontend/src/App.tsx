@@ -3,7 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { useAppStore } from './store/useAppStore'
 import { LoginRoute } from './routes/LoginRoute'
+import { CampaignsRoute } from './routes/CampaignsRoute'
 import { OnboardingRoute } from './routes/OnboardingRoute'
+import { useCampaignPersistence } from './store/useCampaignPersistence'
 import { useProfilePersistence } from './store/useProfilePersistence'
 
 // three.js and the island models are the bulk of the bundle and are needed only
@@ -26,8 +28,12 @@ export function App() {
 function Shell() {
   const { session, loading } = useAuth()
   const profile = useAppStore((state) => state.profile)
+  const activeCampaignId = useAppStore((state) => state.activeCampaignId)
   // Restores the saved profile for the signed-in user, and saves it on change.
-  const restoring = useProfilePersistence(session?.userId)
+  const restoringProfile = useProfilePersistence(session?.userId)
+  // Same contract for the campaign history, so the hub does not flash empty.
+  const restoringCampaigns = useCampaignPersistence(session?.userId)
+  const restoring = restoringProfile || restoringCampaigns
 
   // Never redirect while a stored session or profile is still being read, or a
   // returning user gets bounced to the login screen on every reload.
@@ -43,23 +49,30 @@ function Shell() {
   }
 
   const onboarded = profile !== null && profile.name.trim().length > 0
+  const hasCampaign = activeCampaignId !== null
 
   return (
     <Routes>
       <Route path="/onboarding" element={<OnboardingRoute />} />
       <Route
+        path="/campaigns"
+        element={onboarded ? <CampaignsRoute /> : <Navigate to="/onboarding" replace />}
+      />
+      <Route
         path="/workspace"
         element={
-          onboarded ? (
+          !onboarded ? (
+            <Navigate to="/onboarding" replace />
+          ) : !hasCampaign ? (
+            <Navigate to="/campaigns" replace />
+          ) : (
             <Suspense fallback={<Booting />}>
               <WorkspaceRoute />
             </Suspense>
-          ) : (
-            <Navigate to="/onboarding" replace />
           )
         }
       />
-      <Route path="*" element={<Navigate to={onboarded ? '/workspace' : '/onboarding'} replace />} />
+      <Route path="*" element={<Navigate to={onboarded ? '/campaigns' : '/onboarding'} replace />} />
     </Routes>
   )
 }

@@ -54,8 +54,15 @@ export const AudienceMember = __t.object("AudienceMember", {
   model: __t.string(),
   accessory: __t.option(__t.string()),
   onIsland: __t.bool(),
+  profileJson: __t.string(),
 });
 export type AudienceMember = __Infer<typeof AudienceMember>;
+
+export const CampaignOption = __t.object("CampaignOption", {
+  name: __t.string(),
+  costUsd: __t.f64(),
+});
+export type CampaignOption = __Infer<typeof CampaignOption>;
 
 export const ChatMessage = __t.object("ChatMessage", {
   id: __t.u64(),
@@ -190,6 +197,74 @@ export const GroupMetrics = __t.object("GroupMetrics", {
 });
 export type GroupMetrics = __Infer<typeof GroupMetrics>;
 
+export const IdeaAnalysis = __t.object("IdeaAnalysis", {
+  recommendedCampaign: __t.string(),
+  evidence: __t.array(__t.string()),
+  segments: __t.array(__t.string()),
+  objections: __t.array(__t.string()),
+  budgetAllocation: __t.string(),
+  experiment: __t.string(),
+  successMetric: __t.string(),
+  assumptions: __t.array(__t.string()),
+  limitations: __t.array(__t.string()),
+});
+export type IdeaAnalysis = __Infer<typeof IdeaAnalysis>;
+
+export const IdeaMetrics = __t.object("IdeaMetrics", {
+  scored: __t.u32(),
+  inTarget: __t.u32(),
+  interested: __t.u32(),
+  interestedInTarget: __t.u32(),
+  expectedVisits: __t.f64(),
+  expectedShares: __t.f64(),
+  optionVisits: __t.array(__t.f64()),
+});
+export type IdeaMetrics = __Infer<typeof IdeaMetrics>;
+
+export const IdeaResident = __t.object("IdeaResident", {
+  memberId: __t.u32(),
+  name: __t.string(),
+  age: __t.u32(),
+  groupId: __t.string(),
+  inTarget: __t.bool(),
+  pVisit: __t.f64(),
+  pReturn: __t.f64(),
+  pShare: __t.f64(),
+  optionInterest: __t.array(__t.f64()),
+  reason: __t.string(),
+  missing: __t.bool(),
+});
+export type IdeaResident = __Infer<typeof IdeaResident>;
+
+export const IdeaTest = __t.object("IdeaTest", {
+  id: __t.u64(),
+  owner: __t.identity(),
+  profileId: __t.string(),
+  prompt: __t.string(),
+  budgetUsd: __t.option(__t.f64()),
+  get options() {
+    return __t.array(CampaignOption);
+  },
+  status: __t.string(),
+  idea: __t.string(),
+  targetLabel: __t.string(),
+  minAge: __t.option(__t.u32()),
+  maxAge: __t.option(__t.u32()),
+  get residents() {
+    return __t.array(IdeaResident);
+  },
+  get metrics() {
+    return __t.option(IdeaMetrics);
+  },
+  get analysis() {
+    return __t.option(IdeaAnalysis);
+  },
+  error: __t.option(__t.string()),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type IdeaTest = __Infer<typeof IdeaTest>;
+
 export const Job = __t.object("Job", {
   id: __t.u64(),
   kind: __t.string(),
@@ -222,6 +297,7 @@ export const MemberInput = __t.object("MemberInput", {
   model: __t.string(),
   accessory: __t.option(__t.string()),
   onIsland: __t.bool(),
+  profileJson: __t.string(),
 });
 export type MemberInput = __Infer<typeof MemberInput>;
 

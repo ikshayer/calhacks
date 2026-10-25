@@ -1,4 +1,4 @@
-import { createRng } from '@/lib/rng'
+import { createRng } from '../../lib/rng.ts'
 import type {
   Audience,
   ContentSignals,

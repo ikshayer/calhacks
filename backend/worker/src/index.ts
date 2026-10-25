@@ -7,6 +7,7 @@ import { chatReply } from './jobs/chatReply.ts';
 import { explainComparison } from './jobs/explainComparison.ts';
 import { explainMember } from './jobs/explainMember.ts';
 import { scoreRun } from './jobs/scoreRun.ts';
+import { testIdea } from './jobs/testIdea.ts';
 import { writeReport } from './jobs/writeReport.ts';
 import { DbConnection } from './module_bindings/index.ts';
 import { setStage } from './stage.ts';
@@ -50,6 +51,7 @@ const handlers: Record<string, Handler> = {
   chat_reply: chatReply,
   explain_member: explainMember,
   explain_comparison: explainComparison,
+  test_idea: testIdea,
 };
 
 /** Jobs already picked up by this process, so an insert and the initial sync don't double-claim. */
@@ -140,6 +142,7 @@ DbConnection.builder()
         'SELECT * FROM report',
         'SELECT * FROM chat_message',
         'SELECT * FROM comparison',
+        'SELECT * FROM idea_test',
       ]);
   })
   .onConnectError((_ctx, error) => {

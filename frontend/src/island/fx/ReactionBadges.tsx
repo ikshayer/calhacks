@@ -124,7 +124,7 @@ export function ReactionBadges({ sim }: { sim: IslandSim }) {
       if (material) sprite.material = material
       // A slow bob, offset per villager so a crowd does not pulse in unison.
       const bob = Math.sin(clock.current * 2.4 + i) * 0.07
-      sprite.position.set(sim.x[i] as number, RESIDENT_ANCHORS.badge + bob, sim.z[i] as number)
+      sprite.position.set(sim.x[i] as number, sim.y[i]! + RESIDENT_ANCHORS.badge + bob, sim.z[i] as number)
       sprite.visible = true
       used++
     }

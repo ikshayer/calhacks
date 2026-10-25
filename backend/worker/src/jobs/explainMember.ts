@@ -52,6 +52,7 @@ export async function explainMember(conn: DbConnection, job: Job): Promise<void>
     '',
     `Simulated member: ${member.name}, in the group "${group}".`,
     `Persona: ${member.persona}`,
+    member.profileJson ? `Full profile (JSON): ${member.profileJson}` : '',
     `Cares about: ${member.hotButtons.join(', ') || 'not specified'}.`,
     `Ignores: ${member.ignores.join(', ') || 'not specified'}.`,
     `Calibrated probabilities once exposed: watch ${decision.pWatch.toFixed(2)}, like ${decision.pLike.toFixed(2)}, comment ${decision.pComment.toFixed(3)}, share ${decision.pShare.toFixed(3)}.`,

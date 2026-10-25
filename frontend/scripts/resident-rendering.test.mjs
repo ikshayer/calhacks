@@ -9,7 +9,9 @@ import { AnimationBudget } from '../src/island/AnimationBudget.ts'
 import { residentAppearance, residentPhase, RESIDENT_IDS } from '../src/island/residentAppearance.ts'
 import { surfaceBorders } from '../src/island/surfaceEdges.ts'
 import { buildIsland, buildDistanceField, assignHomeTiles, tileToWorld, TILE, GRID, Tile, ISLAND_SPACING, BUILDING_SCALE } from '../src/island/scene/island.ts'
-import { IslandSim, Activity } from '../src/island/scene/IslandSim.ts'
+import { IslandSim, Activity, isCascadeActivity } from '../src/island/scene/IslandSim.ts'
+import { blockedSlots, buildRoutes, townDestinations } from '../src/island/scene/townRoutes.ts'
+import { createPoseOverlay } from '../src/island/residentPose.ts'
 import { ISLAND_VIEW } from '../src/island/scene/islandView.ts'
 import { hashSeed } from '../src/lib/rng.ts'
 import { RESIDENT_HEIGHT, RESIDENT_ANCHORS } from '../src/island/residentAppearance.ts'
@@ -22,6 +24,214 @@ import { planLandscape, walkCorridors, WALK_CLEARANCE } from '../src/island/land
 import { createFountainGeometry, FOUNTAIN_RADIUS, FOUNTAIN_POOL_Y } from '../src/island/fountainGeometry.ts'
 import { createLeafCardBatch, leafSurfaces, sampleLeafCards } from '../src/island/leafCards.ts'
 import { planGrassLeaves } from '../src/island/grassLeaves.ts'
+import { buildElevatedIsland, groundHeight, groundTile, surfaceHeight, continuousEdge, validateGroundGraph, TERRACE_HEIGHT } from '../src/island/scene/ground.ts'
+import { createTerrainGeometry, createRetainingGeometry } from '../src/island/terrainGeometry.ts'
+import { entrancePaving } from '../src/island/townArchitecture.ts'
+import { createGroundRings, updateGroundRing } from '../src/island/fx/groundRings.ts'
+
+test('inland terrace preserves source coast/plots and joins every harbor with real land approaches', () => {
+  const seed = hashSeed('giving-garden-island'), flat = buildIsland(seed), elevated = buildElevatedIsland(seed)
+  assert.deepEqual(elevated.tiles, flat.tiles)
+  assert.deepEqual(elevated.plots.map(({ y: _y, ...plot }) => plot), flat.plots)
+  assert.deepEqual(elevated.lamps.map(({ y: _y, ...lamp }) => lamp), flat.lamps)
+  assert.deepEqual(buildDistanceField(elevated), buildDistanceField(flat))
+  assert.equal(Math.max(...elevated.surfaces), Math.fround(TERRACE_HEIGHT))
+  assert.equal(elevated.connectors.length, 6)
+  assert.ok(flat.walkable.every(tile => elevated.walkable.includes(tile)))
+  assert.equal(elevated.walkable.length, 122)
+  assert.doesNotThrow(() => validateGroundGraph(elevated))
+  const homes = assignHomeTiles(elevated, ['a','b','c'], [40,35,25])
+  assert.deepEqual(homes, assignHomeTiles(buildElevatedIsland(seed), ['a','b','c'], [40,35,25]))
+  assert.equal(new Set([...homes.values()].flat()).size, elevated.walkable.length)
+  elevated.tiles.forEach((kind, tile) => {
+    if ([Tile.Water, Tile.Sand, Tile.Dock, Tile.Plaza].includes(kind)) {
+      assert.deepEqual([...elevated.surfaces.slice(tile * 4, tile * 4 + 4)], [0,0,0,0])
+    }
+  })
+  for (const tile of elevated.connectors) assert.notEqual(elevated.tiles[tile], Tile.Water)
+  elevated.walkable.forEach((tile, slot) => {
+    for (const next of elevated.links[slot]) {
+      const other = elevated.walkable[next]
+      assert.ok(continuousEdge(elevated, tile, other))
+      const a = tileToWorld(tile), b = tileToWorld(other)
+      const dx = Math.sign(b.x - a.x), dz = Math.sign(b.z - a.z)
+      for (const lane of [-WALK_CLEARANCE, 0, WALK_CLEARANCE]) {
+        const x = (a.x + b.x) / 2 - dz * lane, z = (a.z + b.z) / 2 + dx * lane
+        assert.ok(Math.abs(surfaceHeight(elevated, tile, x, z) - surfaceHeight(elevated, other, x, z)) < 1e-6)
+      }
+    }
+  })
+  const broken = { ...elevated, links: elevated.links.map(links => [...links]) }
+  broken.links[0] = []
+  assert.throws(() => validateGroundGraph(broken), /Stranded|Invalid/)
+  const tooSteep = { ...elevated, surfaces: elevated.surfaces.slice() }
+  tooSteep.surfaces[elevated.walkable[0] * 4 + 1] += TILE
+  assert.throws(() => validateGroundGraph(tooSteep), /grade limit/)
+})
+
+test('rendered top triangles match the height sampler across terrace ramps and retaining faces clear lanes', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const geometry = createTerrainGeometry(island), retaining = createRetainingGeometry(island)
+  const position = geometry.attributes.position, color = geometry.attributes.color
+  assert.equal(position.count, island.tiles.filter(kind => kind !== Tile.Water).length * 30)
+  assert.equal(color.count, position.count)
+  const tileIndices = Array.from(island.tiles).flatMap((kind, tile) => kind === Tile.Water ? [] : [tile])
+  for (const [slot, tile] of tileIndices.entries()) for (const triangle of [0, 3]) {
+    const vertices = [0,1,2].map(i => new THREE.Vector3().fromBufferAttribute(position, slot * 30 + triangle + i))
+    for (const weights of [[0.2,0.3,0.5], [0.7,0.1,0.2]]) {
+      const p = vertices.reduce((sum, vertex, i) => sum.addScaledVector(vertex, weights[i]), new THREE.Vector3())
+      assert.ok(Math.abs(p.y - surfaceHeight(island, tile, p.x, p.z)) < 1e-5)
+    }
+  }
+  const corridors = walkCorridors(island)
+  const wallPosition = retaining.attributes.position
+  assert.ok(wallPosition.count > 0)
+  for (let i = 0; i < wallPosition.count; i++) {
+    const point = new THREE.Vector3().fromBufferAttribute(wallPosition, i)
+    assert.ok(!corridors.some(bounds => bounds.containsPoint(point)), `retaining face clips a full lane at ${point.toArray()}`)
+  }
+  for (let at = 0; at < wallPosition.count; at += 12) {
+    const a = new THREE.Vector3().fromBufferAttribute(wallPosition, at)
+    const b = new THREE.Vector3().fromBufferAttribute(wallPosition, at + 1)
+    const coordinate = Math.abs(a.x - b.x) < 1e-6 ? a.x : a.z
+    const nearestSide = (Math.round(coordinate / TILE + GRID / 2) - GRID / 2) * TILE
+    assert.ok(Math.abs(Math.abs(coordinate - nearestSide) - 0.012) < 2e-6, 'wall finish must not coincide with terrain sides')
+  }
+  geometry.dispose(); retaining.dispose()
+})
+
+test('elevated final town, approaches, landscape and dense grass meet ground and keep repaired routes clear', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island')), assets = deliveredTownBounds()
+  const town = planTown(island.plots, island, assets), landscape = planLandscape(island, town, assets)
+  const corridors = walkCorridors(island)
+  for (const plot of landscape.plots) {
+    assert.ok(Math.abs((plot.y ?? 0) - groundHeight(island, plot.x, plot.z)) < 1e-6)
+    const bounds = plot.style ? architectureFor(plot, town.styles.get(plot.style), island).totalBounds
+      : new THREE.Box3().union(assets.get(plot.model).reduce((result, part) => result.union(
+        new THREE.Box3().setFromBufferAttribute(part.geometry.attributes.position).applyMatrix4(placedStaticMatrix(plot, part.matrix))), new THREE.Box3()))
+    assert.ok(!corridors.some(corridor => corridor.intersectsBox(bounds)), `${plot.model} overlaps a lane`)
+    if (plot.style) {
+      const detail = architectureFor(plot, town.styles.get(plot.style), island)
+      const base = new THREE.Matrix4().makeRotationY(plot.rotation).setPosition(plot.x, plot.y, plot.z)
+      const footprint = detail.footprint
+      const stepsX = Math.ceil((footprint.max.x - footprint.min.x) / 0.25)
+      const stepsZ = Math.ceil((footprint.max.z - footprint.min.z) / 0.25)
+      for (let ix = 0; ix <= stepsX; ix++) for (let iz = 0; iz <= stepsZ; iz++) {
+        const point = new THREE.Vector3(THREE.MathUtils.lerp(footprint.min.x, footprint.max.x, ix / stepsX), 0,
+          THREE.MathUtils.lerp(footprint.min.z, footprint.max.z, iz / stepsZ)).applyMatrix4(base)
+        assert.ok(Math.abs(groundHeight(island, point.x, point.z) - plot.y) < 1e-6, `${plot.model} footprint spans different ground heights`)
+      }
+      const paving = entrancePaving(plot, town.styles.get(plot.style), island)
+      assert.ok(paving.length > 0)
+      for (const part of paving) {
+        const e = part.matrix.elements
+        assert.ok(Math.abs(e[13] - groundHeight(island, e[12], e[14]) - 0.018) < 1e-6)
+        for (const x of [-0.5, 0, 0.5]) for (const z of [-0.5, 0, 0.5]) {
+          const point = new THREE.Vector3(x, 0, z).applyMatrix4(part.matrix)
+          assert.ok(Math.abs(point.y - groundHeight(island, point.x, point.z) - 0.018) < 1e-5,
+            `${plot.model} ${plot.sourceIndex} paving slab crosses a grade break: ${point.toArray()} ground=${groundHeight(island, point.x, point.z)}`)
+        }
+      }
+    }
+  }
+  for (const obstacle of landscape.obstacles) assert.ok(!corridors.some(corridor => corridor.intersectsBox(obstacle.bounds)))
+  const blocked = [...corridors, ...landscape.buildingBounds, ...landscape.approaches, ...landscape.obstacles.map(o => o.bounds)]
+  const grass = planGrassLeaves(island, blocked)
+  assert.ok(grass.patches.length >= 10)
+  assert.ok(grass.cards.length > 10000)
+  for (const card of grass.cards) {
+    const e = card.matrix.elements
+    assert.ok(Math.abs(e[13] - groundHeight(island, e[12], e[14]) - 0.004) < 1e-6)
+  }
+})
+
+test('residents keep 3D walk speed on ramp grades and ground rings follow every sampled vertex', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const tile = groundTile(-5 * TILE, -8 * TILE), from = island.walkable.indexOf(tile)
+  const to = island.walkable.indexOf(tile + 1)
+  const sim = new IslandSim([{ id: 91, groupId: 'a', onIsland: true }], island,
+    new Map([['a', [from, to]]]), 77, { min: 0.6, max: 0.6 })
+
+  // A chosen leg puts the resident on the ramp without waiting for it to walk
+  // there, and clearing `willStop` keeps it from braking for the junction.
+  placeOnLeg(sim, 0, from, to, TILE * 0.26, 0.2)
+  sim.update(0.05)
+  assert.ok(Math.abs(sim.grade[0]) > 0.05, 'the chosen leg must actually be a graded ramp')
+
+  // Travel is measured in three dimensions: a flat step up a slope would cover
+  // more ground than the feet do, and slide.
+  const before = new THREE.Vector3(sim.x[0], sim.y[0], sim.z[0])
+  sim.update(0.05)
+  const moved = before.distanceTo(new THREE.Vector3(sim.x[0], sim.y[0], sim.z[0]))
+  assert.ok(Math.abs(moved - sim.locomotionSpeed(0) * 0.05) < 1e-3,
+    `3D travel ${moved} must match the live speed ${sim.locomotionSpeed(0)} over the step`)
+  assert.ok(Math.abs(sim.y[0] - sim.groundHeight(sim.x[0], sim.z[0])) < 1e-6)
+  assert.ok(sim.pitch[0] < -0.04, 'the body must lean into the grade it is climbing')
+
+  const { geometry, source } = createGroundRings(1, 1, 32)
+  updateGroundRing(geometry, source, 0, sim, 0, 1.07, 0.06)
+  const p = geometry.attributes.position
+  for (let i = 0; i < p.count; i++) assert.ok(Math.abs(p.getY(i) - sim.groundHeight(p.getX(i), p.getZ(i)) - 0.06) < 1e-6)
+  for (let i = 0; i < p.count; i++) assert.ok(sim.continuousGroundSpan(sim.x[0], sim.z[0], p.getX(i), p.getZ(i)),
+    'ring vertices must stay on a continuous surface rather than stretch through retaining walls')
+  const maxRadius = Math.max(...Array.from({ length: p.count }, (_, i) => Math.hypot(p.getX(i) - sim.x[0], p.getZ(i) - sim.z[0])))
+  assert.ok(maxRadius < 1.0, 'the outer-lane ring must shrink before its circle reaches the ramp side cliff')
+  geometry.dispose()
+
+  // Exposure brakes to a halt rather than stopping on a single frame, then
+  // stays put for the rest of the beat.
+  sim.applyRound({ exposed: [91], acted: [], ignored: [], shares: [] })
+  const caught = new THREE.Vector3(sim.x[0], sim.y[0], sim.z[0])
+  sim.update(0.05)
+  assert.ok(caught.distanceTo(new THREE.Vector3(sim.x[0], sim.y[0], sim.z[0])) > 0,
+    'a resident caught mid-stride decelerates instead of freezing on the spot')
+  for (let frame = 0; frame < 10; frame++) sim.update(0.05)
+  assert.equal(sim.locomotionSpeed(0), 0)
+  const halted = [sim.x[0], sim.y[0], sim.z[0]]
+  sim.update(0.1)
+  assert.deepEqual([sim.x[0], sim.y[0], sim.z[0]], halted)
+  assert.ok(caught.distanceTo(new THREE.Vector3(...halted)) < 0.12,
+    'the stop must land within a stride, not carry the resident down the street')
+
+  const crowd = new IslandSim(Array.from({ length: 48 }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 123, { min: 0.5, max: 0.75 })
+  const visited = new Set()
+  for (let frame = 0; frame < 2400; frame++) {
+    crowd.update(0.05)
+    for (let i = 0; i < crowd.count; i++) {
+      const tile = groundTile(crowd.x[i], crowd.z[i])
+      assert.ok(tile >= 0)
+      assert.notEqual(island.tiles[tile], Tile.Water)
+      assert.ok(Math.abs(crowd.y[i] - groundHeight(island, crowd.x[i], crowd.z[i])) < 1e-6)
+      visited.add(island.tiles[tile])
+    }
+  }
+  // Destinations cover the whole town, piers included, not just the streets.
+  for (const kind of [Tile.Road, Tile.Plaza, Tile.Dock]) assert.ok(visited.has(kind), `nobody ever walked on tile kind ${kind}`)
+})
+
+/**
+ * Drops a resident onto a chosen leg of the walking graph, mid-street and up to
+ * speed. Used so a test can exercise one piece of ground directly instead of
+ * waiting for someone to be routed there.
+ */
+function placeOnLeg(sim, index, from, to, lane, along = 0) {
+  sim.node[index] = from
+  sim.nextNode[index] = to
+  sim.goal[index] = to
+  sim.lane[index] = lane
+  sim.writeWaypoint(index)
+  sim.willStop[index] = 0
+  // Offset perpendicular to the leg, which is where the lane actually runs,
+  // rather than along the line to the lane-offset waypoint.
+  const dx = sim.nodeX[to] - sim.nodeX[from], dz = sim.nodeZ[to] - sim.nodeZ[from]
+  const span = Math.hypot(dx, dz) || 1
+  sim.x[index] = sim.nodeX[from] + dx * along + (-dz / span) * lane
+  sim.z[index] = sim.nodeZ[from] + dz * along + (dx / span) * lane
+  sim.angle[index] = Math.atan2(sim.waypointX[index] - sim.x[index], sim.waypointZ[index] - sim.z[index])
+  sim.velocity[index] = sim.locomotionSpeed(index) || 0.6
+  sim.writeGround(index, 1)
+}
 
 test('grass beds span adjoining tiles, stay connected and keep paths, doors, buildings and furniture clear', () => {
   const island = buildIsland(hashSeed('giving-garden-island'))
@@ -384,16 +594,515 @@ test('expanded simulation keeps stable member lookup, intended speed and cascade
   assert.equal(sim.count, ids.length)
   ids.forEach((id, index) => { assert.equal(sim.memberOfIndex(index), id); assert.equal(sim.indexOfMember(id), index) })
   assert.equal(sim.indexOfMember(499), undefined)
-  const positions = ids.map((_, index) => [sim.x[index], sim.z[index]])
-  sim.applyRound({ exposed: [51, 499], acted: [], ignored: [], shares: [] })
-  assert.equal(sim.activity[1], Activity.OnPhone)
-  sim.update(0.02)
+
+  // Residents start at their cruising speed, inside the configured band, and
+  // the cadence they report is the speed they are actually travelling at —
+  // not a nominal figure — so the walk cycle cannot slide against the ground.
   ids.forEach((_, index) => {
-    const distance = Math.hypot(sim.x[index] - positions[index][0], sim.z[index] - positions[index][1])
-    if (index === 1) assert.equal(distance, 0)
-    else assert.ok(Math.abs(distance - sim.locomotionSpeed(index) * 0.02) < 1e-5)
-    assert.ok(sim.locomotionSpeed(index) >= 0.5 && sim.locomotionSpeed(index) <= 0.75)
+    const before = [sim.x[index], sim.y[index], sim.z[index]]
+    sim.update(0.02)
+    const moved = Math.hypot(sim.x[index] - before[0], sim.y[index] - before[1], sim.z[index] - before[2])
+    assert.ok(Math.abs(moved - sim.locomotionSpeed(index) * 0.02) < 1e-4,
+      `resident ${index} travelled ${moved} while reporting ${sim.locomotionSpeed(index)}`)
+    // The configured band is the speed a resident walks at when nothing is in
+    // the way. What it reports moment to moment is its real speed, which dips
+    // for turns, for crowds and for the junction it is braking into.
+    assert.ok(sim.cruise[index] >= 0.5 && sim.cruise[index] <= 0.75)
+    assert.ok(sim.locomotionSpeed(index) <= sim.cruise[index] + 1e-6)
   })
+
+  // Exposure stages the phone beat alone. The reaction, its badge and its
+  // share trail all wait for that beat to end, so the town shows the phone
+  // coming up before it shows what the member decided.
+  const staged = new IslandSim(members, expandedIsland, expandedHomes, 1234, { min: 0.5, max: 0.75 })
+  staged.applyRound({
+    exposed: [7, 51, 108, 499],
+    acted: [{ memberId: 7, kinds: ['like'] }, { memberId: 51, kinds: ['share'] }],
+    shares: [{ from: 51, to: [108] }],
+    ignored: [108],
+  })
+  assert.deepEqual([0, 1, 2].map((i) => staged.activity[i]), [Activity.OnPhone, Activity.OnPhone, Activity.OnPhone])
+  assert.ok([0, 1, 2].every((i) => isCascadeActivity(staged.activity[i])))
+  assert.equal(staged.badges.size, 0, 'no reaction badge may appear while the phone is still coming up')
+  assert.equal(staged.trails.length, 0, 'a share must not leave before its sharer waves')
+  // A member with no body in town is never staged.
+  assert.equal(staged.indexOfMember(499), undefined)
+
+  for (let frame = 0; frame < 56; frame++) staged.update(0.02)
+  assert.deepEqual([0, 1, 2].map((i) => staged.activity[i]),
+    [Activity.Reacting, Activity.Sharing, Activity.Dismissing])
+  assert.equal(staged.badges.size, 2, 'only the two members who acted carry a badge')
+  assert.equal(staged.trails.length, 1, 'the share leaves on the sharing beat')
+
+  // A second exposure must not restage a reaction the cascade counted once.
+  const held = [...staged.activity]
+  staged.applyRound({ exposed: [7, 51, 108], acted: [], shares: [], ignored: [] })
+  assert.deepEqual([...staged.activity], held)
+
+  // Every beat ends with the resident walking again, and its badge cleared.
+  for (let frame = 0; frame < 150; frame++) staged.update(0.02)
+  assert.ok([0, 1, 2].every((i) => !isCascadeActivity(staged.activity[i])))
+  assert.equal(staged.badges.size, 0)
+})
+
+test('routes are shortest, never double back, and reach every destination kind', () => {
+  // The elevated island is the one the workspace builds, and the only one
+  // whose walking graph is joined up: `buildIsland` alone leaves the piers as
+  // detached components, which `connectHarbors` is what repairs.
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const routes = buildRoutes(island)
+  const destinations = townDestinations(island)
+  assert.equal(routes.nodeCount, island.walkable.length)
+
+  for (let from = 0; from < routes.nodeCount; from++) {
+    for (let to = 0; to < routes.nodeCount; to++) {
+      if (from === to) continue
+      const hops = routes.hops(from, to)
+      assert.ok(hops > 0, `no route from ${from} to ${to}`)
+      const step = routes.step(from, to)
+      assert.ok(island.links[from].includes(step), 'a step must follow an actual street')
+      assert.equal(routes.hops(step, to), hops - 1, 'every step must shorten the remaining route')
+    }
+  }
+
+  // Walking a whole route must never reverse onto the junction just left,
+  // which is what the old uniform choice between neighbours did half the time
+  // — and most of the town's walking tiles have exactly two neighbours.
+  for (const kind of Object.keys(destinations)) {
+    assert.ok(destinations[kind].length > 0, `no ${kind} destinations were found`)
+    for (const goal of destinations[kind]) {
+      let at = 0, previous = -1, guard = 0
+      while (at !== goal) {
+        const next = routes.step(at, goal)
+        assert.notEqual(next, previous, 'a route must not double back on itself')
+        previous = at
+        at = next
+        assert.ok(++guard <= routes.nodeCount, 'a route must terminate')
+      }
+    }
+  }
+
+  // A graph with detached pieces must report them as unreachable rather than
+  // hand back a step that goes nowhere near the goal.
+  const detached = buildRoutes(expandedIsland)
+  const unreachable = []
+  for (let to = 0; to < detached.nodeCount; to++) if (detached.hops(0, to) < 0) unreachable.push(to)
+  assert.ok(unreachable.length > 0, 'the unrepaired island is expected to keep detached piers')
+  for (const to of unreachable) assert.equal(detached.step(0, to), -1)
+})
+
+test('walking stays continuous through junctions and keeps bodies apart and on the street', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const count = 48
+  const sim = new IslandSim(Array.from({ length: count }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 4242, { min: 0.5, max: 0.75 })
+  const dt = 1 / 60
+  // A resident's own top speed, plus the most the separation step may add.
+  const stepCeiling = (0.75 + 0.4) * dt + 1e-6
+  const corridors = walkCorridors(island)
+  const was = { x: new Float32Array(count), z: new Float32Array(count), angle: new Float32Array(count) }
+  const point = new THREE.Vector3()
+
+  let closest = Infinity
+  let turns = 0
+  for (let frame = 0; frame < 3600; frame++) {
+    for (let i = 0; i < count; i++) {
+      was.x[i] = sim.x[i]; was.z[i] = sim.z[i]; was.angle[i] = sim.angle[i]
+    }
+    sim.update(dt)
+    for (let i = 0; i < count; i++) {
+      // The regression this locks out: the old model offset the body along the
+      // perpendicular of its current segment, so a ninety degree turn rotated
+      // that offset instantly and jumped the body sideways by most of a body
+      // width. Position is integrated now, so no frame may move a resident
+      // further than it can walk in one.
+      const step = Math.hypot(sim.x[i] - was.x[i], sim.z[i] - was.z[i])
+      assert.ok(step <= stepCeiling, `frame ${frame}: resident ${i} moved ${step}, over the ${stepCeiling} ceiling`)
+
+      let swing = sim.angle[i] - was.angle[i]
+      while (swing > Math.PI) swing -= Math.PI * 2
+      while (swing < -Math.PI) swing += Math.PI * 2
+      assert.ok(Math.abs(swing) <= 2 * dt + 1e-6, `frame ${frame}: resident ${i} turned ${swing} in one frame`)
+      if (Math.abs(swing) > 0.5 * dt) turns++
+
+      // Bodies stay inside the lanes landscaping is told to keep clear, so a
+      // resident shoved aside by a crowd cannot be pushed into a planter.
+      point.set(sim.x[i], 0, sim.z[i])
+      assert.ok(corridors.some((box) => box.containsPoint(point)),
+        `frame ${frame}: resident ${i} left the walking corridors at ${sim.x[i]}, ${sim.z[i]}`)
+
+      for (let j = i + 1; j < count; j++) {
+        closest = Math.min(closest, Math.hypot(sim.x[i] - sim.x[j], sim.z[i] - sim.z[j]))
+      }
+    }
+  }
+  assert.ok(turns > 1000, 'the run must contain real turns for the continuity check to mean anything')
+  assert.ok(closest > 0.4, `residents closed to ${closest}, which reads as walking through each other`)
+})
+
+test('a crowd pushes a villager off its line but can never take over its heading', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const count = 9
+  const sim = new IslandSim(Array.from({ length: count }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 31337, { min: 0.6, max: 0.6 })
+
+  // Put everyone on top of the subject, which is the state a popular
+  // destination used to produce. Avoidance biased along the villager's own
+  // left-hand normal turns this into a spin: the target sits ninety degrees
+  // off the nose, the body turns to it, and the normal turns with the body, so
+  // the target stays ninety degrees ahead for ever.
+  const subject = 0
+  for (let i = 1; i < count; i++) {
+    sim.node[i] = sim.node[subject]
+    sim.nextNode[i] = sim.nextNode[subject]
+    sim.goal[i] = sim.goal[subject]
+    sim.writeWaypoint(i)
+    // Bunched to one flank. A ring would cancel out and prove nothing.
+    const spread = (i / (count - 1)) * Math.PI * 0.6 - Math.PI * 0.3
+    sim.x[i] = sim.x[subject] + Math.cos(spread) * 0.55
+    sim.z[i] = sim.z[subject] + Math.sin(spread) * 0.55
+    sim.angle[i] = sim.angle[subject]
+  }
+
+  let worstOffCourse = 0
+  let turned = 0
+  let previous = sim.angle[subject]
+  for (let frame = 0; frame < 600; frame++) {
+    sim.update(1 / 60)
+    const toGoal = Math.atan2(sim.waypointX[subject] - sim.x[subject], sim.waypointZ[subject] - sim.z[subject])
+    let off = sim.angle[subject] - toGoal
+    while (off > Math.PI) off -= Math.PI * 2
+    while (off < -Math.PI) off += Math.PI * 2
+    // Only judge the heading while there is a real distance left to aim at;
+    // right on top of a waypoint the bearing to it is meaningless.
+    const reach = Math.hypot(sim.waypointX[subject] - sim.x[subject], sim.waypointZ[subject] - sim.z[subject])
+    if (reach > 1) worstOffCourse = Math.max(worstOffCourse, Math.abs(off))
+
+    let swing = sim.angle[subject] - previous
+    while (swing > Math.PI) swing -= Math.PI * 2
+    while (swing < -Math.PI) swing += Math.PI * 2
+    turned += Math.abs(swing)
+    previous = sim.angle[subject]
+  }
+
+  // Avoidance is weighted under the direction of travel, so the furthest it
+  // can bend a heading is asin(AVOID_BIAS) — well short of the ninety degrees
+  // that let the old rule run away with itself.
+  assert.ok(worstOffCourse < Math.asin(0.7) + 0.2,
+    `a crowd bent the heading ${(worstOffCourse * 180 / Math.PI).toFixed(0)} degrees off the route`)
+  assert.ok(turned / (Math.PI * 2) < 3,
+    `the villager spun ${(turned / (Math.PI * 2)).toFixed(1)} times in ten seconds while penned in by a crowd`)
+})
+
+test('nobody walks through the fountain, and no route goes under it', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  assert.ok(island.obstructions.length > 0, 'the island must declare what stands on its pavement')
+
+  const blocked = blockedSlots(island)
+  assert.ok(blocked.size > 0, 'the fountain fills a walking tile, so one must be blocked')
+  const destinations = townDestinations(island, blocked)
+  for (const kind of Object.keys(destinations)) {
+    for (const slot of destinations[kind]) {
+      assert.ok(!blocked.has(slot), `a ${kind} destination stands inside an obstruction`)
+    }
+  }
+
+  // Blocking a tile must not cut the town in two.
+  const routes = buildRoutes(island, blocked)
+  const open = []
+  for (let slot = 0; slot < routes.nodeCount; slot++) if (!blocked.has(slot)) open.push(slot)
+  for (const from of open) {
+    for (const to of open) {
+      if (from === to) continue
+      assert.ok(routes.hops(from, to) > 0, `blocking the fountain stranded ${from} from ${to}`)
+      let at = from, guard = 0
+      while (at !== to) {
+        at = routes.step(at, to)
+        assert.ok(!blocked.has(at), 'a route stepped through an obstruction')
+        assert.ok(++guard <= routes.nodeCount, 'a route must terminate')
+      }
+    }
+  }
+
+  const count = 48
+  const sim = new IslandSim(Array.from({ length: count }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 99, { min: 0.5, max: 0.75 })
+  // Half a body's width of stone, plus the body, is the least it may come to
+  // the middle of the basin.
+  const clearance = island.obstructions[0].radius + 1.47 / 2
+  let closest = Infinity
+  let targetedBlocked = 0
+  for (let frame = 0; frame < 3600; frame++) {
+    sim.update(1 / 60)
+    for (let i = 0; i < count; i++) {
+      // Being shoved back out of the stonework is a last resort. Nobody should
+      // have been heading there in the first place.
+      if (blocked.has(sim.goal[i]) || blocked.has(sim.nextNode[i]) || blocked.has(sim.node[i])) targetedBlocked++
+      for (const stone of island.obstructions) {
+        closest = Math.min(closest, Math.hypot(sim.x[i] - stone.x, sim.z[i] - stone.z))
+      }
+    }
+  }
+  assert.ok(closest >= clearance - 1e-3,
+    `a resident stood ${closest} from the fountain centre, inside the ${clearance} it occupies`)
+  assert.ok(targetedBlocked === 0,
+    `${targetedBlocked} times a resident was routed to or through the fountain tile; the push-out only hides it`)
+})
+
+test('villagers go round whoever is in the way instead of queueing behind them', () => {
+  // Bodies are solid and a street is only two of them wide, so somebody who
+  // stops in one has to be passed. Pushing only straight apart meant the
+  // villager behind was shoved back down its own route and waited there: at
+  // full density a third of the town stood still and one resident went a
+  // whole minute without moving.
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const dt = 1 / 60
+
+  for (const count of [48, 120]) {
+    const sim = new IslandSim(Array.from({ length: count }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+      island, new Map(), 99, { min: 0.5, max: 0.75 })
+    for (let frame = 0; frame < 600; frame++) sim.update(dt)
+
+    const travelled = new Float64Array(count)
+    const stalled = new Float64Array(count)
+    const worstStall = new Float64Array(count)
+    let cruise = 0
+    for (let i = 0; i < count; i++) cruise += sim.cruise[i]
+    cruise /= count
+
+    for (let frame = 0; frame < 3600; frame++) {
+      const wasX = Float32Array.from(sim.x), wasZ = Float32Array.from(sim.z)
+      sim.update(dt)
+      for (let i = 0; i < count; i++) {
+        const step = Math.hypot(sim.x[i] - wasX[i], sim.z[i] - wasZ[i])
+        travelled[i] += step
+        if (step < 0.002) {
+          stalled[i] += dt
+          worstStall[i] = Math.max(worstStall[i], stalled[i])
+        } else stalled[i] = 0
+      }
+    }
+
+    // Nobody may be pinned for much longer than an ordinary stop at a
+    // destination, which is three to six seconds.
+    const longest = Math.max(...worstStall)
+    assert.ok(longest < 12,
+      `at ${count} residents somebody went ${longest.toFixed(1)}s without moving`)
+
+    // And the town as a whole has to keep flowing, not just avoid deadlock.
+    const free = cruise * 60
+    const median = [...travelled].sort((a, b) => a - b)[Math.floor(count / 2)]
+    assert.ok(median > free * 0.6,
+      `at ${count} residents the median villager covered ${median.toFixed(1)} of a possible ${free.toFixed(1)} units`)
+  }
+})
+
+test('scrubbing the cascade back does not teleport anyone mid-street', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const count = 24
+  const sim = new IslandSim(Array.from({ length: count }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 606, { min: 0.5, max: 0.75 })
+  for (let frame = 0; frame < 240; frame++) sim.update(1 / 60)
+
+  // Re-routing a resident standing midway between two junctions would move its
+  // confinement rectangle out from under it, and the clamp would drag the body
+  // across the street. A reset keeps the leg underway and only drops the goal.
+  const before = Array.from({ length: count }, (_, i) => [sim.x[i], sim.z[i]])
+  sim.reset()
+  for (let i = 0; i < count; i++) {
+    assert.deepEqual([sim.x[i], sim.z[i]], before[i], 'reset must not move anybody')
+    assert.equal(sim.activity[i], Activity.Walking)
+  }
+  sim.update(1 / 60)
+  for (let i = 0; i < count; i++) {
+    const step = Math.hypot(sim.x[i] - before[i][0], sim.z[i] - before[i][1])
+    assert.ok(step <= (0.75 + 0.4) / 60 + 1e-6, `resident ${i} jumped ${step} on the frame after a reset`)
+  }
+  assert.equal(sim.badges.size, 0)
+  assert.equal(sim.trails.length, 0)
+})
+
+test('every exported resident carries the bones and clips the overlay poses', () => {
+  // The overlay was silently doing nothing to the arms until this was checked.
+  // The exports name the bone `bicep.L`, but glTF strips the characters
+  // three.js reserves for property paths, so by the time a resident is in the
+  // scene it is `bicepL` — and looking it up under the authored spelling found
+  // nothing while the head, which has no dot, kept working.
+  //
+  // So the skeleton here is rebuilt under the names the loader produces, not
+  // the names the file stores, which is the mistake the first version of this
+  // test made.
+  const posed = ['head', 'neck', 'bicep.L', 'bicep.R', 'forearm.L', 'forearm.R']
+  assert.ok(posed.some((bone) => THREE.PropertyBinding.sanitizeNodeName(bone) !== bone),
+    'at least one posed bone must be renamed on load, or this test proves nothing')
+
+  for (const id of RESIDENT_IDS) {
+    const buffer = readFileSync(new URL(`../public/models/mii-test/${id}.glb`, import.meta.url))
+    const header = JSON.parse(buffer.subarray(20, 20 + buffer.readUInt32LE(12)).toString('utf8'))
+    const authored = new Set(header.nodes.map((node) => node.name).filter(Boolean))
+    for (const bone of posed) {
+      assert.ok(authored.has(bone), `${id} is missing the ${bone} bone the pose overlay writes to`)
+    }
+    const clips = new Set((header.animations ?? []).map((clip) => clip.name))
+    for (const clip of ['test_Idle', 'test_walk', 'test_wave', 'test_look_around']) {
+      assert.ok(clips.has(clip), `${id} is missing the ${clip} clip`)
+    }
+
+    // As the loader delivers it: names sanitized, hierarchy flattened enough to
+    // resolve by name, which is all the overlay asks of it.
+    const loaded = new THREE.Object3D()
+    for (const name of authored) {
+      const bone = new THREE.Bone()
+      bone.name = THREE.PropertyBinding.sanitizeNodeName(name)
+      loaded.add(bone)
+    }
+    const pose = createPoseOverlay(loaded, 0)
+    assert.ok(pose, `${id} must resolve an overlay from the names the loader produces`)
+
+    pose.apply(1, Activity.OnPhone, 1, 0)
+    const forearm = loaded.getObjectByName(THREE.PropertyBinding.sanitizeNodeName('forearm.L'))
+    assert.ok(forearm.quaternion.angleTo(new THREE.Quaternion()) > 0.5,
+      `${id} must actually raise its forearms for the phone, not just tilt its head`)
+  }
+})
+
+test('poses do not compound on bones the animation never writes back', () => {
+  // three.js only writes a bone when the value it computed differs from the
+  // one it wrote last, so a track that holds the same value for a whole clip
+  // leaves the bone alone for ever. Every clip these residents ship with holds
+  // the neck still, so rotating it in place compounded every frame and the
+  // heads wound round and round. This reproduces that exactly: a bone nothing
+  // else ever touches.
+  const root = new THREE.Object3D()
+  const bones = {}
+  for (const name of ['neck', 'head', 'bicepL', 'bicepR', 'forearmL', 'forearmR']) {
+    const bone = new THREE.Bone()
+    bone.name = name
+    bone.position.set(0, 0.12, 0)
+    root.add(bone)
+    bones[name] = bone
+  }
+  const pose = createPoseOverlay(root, 0)
+  assert.ok(pose)
+
+  const yawOf = (name) => new THREE.Euler().setFromQuaternion(bones[name].quaternion, 'YXZ').y
+
+  // Hold a steady gaze for a long time. Nothing resets the bones in between.
+  for (let frame = 0; frame < 600; frame++) pose.apply(1 / 60, Activity.Walking, frame / 60, 0.6)
+  const held = yawOf('neck')
+  for (let frame = 0; frame < 600; frame++) pose.apply(1 / 60, Activity.Walking, (600 + frame) / 60, 0.6)
+  assert.ok(Math.abs(yawOf('neck') - held) < 1e-6,
+    `the neck drifted from ${held} to ${yawOf('neck')} radians while the gaze held steady`)
+  assert.ok(Math.abs(held) < 0.4, `a steady gaze bent the neck ${held} radians`)
+
+  // Letting the gaze go must return the bones to the clip, not strand them.
+  for (let frame = 0; frame < 600; frame++) pose.apply(1 / 60, Activity.Walking, frame / 60, 0)
+  assert.ok(Math.abs(yawOf('neck')) < 1e-6, `the neck stayed at ${yawOf('neck')} after the gaze was released`)
+  assert.ok(Math.abs(yawOf('head')) < 1e-6, `the head stayed at ${yawOf('head')} after the gaze was released`)
+  for (const arm of ['bicepL', 'bicepR', 'forearmL', 'forearmR']) {
+    assert.ok(bones[arm].quaternion.angleTo(new THREE.Quaternion()) < 1e-6,
+      `${arm} kept the phone pose after it was put away`)
+  }
+
+  // Swinging the gaze back and forth must not ratchet the bones round either.
+  for (let frame = 0; frame < 2400; frame++) {
+    pose.apply(1 / 60, Activity.Walking, frame / 60, Math.sin(frame / 11))
+  }
+  assert.ok(Math.abs(yawOf('neck')) < 0.5 && Math.abs(yawOf('head')) < 1.2,
+    `a swinging gaze ratcheted the head to ${yawOf('head')} and the neck to ${yawOf('neck')} radians`)
+
+  // And when the animation does move a bone, that pose is what gets built on.
+  bones.neck.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.3)
+  pose.apply(1 / 60, Activity.Walking, 1, 0)
+  const pitch = new THREE.Euler().setFromQuaternion(bones.neck.quaternion, 'YXZ').x
+  assert.ok(Math.abs(pitch - 0.3) < 1e-6, `the animation's own pose was lost: pitch ${pitch}`)
+})
+
+test('headings stay wrapped however far a villager turns', () => {
+  const island = buildElevatedIsland(hashSeed('giving-garden-island'))
+  const sim = new IslandSim(Array.from({ length: 24 }, (_, id) => ({ id, groupId: 'a', onIsland: true })),
+    island, new Map(), 5150, { min: 0.5, max: 0.75 })
+  for (let frame = 0; frame < 7200; frame++) {
+    sim.update(1 / 60)
+    for (let i = 0; i < sim.count; i++) {
+      assert.ok(Math.abs(sim.angle[i]) <= Math.PI + 1e-5,
+        `resident ${i} wound its heading to ${sim.angle[i]} radians instead of wrapping`)
+    }
+  }
+})
+
+test('pose overlays bend bones without moving or rescaling the skeleton', () => {
+  const bones = {}
+  const root = new THREE.Object3D()
+  let parent = root
+  for (const name of ['neck', 'head']) {
+    const bone = new THREE.Bone()
+    bone.name = name
+    bone.position.set(0, 0.11, 0)
+    parent.add(bone)
+    bones[name] = bone
+    parent = bone
+  }
+  // glTF strips the dot out of the authored `bicep.L`, so the overlay has to
+  // find the bones under the names the loader actually delivers.
+  for (const name of ['bicepL', 'bicepR', 'forearmL', 'forearmR']) {
+    const bone = new THREE.Bone()
+    bone.name = name
+    bone.position.set(0, 0.19, 0)
+    root.add(bone)
+    bones[name] = bone
+  }
+
+  const pose = createPoseOverlay(root, 0.3)
+  assert.ok(pose, 'a skeleton carrying the named bones must get an overlay')
+  const rest = Object.fromEntries(Object.entries(bones)
+    .map(([name, bone]) => [name, { position: bone.position.clone(), scale: bone.scale.clone() }]))
+
+  // The mixer rewrites orientations every update, so the overlay re-applies
+  // its deltas each time and must never accumulate them.
+  const sampleOnce = (activity, elapsed, gaze) => {
+    for (const bone of Object.values(bones)) bone.quaternion.identity()
+    pose.apply(1 / 60, activity, elapsed, gaze)
+    return Object.fromEntries(Object.entries(bones).map(([name, bone]) => [name, bone.quaternion.clone()]))
+  }
+
+  // The pose eases in over a fraction of a second, so it is let settle before
+  // repeat calls are compared.
+  for (let frame = 0; frame < 200; frame++) sampleOnce(Activity.OnPhone, frame / 60, 0)
+  const settled = sampleOnce(Activity.OnPhone, 200 / 60, 0)
+  const again = sampleOnce(Activity.OnPhone, 200 / 60, 0)
+  for (const name of Object.keys(bones)) {
+    assert.ok(settled[name].angleTo(again[name]) < 1e-6, `${name} must pose identically for identical input`)
+    assert.deepEqual(bones[name].position.toArray(), rest[name].position.toArray(), `${name} must not be moved`)
+    assert.deepEqual(bones[name].scale.toArray(), rest[name].scale.toArray(), `${name} must not be rescaled`)
+  }
+
+  // The phone pose has to actually read: arms up, chin down.
+  assert.ok(new THREE.Euler().setFromQuaternion(settled.head).x > 0.2, 'the chin must come down over the phone')
+  assert.ok(Math.abs(new THREE.Euler().setFromQuaternion(settled['forearmL'], 'ZYX').z) > 0.8,
+    'the elbow must bend to bring the phone to chest height')
+
+  // Walking carries no phone, and gaze turns the head rather than tilting it.
+  // The pose eases out as well as in, so it is given time to clear.
+  for (let frame = 0; frame < 200; frame++) sampleOnce(Activity.Walking, frame / 60, 0.6)
+  const walking = sampleOnce(Activity.Walking, 1, 0.6)
+  assert.ok(Math.abs(new THREE.Euler().setFromQuaternion(walking.head).x) < 1e-3, 'a walking resident holds its chin level')
+  assert.ok(new THREE.Euler().setFromQuaternion(walking.head).y > 0.4, 'gaze must turn the head towards what it is looking at')
+  assert.ok(walking['forearmL'].angleTo(new THREE.Quaternion()) < 1e-6, 'no phone pose while walking')
+
+  // Every rotation stays within what a neck or elbow can actually do.
+  for (const activity of [Activity.Walking, Activity.Resting, Activity.OnPhone,
+    Activity.Reacting, Activity.Sharing, Activity.Dismissing, Activity.LookingAround]) {
+    for (let frame = 0; frame < 120; frame++) {
+      const posed = sampleOnce(activity, frame / 60, Math.sin(frame / 7))
+      for (const name of Object.keys(bones)) {
+        assert.ok(posed[name].angleTo(new THREE.Quaternion()) < Math.PI / 2,
+          `${name} bent past a right angle on activity ${activity}`)
+      }
+    }
+  }
+
+  assert.equal(createPoseOverlay(new THREE.Object3D()), null, 'a skeleton without the named bones opts out')
 })
 
 const surfaceKinds = { Water: 0, Grass: 1, Sand: 2, Road: 3, Plaza: 4, Dock: 5 }

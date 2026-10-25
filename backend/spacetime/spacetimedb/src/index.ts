@@ -5,6 +5,10 @@ import spacetimedb, {
   DecisionInput,
   EdgeInput,
   MemberInput,
+  CampaignOption,
+  IdeaAnalysis,
+  IdeaMetrics,
+  IdeaResident,
   ReelInput,
   ReferenceExample,
   RewrittenHook,
@@ -352,7 +356,9 @@ export const failJob = spacetimedb.reducer({ jobId: t.u64(), error: t.string() }
     if (m && m.status === 'pending') ctx.db.chatMessage.id.update({ ...m, status: 'failed', content: error });
   } else if (row.kind === 'explain_comparison') {
     const c = ctx.db.comparison.id.find(BigInt(row.targetId));
-    if (c) ctx.db.comparison.id.update({ ...c, status: 'failed', error, updatedAt: ctx.timestamp });
+    if (c) ctx.db.comparison.id.update({ ...c, status: 'failed', error, updatedAt: ctx.timestamp });  } else if (row.kind === 'test_idea') {
+    const idea = ctx.db.ideaTest.id.find(BigInt(row.targetId));
+    if (idea && idea.status === 'running') ctx.db.ideaTest.id.update({ ...idea, status: 'failed', error, updatedAt: ctx.timestamp });
   }
 });
 
@@ -615,5 +621,69 @@ export const setComparisonSummary = spacetimedb.reducer(
     const c = ctx.db.comparison.id.find(id);
     if (!c) throw new SenderError('unknown comparison');
     ctx.db.comparison.id.update({ ...c, summary, status: 'ready', error: undefined, updatedAt: ctx.timestamp });
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Idea test (no video): client asks, worker parses + scores + analyses
+// ---------------------------------------------------------------------------
+
+export const testIdea = spacetimedb.reducer(
+  { profileId: t.string(), prompt: t.string(), budgetUsd: t.option(t.f64()), options: t.array(CampaignOption) },
+  (ctx, { profileId, prompt, budgetUsd, options }) => {
+    const profile = ctx.db.companyProfile.id.find(profileId);
+    if (!profile) throw new SenderError('unknown profile');
+    requireOwner(ctx, profile.owner);
+    const text = prompt.trim();
+    if (!text) throw new SenderError('describe the idea to test');
+    if (text.length > 1000) throw new SenderError('the idea is longer than 1000 characters');
+    if (options.length > 3) throw new SenderError('at most 3 campaign options');
+    for (const o of options) {
+      if (!o.name.trim()) throw new SenderError('every campaign option needs a name');
+      if (!(o.costUsd >= 0)) throw new SenderError('campaign option costs must be zero or more');
+    }
+    if (budgetUsd !== undefined && !(budgetUsd >= 0)) throw new SenderError('the budget must be zero or more');
+    const members = [...ctx.db.audienceMember.byAudience.filter([profileId, profile.audienceVersion])];
+    if (members.length === 0) throw new SenderError('no audience saved for this profile yet');
+
+    const row = ctx.db.ideaTest.insert({
+      id: 0n,
+      owner: ctx.sender,
+      profileId,
+      prompt: text,
+      budgetUsd,
+      options,
+      status: 'running',
+      idea: '',
+      targetLabel: '',
+      minAge: undefined,
+      maxAge: undefined,
+      residents: [],
+      metrics: undefined,
+      analysis: undefined,
+      error: undefined,
+      createdAt: ctx.timestamp,
+      updatedAt: ctx.timestamp,
+    });
+    enqueue(ctx, 'test_idea', row.id.toString());
+  }
+);
+
+export const setIdeaResult = spacetimedb.reducer(
+  {
+    id: t.u64(),
+    idea: t.string(),
+    targetLabel: t.string(),
+    minAge: t.option(t.u32()),
+    maxAge: t.option(t.u32()),
+    residents: t.array(IdeaResident),
+    metrics: IdeaMetrics,
+    analysis: IdeaAnalysis,
+  },
+  (ctx, { id, ...fields }) => {
+    requireWorker(ctx);
+    const row = ctx.db.ideaTest.id.find(id);
+    if (!row) throw new SenderError('unknown idea test');
+    ctx.db.ideaTest.id.update({ ...row, ...fields, status: 'ready', error: undefined, updatedAt: ctx.timestamp });
   }
 );

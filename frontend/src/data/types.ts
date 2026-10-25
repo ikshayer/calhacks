@@ -1,3 +1,5 @@
+import type { MillbrookHousehold, MillbrookPersona } from './millbrookTypes'
+
 /**
  * The vocabulary shared by every part of the frontend.
  *
@@ -57,6 +59,8 @@ export interface AudienceMember {
   groupId: GroupId
   interests: string[]
   persona: string
+  /** Complete, read-only source identity and household from the Millbrook snapshot. */
+  millbrook?: { readonly persona: MillbrookPersona; readonly household: MillbrookHousehold }
   hotButtons: string[]
   ignores: string[]
   /** Visual asset hint; recognized Mii ids are honored, legacy stems use a render adapter. */
@@ -75,6 +79,8 @@ export interface Edge {
 
 export interface Audience {
   version: number
+  /** Dataset and group configuration identity; absent on legacy generated audiences. */
+  key?: string
   members: AudienceMember[]
   edges: Edge[]
   /** `adjacency[i]` lists the member ids linked to member `i`. */
@@ -128,6 +134,49 @@ export interface VideoAnalysis {
 }
 
 // ---------------------------------------------------------------------------
+// Campaign (one uploaded video and everything simulated against it)
+// ---------------------------------------------------------------------------
+
+export type CampaignId = string
+
+/**
+ * One campaign in the history list.
+ *
+ * A campaign outlives the page: the metadata, signals and run results are
+ * persisted, but the video file itself is not — browsers cannot hand a `File`
+ * back after a reload. `posterDataUrl` is a single captured frame so a restored
+ * campaign still has a face in the list, and `videoAvailable` tells the UI
+ * whether the player can be shown or the user has to re-attach the file.
+ */
+export interface Campaign {
+  id: CampaignId
+  profileId: string
+  title: string
+  /** Epoch ms. Sorted newest-first in the history list. */
+  createdAt: number
+  videoId: string
+  videoName: string
+  durationSec: number
+  /** JPEG data URL of one frame, ~320px wide. Absent if capture failed. */
+  posterDataUrl?: string
+  /** False after a reload: metadata survived, the file did not. */
+  videoAvailable: boolean
+  signals: ContentSignals
+  summary: string
+  /** Newest last. */
+  runIds: RunId[]
+  /** Headline numbers from the most recent complete run, for the history card. */
+  headline?: {
+    runId: RunId
+    uniqueExposed: number
+    likes: number
+    comments: number
+    shares: number
+    coverage: number
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Simulation
 // ---------------------------------------------------------------------------
 
@@ -151,6 +200,8 @@ export interface RunOptions {
   /** Preserved across original and revision so the comparison is fair. */
   seed: number
   audienceVersion: number
+  /** Absent on historical runs created before persona-backed audiences. */
+  audienceKey?: string
   /** Proportion of the audience exposed in round 0. A declared assumption. */
   seedExposure: number
   maxRounds: number
@@ -207,7 +258,7 @@ export type RunStatus = 'idle' | 'scoring' | 'cascading' | 'complete' | 'failed'
 
 export interface RunSummary {
   id: RunId
-  campaignId: string
+  campaignId: CampaignId
   videoId: string
   label: string
   options: RunOptions
@@ -263,4 +314,67 @@ export interface Report {
 export interface ChatTurn {
   role: 'user' | 'assistant'
   content: string
+}
+
+export interface IdeaOption {
+  name: string
+  costUsd: number
+}
+
+export interface IdeaTestInput {
+  prompt: string
+  budgetUsd?: number
+  options: IdeaOption[]
+}
+
+export interface IdeaResident {
+  memberId: number
+  name: string
+  age: number
+  groupId: string
+  inTarget: boolean
+  pVisit: number
+  pReturn: number
+  pShare: number
+  optionInterest: number[]
+  reason: string
+  /** The resident's profile lacked what the question needed, so the numbers are not a real prediction. */
+  missing: boolean
+}
+
+export interface IdeaMetrics {
+  scored: number
+  inTarget: number
+  interested: number
+  interestedInTarget: number
+  expectedVisits: number
+  expectedShares: number
+  optionVisits: number[]
+}
+
+export interface IdeaAnalysis {
+  recommendedCampaign: string
+  evidence: string[]
+  segments: string[]
+  objections: string[]
+  budgetAllocation: string
+  experiment: string
+  successMetric: string
+  assumptions: string[]
+  limitations: string[]
+}
+
+export interface IdeaTestResult {
+  id: string
+  status: 'running' | 'ready' | 'failed'
+  prompt: string
+  idea: string
+  targetLabel: string
+  minAge?: number
+  maxAge?: number
+  residents: IdeaResident[]
+  metrics?: IdeaMetrics
+  analysis?: IdeaAnalysis
+  error?: string
+  stage?: string
 }

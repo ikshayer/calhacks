@@ -43,6 +43,8 @@ export interface JevState {
     habits: string;
     responds_to: string[];
     turned_off_by: string[];
+    /** The resident's full profile (Millbrook: age, occupation, Big Five personality, values, goals, beliefs, memories). */
+    profile?: Record<string, unknown>;
   };
   reel: { account: string; content: string };
 }

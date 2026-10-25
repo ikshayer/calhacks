@@ -15,6 +15,14 @@ export const TILE = 3.4
 /** Authoring lattice preserves the existing shape, plot choices and home-slot ordering. */
 export const REFERENCE_TILE = 2.4
 export const ISLAND_SPACING = TILE / REFERENCE_TILE
+/**
+ * Lateral room a walking villager needs, measured from the street centreline.
+ *
+ * Every signed lane offset, the body's own clearance, and the swing of a
+ * junction turn fit inside this. Landscaping keeps props and curbs outside it,
+ * and the simulation confines bodies to it, so the two cannot drift apart.
+ */
+export const WALK_CLEARANCE = TILE * 0.26 + 0.48
 /** Tiles across. Odd, so there is a true centre tile. */
 export const GRID = 29
 /** Nominal radius in reference units; actual land expands with tile spacing. */
@@ -30,6 +38,14 @@ export const Tile = {
 } as const
 export type Tile = (typeof Tile)[keyof typeof Tile]
 
+/**
+ * Footprint of the fountain at the centre of the plaza.
+ *
+ * Declared with the island rather than with the geometry that draws it, so the
+ * simulation and the renderer cannot disagree about where it stands.
+ */
+export const FOUNTAIN_RADIUS = 1.65
+
 /** Road grid period, in tiles: 3 tiles of block, then 1 of road. */
 const ROAD_PERIOD = 4
 
@@ -37,6 +53,8 @@ export interface Plot {
   model: string
   x: number
   z: number
+  /** Base of the placement on the authored surface; absent on the flat baseline. */
+  y?: number
   rotation: number
   scale: number
   /**
@@ -50,9 +68,23 @@ export interface Plot {
   tint?: string
 }
 
+/**
+ * Something standing on walkable ground that a villager has to go around.
+ *
+ * The fountain is the reason this exists: it is drawn as geometry at the
+ * centre of the plaza rather than placed as a plot, so nothing in the tile
+ * mask knew it was there and residents walked straight through the water.
+ */
+export interface Obstruction {
+  x: number
+  z: number
+  radius: number
+}
+
 export interface Lamp {
   x: number
   z: number
+  y?: number
 }
 
 export interface Island {
@@ -65,6 +97,12 @@ export interface Island {
   plots: Plot[]
   /** Street lamps, placed at junctions. Drawn as geometry, not models. */
   lamps: Lamp[]
+  /** NW, NE, SW, SE top corners for every tile, in world units. */
+  surfaces?: Float32Array
+  /** Additional paved harbor approaches on existing land, never over water. */
+  connectors?: number[]
+  /** Solid things standing on walkable tiles. Navigation must avoid these. */
+  obstructions: Obstruction[]
 }
 
 const tileToReference = (index: number) => {
@@ -143,7 +181,11 @@ export function buildIsland(seed: number): Island {
   const plots = placeBuildings(tiles, rng)
   const lamps = placeLamps(tiles, links, walkable)
 
-  return { tiles, walkable, links, plots, lamps }
+  // The fountain stands on the centre tile, which is paved and otherwise
+  // perfectly walkable, so it has to be declared rather than inferred.
+  const obstructions: Obstruction[] = [{ x: 0, z: 0, radius: FOUNTAIN_RADIUS }]
+
+  return { tiles, walkable, links, plots, lamps, obstructions }
 }
 
 /**

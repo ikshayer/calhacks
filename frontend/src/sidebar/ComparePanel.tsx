@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { EmptyState, Section } from '@/components/ui'
 import type { RunMetrics } from '@/data/types'
 import type { RunState } from '@/store/useAppStore'
+import { sameRunAudience } from '@/data/runCompatibility'
 
 /**
  * Original against revision.
@@ -44,10 +45,7 @@ export function ComparePanel() {
   const leftSpread = left.metrics.spread
   const rightSpread = right.metrics.spread
 
-  const sameAudience =
-    left.options.audienceVersion === right.options.audienceVersion &&
-    left.options.seed === right.options.seed &&
-    left.options.seedExposure === right.options.seedExposure
+  const sameAudience = sameRunAudience(left.options, right.options)
 
   // Declare a winner only when each run's typical result sits outside the
   // other's P10-P90 band, in both directions.
@@ -60,6 +58,7 @@ export function ComparePanel() {
   const separated = (a: RunMetrics['spread'], b: RunMetrics['spread']) =>
     a.p50 > b.p90 || a.p50 < b.p10
   const decisive =
+    sameAudience &&
     leftSpread.p50 !== rightSpread.p50 &&
     separated(leftSpread, rightSpread) &&
     separated(rightSpread, leftSpread)
@@ -95,7 +94,15 @@ export function ComparePanel() {
             (winner ? 'border-sun/30 bg-sun/[0.07]' : 'border-line bg-ink')
           }
         >
-          {winner ? (
+          {!sameAudience ? (
+            <>
+              <p className="display text-[14px] text-paper">Different simulation settings</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+                These results cannot establish a winner. Run both versions against the same
+                Millbrook audience and exposure settings to compare them.
+              </p>
+            </>
+          ) : winner ? (
             <>
               <p className="display text-[14px] text-sun">{winner.label} does better</p>
               <p className="mt-1 text-[12px] leading-relaxed text-muted">
@@ -126,8 +133,9 @@ export function ComparePanel() {
 
         {!sameAudience && (
           <p className="mt-3 rounded-lg border border-bloom/30 bg-bloom/[0.07] px-3 py-2.5 text-[11.5px] leading-relaxed text-muted">
-            These runs used different audience or exposure settings, so the comparison is not
-            like-for-like. Re-run them with the same settings before trusting the gap.
+            {!left.options.audienceKey || !right.options.audienceKey
+              ? 'A saved run belongs to the previous audience. Its original results remain available.'
+              : 'These runs used different audience or exposure settings.'}
           </p>
         )}
       </Section>
@@ -204,12 +212,11 @@ function WrittenComparison({ baseRunId, revisedRunId }: { baseRunId: string; rev
 }
 
 function ComparisonRow({ label, a, b }: { label: string; a: number; b: number }) {
-  const better = a === b ? null : a > b ? 'a' : 'b'
   return (
     <tr className="border-t border-line">
       <td className="py-1.5 text-muted">{label}</td>
-      <td className={'py-1.5 text-right ' + (better === 'a' ? 'text-sun' : 'text-paper')}>{a}</td>
-      <td className={'py-1.5 text-right ' + (better === 'b' ? 'text-sun' : 'text-paper')}>{b}</td>
+      <td className="py-1.5 text-right text-paper">{a}</td>
+      <td className="py-1.5 text-right text-paper">{b}</td>
     </tr>
   )
 }

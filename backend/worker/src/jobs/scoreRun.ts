@@ -58,12 +58,27 @@ function stateFor(member: AudienceMember, profile: CompanyProfile, video: Video,
       habits: member.persona,
       responds_to: member.hotButtons,
       turned_off_by: member.ignores,
+      ...(member.profileJson ? { profile: parseProfile(member) } : {}),
     },
     reel: {
       account: `${profile.name}: ${profile.pitch}`,
       content: `${video.summary}\n${signalsLine(signals)}`,
     },
   };
+}
+
+/** The stored resident profile. A malformed one fails the run (states are built before scoring) rather than silently scoring a thinner persona. */
+function parseProfile(member: AudienceMember): Record<string, unknown> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(member.profileJson);
+  } catch (error) {
+    throw new Error(`member ${member.memberId} has an invalid profileJson: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`member ${member.memberId} profileJson is not an object`);
+  }
+  return Object.fromEntries(Object.entries(parsed));
 }
 
 function missingDecision(memberId: number): DecisionInput {
