@@ -65,9 +65,22 @@ async def handle_run(ctx: Context, sender: str, msg: RunRequest):
     )
 
 
+def row_id(value: str, what: str) -> int:
+    """
+    A row id from an agent message, as an integer.
+
+    Chat messages reach these agents from any sender, so an id that is not a
+    number is rejected here rather than interpolated into SQL.
+    """
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        raise stdb.StdbError(f"{what} must be a row id, got {value!r}") from None
+
+
 async def start(video_id: str) -> str:
     """Call start_run and return the new run's id."""
-    videos = await stdb.sql(f"SELECT * FROM video WHERE id = {video_id}")
+    videos = await stdb.sql(f"SELECT * FROM video WHERE id = {row_id(video_id, 'video id')}")
     if not videos:
         raise stdb.StdbError(f"no video with id {video_id}")
     video = videos[0]
@@ -117,7 +130,7 @@ async def handle_progress(ctx: Context, sender: str, msg: ProgressRequest):
 
 
 async def progress(request_id: str, run_id: str) -> ProgressResult:
-    runs = await stdb.sql(f"SELECT * FROM run WHERE id = {run_id}")
+    runs = await stdb.sql(f"SELECT * FROM run WHERE id = {row_id(run_id, 'run id')}")
     if not runs:
         raise stdb.StdbError(f"no run with id {run_id}")
     run = runs[0]
@@ -132,7 +145,7 @@ async def progress(request_id: str, run_id: str) -> ProgressResult:
     failed_job = next((j for j in jobs if j.get("status") == "failed"), None)
 
     report_status = ""
-    reports = await stdb.sql(f"SELECT * FROM report WHERE run_id = {run_id}")
+    reports = await stdb.sql(f"SELECT * FROM report WHERE run_id = {row_id(run_id, 'run id')}")
     if reports:
         report_status = reports[0].get("status", "")
 
@@ -157,7 +170,7 @@ async def progress(request_id: str, run_id: str) -> ProgressResult:
 
 async def read_results(request_id: str, run_id: str) -> RunResult:
     """Metrics and the finished report. The agent never writes either."""
-    runs = await stdb.sql(f"SELECT * FROM run WHERE id = {run_id}")
+    runs = await stdb.sql(f"SELECT * FROM run WHERE id = {row_id(run_id, 'run id')}")
     if not runs:
         return RunResult(request_id=request_id, run_id=run_id, error="the run disappeared")
     run = runs[0]
@@ -174,7 +187,7 @@ async def read_results(request_id: str, run_id: str) -> RunResult:
     summary = format_metrics(metrics)
 
     report_text = ""
-    reports = await stdb.sql(f"SELECT * FROM report WHERE run_id = {run_id}")
+    reports = await stdb.sql(f"SELECT * FROM report WHERE run_id = {row_id(run_id, 'run id')}")
     if reports:
         report = reports[0]
         if report.get("status") == "ready":
