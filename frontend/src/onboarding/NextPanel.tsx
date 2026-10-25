@@ -12,9 +12,7 @@ import { MILLBROOK_SIZE } from '@/data/millbrook'
  * paper, hairlines and black text. Spending the colour here keeps the
  * questions themselves calm.
  *
- * The numbers are read from the data rather than written into the copy. The
- * cast is fixed and fictional, and saying so plainly is a requirement, not a
- * disclaimer to bury.
+ * The numbers are read from the resident data rather than written into the copy.
  */
 export function NextPanel() {
   return (
@@ -40,8 +38,7 @@ export function NextPanel() {
 
         <ul className="mt-5 space-y-4">
           <Item title={`${MILLBROOK_SIZE.total} residents react`}>
-            Millbrook is a fictional town. Each resident has their own history and habits, and
-            decides about your video on their own.
+            Resident histories, personalities and habits inform each response in the digital simulation.
           </Item>
           <Item title="You watch it spread">
             See who shares it, who scrolls past, and where attention drops — second by second.
@@ -52,7 +49,7 @@ export function NextPanel() {
         </ul>
 
         <p className="mt-6 border-t border-white/20 pt-4 text-[13.5px] leading-relaxed text-white/75">
-          Simulated reactions, not measured results. You can change any of this later.
+          Explore predicted reactions in the digital simulation. You can change any of this later.
         </p>
       </div>
     </aside>

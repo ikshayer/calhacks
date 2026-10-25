@@ -18,7 +18,6 @@ const IDEA_SUGGESTIONS = [
   'Summarize this idea report and its results.',
   'How do the residents’ personalities influence their interest?',
   'Which campaign option fits the budget, and why?',
-  'What are the assumptions and limits of these predictions?',
 ]
 
 export function ChatPanel({ memberName }: { memberName?: string }) {
@@ -65,7 +64,7 @@ export function ChatPanel({ memberName }: { memberName?: string }) {
         </p>
         <p className="mt-1 text-[11px] text-ui-faint">
           {source.kind === 'mock' ? 'Demo replies · scripted, not live AI' : 'AI replies · grounded in this simulation'}
-          {' · Synthetic results'}
+          {' · Simulation results'}
         </p>
       </header>
 

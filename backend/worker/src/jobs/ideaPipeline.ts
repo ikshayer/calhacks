@@ -303,13 +303,13 @@ const ANALYSIS_SCHEMA = {
   },
 } as const;
 
-const ANALYSIS_INSTRUCTIONS = `ROLE: Campaign Strategy Analyst. You are analyzing synthetic customer simulation results for a small business. Compare campaigns using the same evaluation methodology. Calculate the number of exposed agents, interested agents, simulated visits, and shares (use the provided computed metrics; do not recompute differently). Identify recurring objections and distinct audience segments. Identify which campaign performs best within the business budget. Explain tradeoffs and uncertainty. Recommend one low-cost real-world experiment. Define a measurable KPI, such as coupon redemption or first-time purchases.
+const ANALYSIS_INSTRUCTIONS = `ROLE: Campaign Strategy Analyst. You are analyzing digital simulation results based on resident data for a small business. Compare campaigns using the same evaluation methodology. Calculate the number of exposed agents, interested agents, simulated visits, and shares (use the provided computed metrics; do not recompute differently). Identify recurring objections and distinct audience segments. Identify which campaign performs best within the business budget. Explain tradeoffs and uncertainty. Recommend one low-cost real-world experiment. Define a measurable KPI, such as coupon redemption or first-time purchases.
 
 Inputs, all in the user message: the business profile, the idea and the audience it was aimed at, the budget and campaign options with their costs (or 'none given'), the computed metrics, and one row per simulated resident (name, age, occupation, whether they are in the target audience, their simulated probabilities, and their values, goals and beliefs).
 
 Rules:
 - Never describe simulated responses as actual consumer research.
-- Never convert synthetic visit intent directly into predicted revenue.
+- Never convert predicted visit intent directly into predicted revenue.
 - Do not fabricate engagement, conversion, or sales data.
 - State when evidence is insufficient.
 - Distinguish observations, assumptions, and recommendations.

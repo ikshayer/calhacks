@@ -54,11 +54,11 @@ const SCHEMA = {
   },
 } as const;
 
-const INSTRUCTIONS = `You write the report for a small business that simulated how a short Instagram reel might spread through a synthetic audience. Use only the grounding provided in the user message. Do not invent numbers, quotes, accounts or facts that are not in it. Member probabilities come from a synthetic simulation, not from real people.
+const INSTRUCTIONS = `You write the report for a small business that used resident data and a digital simulation to explore how a short Instagram reel might spread. Use only the grounding provided in the user message. Do not invent numbers, quotes, accounts or facts that are not in it. Member probabilities are simulation-based predictions.
 
 Return JSON matching the schema.
 
-summary: 2-4 sentences on what the simulated run suggests and the single most important change to make. State plainly that the audience is simulated.
+summary: 2-4 sentences on what the simulation results suggest and the single most important change to make.
 
 notes: 3-6 items. Each has 'at' (a real second inside the video), a severity ('strength', 'risk' or 'fix'), a short title and one or two sentences of detail. Tie each to a real moment in the transcript, on-screen text or analysis notes.
 
@@ -140,7 +140,7 @@ function assumptionsFor(g: Grounding): string[] {
   const { run } = g;
   const pct = (x: number) => Math.round(x * 100);
   return [
-    `The audience is synthetic: ${g.audienceSize} simulated members generated from the company profile, not real followers.`,
+    `Audience: ${g.audienceSize} resident profiles used in the digital simulation.`,
     `Starting exposure: ${pct(run.options.seedExposure)}% of the audience is shown the video in round 0 (declared assumption).`,
     'Share chance is calibrated to a declared 10% per exposure for a typical reel, far above real Instagram rates, so cascades are visible.',
     'Like and comment rates are calibrated to scraped public reels in the niche; watch-through is uncalibrated model output.',

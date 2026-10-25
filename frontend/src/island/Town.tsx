@@ -94,7 +94,6 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
       ownedMaterials.forEach((material) => material.dispose())
       ownedTextures.forEach((texture) => texture.dispose())
       meshesRef.current = []
-      if (import.meta.env.DEV) delete (window as unknown as Record<string, unknown>).__townScene
     }
     try {
       const assets = new Map(keys.map((key, index) => [key, collectStaticParts(gltfs[index]!.scene)]))
@@ -211,22 +210,10 @@ export function Town({ placements, island, shadows, onError }: { placements: Plo
         architecture.add(mesh); meshes.push(mesh)
       }
       meshesRef.current = meshes
-      if (import.meta.env.DEV) Object.assign(window, { __townScene: { root, architecture, plan, prepared, landscape,
-        inspect: () => buildings.map(({ plot, style, detail }) => ({ sourceModel: plot.model, sourceIndex: plot.sourceIndex,
-          position: [plot.x, plot.z], rotation: plot.rotation, relocated: plot.relocated, theme: plot.theme,
-          height: detail.footprint.max.y, footprint: detail.totalBounds.getSize(new THREE.Vector3()).toArray(),
-          footprintBounds: { min: detail.totalBounds.min.toArray(), max: detail.totalBounds.max.toArray() },
-          door: detail.door, horizontal: style.fit.horizontal, courseExtra: style.fit.courseExtra })),
-        batches: meshes.length, trimParts: boxes.length, leafCards: leafCards.length,
-        grassPatches: grassLeaves.patches, grassLeafCards: grassLeaves.cards.length } })
       return dispose
     } catch (error) {
-      // A1 requires a missing-asset fallback rather than a blank simulation. The
-      // strict checks in staticTown are deliberate authoring guards and still
-      // fire; what changes here is the blast radius. Losing the buildings costs
-      // the town, where rethrowing out of an effect unmounts the entire React
-      // root and takes the island, the residents and the sidebar with it.
-      // Reported, never swallowed: the caller surfaces this in the UI.
+      // Keep residents and reports usable if buildings fail to load, and report
+      // the missing scenery to the workspace.
       dispose()
       console.error('The town could not be built; the island is rendering without buildings.', error)
       onErrorRef.current?.(error)

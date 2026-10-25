@@ -73,7 +73,7 @@ export interface CompanyProfile {
 // Audience
 // ---------------------------------------------------------------------------
 
-/** A synthetic audience member. Archetypes, not real people. */
+/** An audience member represented by resident profile data in the simulation. */
 export interface AudienceMember {
   /** Stable audience member id. Use IslandSim lookups for the sampled villager index. */
   id: number

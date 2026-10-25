@@ -11,7 +11,7 @@ const SYSTEM = `You explain, in plain language, how a revised Instagram reel com
 Rules:
 - Write 2 to 4 sentences of plain prose. No headings, lists or markdown.
 - Use only the facts given. Never invent numbers or reasons the facts do not support.
-- Say once that the audience is simulated (synthetic members), not measured viewers.
+- Describe the numbers as digital simulation results based on the supplied resident data.
 - The verdict was decided by code. Respect it exactly:
   - "revised": the revised version did better; say what changed in the video that plausibly explains it.
   - "original": the original did better; say so, and what the revision may have lost.

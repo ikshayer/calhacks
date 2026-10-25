@@ -51,15 +51,10 @@ seed; no avatar request leaves the browser.
 
 ## Production characters
 
-The production island's villager characters are Kenney's CC0 Mini Characters.
-
-## Experimental character evaluation
-
-The experimental exports in `models/mii-test/` (`resident.glb`, `nia.glb`,
-`theo.glb`, and `rowan.glb`) are derived from
+The island uses the twenty resident exports in `models/mii-test/`, derived from
 [Joey Carlino's Mii Maker for Blender](https://joeycarlino.itch.io/mii-maker-for-blender),
-used by the separate `mii-test.html` development preview. They are not wired into
-the production island. The creator's listing does not specify an asset reuse
+with Kenney's CC0 Mini Characters retained as an automatic loading fallback.
+The creator's listing does not specify an asset reuse
 license; applicable terms remain to be established. Export preparation includes
 frozen procedural meshes, baked facial textures, and sampled animation clips.
 See `frontend/MII-TEST.md` for the source repair, reproduction steps, and results.

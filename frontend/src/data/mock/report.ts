@@ -15,7 +15,7 @@ import type {
  * never cut for space.
  */
 export const STANDING_ASSUMPTIONS = [
-  'The audience is 50 fictional Millbrook residents, not measured followers. All 50 appear on the island.',
+  'The simulation uses 50 Millbrook resident profiles. All 50 appear on the island.',
   'Group shares are assumptions you set during onboarding, not observed demographics.',
   'Residents are assigned to audience groups proportionally, with rounding to whole people. Group interests drive reaction scoring; persona traits are descriptive.',
   'Sharing follows the supplied family and friendship links. Relationship affinity does not weight sharing probabilities.',

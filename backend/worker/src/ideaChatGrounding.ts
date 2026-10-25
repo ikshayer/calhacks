@@ -18,7 +18,7 @@ export function buildIdeaChatGrounding(conn: DbConnection, ideaId: bigint): stri
     `Original request: ${idea.prompt}`,
     `Parsed idea: ${idea.idea}. Target: ${idea.targetLabel}. Age limits: ${idea.minAge ?? 'unspecified'} to ${idea.maxAge ?? 'unspecified'}.`,
     `Budget USD: ${idea.budgetUsd ?? 'not specified'}. Campaign options (same order as optionInterest and optionVisits): ${JSON.stringify(idea.options)}`,
-    'These are synthetic residents and raw, uncalibrated model estimates, not consumer research or a sales forecast. pVisit estimates visiting once. pReturn and pShare are conditional on visiting once.',
+    'The digital simulation uses resident profile data. Probabilities are raw, uncalibrated model estimates. pVisit estimates visiting once. pReturn and pShare are conditional on visiting once.',
     'Metrics are computed in code: interested counts nonmissing residents with pVisit >= 0.5; expectedVisits = sum(pVisit); expectedShares = sum(pVisit * pShare); optionVisits[i] = sum(optionInterest[i] * pVisit). Missing predictions are excluded, not interpreted as zero.',
     `Computed metrics: ${JSON.stringify(idea.metrics)}`,
     `Report analysis (recommendations, evidence, segments, objections, budget allocation, experiment, success metric, assumptions and limitations): ${JSON.stringify(idea.analysis)}`,

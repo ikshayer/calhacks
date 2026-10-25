@@ -168,7 +168,11 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
 export function startUploadServer(): Server {
   const server = createServer((req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', config.uploadAllowedOrigin);
+    // Echo the caller's origin only when it is on the list; an unlisted site gets no CORS header.
+    const origin = req.headers.origin;
+    if (origin && config.uploadAllowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-File-Name');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS');
     res.setHeader('Vary', 'Origin');
@@ -195,7 +199,7 @@ export function startUploadServer(): Server {
     process.exit(1);
   });
   server.listen(config.uploadPort, '127.0.0.1', () => {
-    console.log(`[upload] listening on http://127.0.0.1:${config.uploadPort} (CORS: ${config.uploadAllowedOrigin})`);
+    console.log(`[upload] listening on http://127.0.0.1:${config.uploadPort} (CORS: ${config.uploadAllowedOrigins.join(', ')})`);
   });
   return server;
 }

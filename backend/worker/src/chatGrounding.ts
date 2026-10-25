@@ -35,7 +35,7 @@ export function buildChatGrounding(conn: DbConnection, runId: bigint): string {
     }),
     'Sharing graph: undirected connections between resident memberIds; a connection does not prove a share happened.',
     edges.length ? JSON.stringify(edges) : 'No sharing connections recorded.',
-    'Actual canonical simulation events (synthetic, not real-world observations):',
+    'Recorded events from the canonical simulation:',
     ...(rounds.length ? rounds.map(({ round, exposed, acted, shares, ignored }) => JSON.stringify({ round, exposed, acted, shares, ignored }))
       : ['Round events are unavailable. Do not infer individual actions from probabilities.']),
     'An ignored resident was exposed but made no recorded action; absence from an exposure event does not prove dislike.',

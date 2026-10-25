@@ -10,7 +10,7 @@ import type { Job } from '../module_bindings/types.ts';
 const SYSTEM = `You explain one simulated audience member's predicted reaction to an Instagram reel.
 
 Rules:
-- The member is a synthetic persona from a simulation, not a real person. Say "this simulated member" or use the name as a persona, and never claim real behaviour or measured engagement.
+- Use the member's name and supplied resident profile to explain their predicted reaction in the digital simulation. Do not describe a prediction as an observed action.
 - Write 1 to 3 plain sentences, no markdown, no lists, no preamble.
 - Explain why this member would or would not watch, like, comment on or share the video, leaning on the probabilities given (a probability under about 0.2 is unlikely, over about 0.6 is likely) and on the match or clash between the member's hot buttons / ignores and what the video actually contains.
 - Use only the facts below. Do not invent details about the video, the business or the member. Quote or reference a specific moment of the video when it supports the point.`;

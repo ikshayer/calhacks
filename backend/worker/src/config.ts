@@ -44,5 +44,9 @@ export const config = {
   uploadsDir: process.env.UPLOADS_DIR || fileURLToPath(new URL('../uploads/', import.meta.url)),
   /** Local HTTP server that receives video uploads from the browser. */
   uploadPort: Number(process.env.UPLOAD_PORT ?? 8787),
-  uploadAllowedOrigin: process.env.UPLOAD_ALLOWED_ORIGIN ?? 'http://localhost:5173',
+  /** Browser origins allowed to upload, comma-separated. Both local dev ports by default. */
+  uploadAllowedOrigins: (process.env.UPLOAD_ALLOWED_ORIGIN ?? 'http://localhost:5173,http://localhost:5174')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
 };
