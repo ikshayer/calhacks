@@ -1,126 +1,114 @@
-import { useRef, useState } from 'react'
+﻿import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { useAppStore, selectActiveRun } from '@/store/useAppStore'
-import type { ChatTurn } from '@/data/types'
-import { Button, EmptyState, Input, Section } from '@/components/ui'
+import { getChatSession, MAX_CHAT_LENGTH } from '@/store/chatSessions'
+import { chatSubject } from '@/data/chatSubject'
+import { useAuth } from '@/auth/AuthProvider'
+import { EmptyState, Section } from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 const SUGGESTIONS = [
-  'Why would students share this?',
-  'What is holding back the share count?',
-  'Which group responded worst, and why?',
+  'Summarize the report and the simulation results.',
+  'How do the residents’ personalities influence their reactions?',
+  'What held back sharing, and what could I improve?',
+  'How does the simulation work, and what are its limits?',
 ]
 
-/**
- * Follow-up questions about the run.
- *
- * Grounded in this run only: the profile, the analysed video and the outcome.
- * It will not answer about anything it cannot see, which is the difference
- * between a useful assistant and a chatbot bolted onto a dashboard.
- */
-export function ChatPanel() {
+const IDEA_SUGGESTIONS = [
+  'Summarize this idea report and its results.',
+  'How do the residents’ personalities influence their interest?',
+  'Which campaign option fits the budget, and why?',
+]
+
+export function ChatPanel({ memberName }: { memberName?: string }) {
   const run = useAppStore(selectActiveRun)
+  const idea = useAppStore((state) => state.idea)
+  const subject = chatSubject(idea, run)
   const source = useAppStore((state) => state.source)
-  const [history, setHistory] = useState<ChatTurn[]>([])
-  const [draft, setDraft] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const profileId = useAppStore((state) => state.profile?.id ?? '')
+  const { session: user } = useAuth()
+  const session = getChatSession(source, user?.userId ?? '', profileId, subject ?? { kind: 'run', id: '' })
+  const { history, draft, busy, error } = useSyncExternalStore(session.subscribe, session.getSnapshot)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const ready = subject?.ready ?? false
 
-  const ask = async (question: string) => {
-    const message = question.trim()
-    if (!message || !run || busy) return
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+  }, [history, busy, error, session])
 
-    setDraft('')
-    setError(null)
-    setBusy(true)
-    const asked: ChatTurn[] = [...history, { role: 'user', content: message }]
-    setHistory(asked)
-
-    try {
-      const reply = await source.chat(run.id, history, message)
-      setHistory([...asked, { role: 'assistant', content: reply }])
-    } catch (cause: unknown) {
-      setError(
-        cause instanceof Error ? cause.message : 'That question could not be answered. Try again.',
-      )
-    } finally {
-      setBusy(false)
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-      })
-    }
+  const ask = (question: string) => {
+    if (ready && subject) void session.ask(source, subject, question)
   }
 
-  if (!run) {
+  if (!ready) {
     return (
-      <Section title="Ask about this run">
-        <EmptyState title="Nothing to ask about yet">
-          Run a simulation first — answers are grounded in a specific run, not general advice.
+      <Section title="AI assistant">
+        <EmptyState title={!subject ? 'Start with a report' : subject.failed ? 'This simulation failed' : 'Simulation in progress'}>
+          {!subject ? 'Test an idea or complete a video simulation to ask about its report, residents and results. An idea report needs no video.'
+            : subject.failed ? 'Try the simulation again to give the assistant a complete result.'
+              : `The assistant will be ready once the ${subject.kind === 'idea' ? 'idea report' : 'simulation'} finishes.`}
         </EmptyState>
       </Section>
     )
   }
 
   return (
-    <div className="flex min-h-0 flex-col">
-      <div ref={scrollRef} className="scroll-slim flex-1 space-y-3 px-4 py-4">
+    <section aria-label="AI assistant" className="flex min-h-0 flex-1 flex-col">
+      <header className="shrink-0 border-b border-ui-border px-4 py-3">
+        <h2 className="display text-[15px] text-ui-text">AI assistant</h2>
+        <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-ui-muted" title={subject?.label}>
+          {subject?.kind === 'idea' ? 'Idea report' : 'Video simulation'}: {subject?.label}
+        </p>
+        <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
+          Ask about the report, results, or residents and their personalities.
+        </p>
+        <p className="mt-1 text-[11px] text-ui-faint">
+          {source.kind === 'mock' ? 'Demo replies · scripted, not live AI' : 'AI replies · grounded in this simulation'}
+          {' · Simulation results'}
+        </p>
+      </header>
+
+      <div ref={scrollRef} role="log" aria-label="Conversation" aria-live="polite" aria-busy={busy}
+        className="scroll-slim min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        {memberName && (
+          <Button variant="outline" type="button" disabled={busy} onClick={() => ask(`How do ${memberName}'s personality and preferences relate to their predicted ${subject?.kind === 'idea' ? 'interest in this idea' : 'reactions and actual actions in this run'}?`)}
+            className="h-auto w-full justify-start whitespace-normal text-left text-[12px]">
+            Ask about {memberName}
+          </Button>
+        )}
         {history.length === 0 && (
-          <div>
-            <p className="text-[12.5px] leading-relaxed text-muted">
-              Ask about the result and the answer is drawn from this run: the audience you
-              confirmed, the video as analysed, and what happened in the cascade.
-            </p>
-            <div className="mt-3 space-y-1.5">
-              {SUGGESTIONS.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => void ask(suggestion)}
-                  className="block w-full rounded-md border border-line bg-ink px-3 py-2 text-left text-[12.5px] text-muted transition-colors hover:border-faint hover:text-paper"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
+          <div className="space-y-2">
+            <p className="text-[12.5px] leading-relaxed text-ui-muted">Explore the result or start with a question:</p>
+            {(subject?.kind === 'idea' ? IDEA_SUGGESTIONS : SUGGESTIONS).map((suggestion) => (
+              <Button variant="outline" key={suggestion} type="button" disabled={busy} onClick={() => ask(suggestion)}
+                className="h-auto w-full justify-start whitespace-normal text-left text-[12.5px] font-normal">
+                {suggestion}
+              </Button>
+            ))}
           </div>
         )}
-
         {history.map((turn, index) => (
-          <div
-            key={index}
-            className={
-              turn.role === 'user'
-                ? 'ml-6 rounded-lg rounded-br-sm bg-raised px-3 py-2'
-                : 'mr-2 rounded-lg rounded-bl-sm border border-line bg-ink px-3 py-2.5'
-            }
-          >
-            <p className="text-[12.5px] leading-relaxed text-paper">{turn.content}</p>
+          <div key={index} className={turn.role === 'user'
+            ? 'ml-6 rounded-lg rounded-br-sm bg-ui-raised px-3 py-2'
+            : 'mr-2 rounded-lg rounded-bl-sm border border-ui-border bg-ui-well px-3 py-2.5'}>
+            <p className="mb-1 text-[10px] font-medium text-ui-faint">{turn.role === 'user' ? 'You' : 'Assistant'}</p>
+            <p className="whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-ui-text">{turn.content}</p>
           </div>
         ))}
-
-        {busy && <p className="text-[12px] text-faint">Looking at the run…</p>}
-        {error && (
-          <p role="alert" className="text-[12.5px] text-bloom">
-            {error}
-          </p>
-        )}
+        {busy && <p role="status" className="text-[12px] text-ui-faint">Reading the simulation…</p>}
+        {error && <p role="alert" className="break-words text-[12.5px] text-ui-danger">{error}</p>}
       </div>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          void ask(draft)
-        }}
-        className="flex shrink-0 items-center gap-2 border-t border-line px-4 py-3"
-      >
-        <Input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Ask about this run"
-          aria-label="Ask about this run"
-        />
-        <Button type="submit" disabled={!draft.trim() || busy}>
-          Ask
-        </Button>
+      <form onSubmit={(event) => { event.preventDefault(); ask(draft) }}
+        className="shrink-0 space-y-2 border-t border-ui-border bg-ui-panel px-4 py-3">
+        <Textarea value={draft} onChange={(event) => session.setDraft(event.target.value)}
+          rows={2} maxLength={MAX_CHAT_LENGTH} disabled={busy}
+          placeholder="Ask about the report or a resident…" aria-label="Question for the AI assistant" />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] text-ui-faint">{draft.length} / {MAX_CHAT_LENGTH}</span>
+          <Button type="submit" disabled={!draft.trim() || draft.trim().length > MAX_CHAT_LENGTH || busy}>Send</Button>
+        </div>
       </form>
-    </div>
+    </section>
   )
 }

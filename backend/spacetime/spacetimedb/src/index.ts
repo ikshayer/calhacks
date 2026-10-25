@@ -354,6 +354,9 @@ export const failJob = spacetimedb.reducer({ jobId: t.u64(), error: t.string() }
   } else if (row.kind === 'chat_reply') {
     const m = ctx.db.chatMessage.id.find(BigInt(row.targetId));
     if (m && m.status === 'pending') ctx.db.chatMessage.id.update({ ...m, status: 'failed', content: error });
+  } else if (row.kind === 'idea_chat_reply') {
+    const m = ctx.db.ideaChatMessage.id.find(BigInt(row.targetId));
+    if (m && m.status === 'pending') ctx.db.ideaChatMessage.id.update({ ...m, status: 'failed', content: error });
   } else if (row.kind === 'explain_comparison') {
     const c = ctx.db.comparison.id.find(BigInt(row.targetId));
     if (c) ctx.db.comparison.id.update({ ...c, status: 'failed', error, updatedAt: ctx.timestamp });  } else if (row.kind === 'test_idea') {
@@ -665,6 +668,7 @@ export const testIdea = spacetimedb.reducer(
       createdAt: ctx.timestamp,
       updatedAt: ctx.timestamp,
       plainJson: '',
+      audienceVersion: profile.audienceVersion,
     });
     enqueue(ctx, 'test_idea', row.id.toString());
   }
@@ -689,6 +693,31 @@ export const setIdeaResult = spacetimedb.reducer(
     ctx.db.ideaTest.id.update({ ...row, ...fields, status: 'ready', error: undefined, updatedAt: ctx.timestamp });
   }
 );
+
+/** Follow-up questions about an idea report, with no video prerequisite. */
+export const sendIdeaChatMessage = spacetimedb.reducer({ ideaId: t.u64(), content: t.string() }, (ctx, { ideaId, content }) => {
+  const idea = ctx.db.ideaTest.id.find(ideaId);
+  if (!idea) throw new SenderError('unknown idea test');
+  requireOwner(ctx, idea.owner);
+  if (idea.status !== 'ready') throw new SenderError(`idea test is ${idea.status}, not ready`);
+  const text = content.trim();
+  if (!text) throw new SenderError('empty message');
+  if (text.length > 2000) throw new SenderError('message is longer than 2000 characters');
+  const history = [...ctx.db.ideaChatMessage.ideaId.filter(ideaId)];
+  if (history.some((message) => message.status === 'pending')) throw new SenderError('wait for the previous reply');
+  const sequence = history.reduce((max, message) => Math.max(max, message.sequence), 0);
+  ctx.db.ideaChatMessage.insert({ id: 0n, ideaId, owner: ctx.sender, sequence: sequence + 1, role: 'user', content: text, status: 'done', createdAt: ctx.timestamp });
+  const reply = ctx.db.ideaChatMessage.insert({ id: 0n, ideaId, owner: ctx.sender, sequence: sequence + 2, role: 'assistant', content: '', status: 'pending', createdAt: ctx.timestamp });
+  enqueue(ctx, 'idea_chat_reply', reply.id.toString());
+});
+
+export const setIdeaChatReply = spacetimedb.reducer({ messageId: t.u64(), content: t.string() }, (ctx, { messageId, content }) => {
+  requireWorker(ctx);
+  const message = ctx.db.ideaChatMessage.id.find(messageId);
+  if (!message) throw new SenderError('unknown idea chat message');
+  if (message.role !== 'assistant' || message.status !== 'pending') throw new SenderError('message is not a pending reply');
+  ctx.db.ideaChatMessage.id.update({ ...message, content, status: 'done' });
+});
 
 /** Ask for one resident's reason for their idea verdict; the worker writes it into idea_test.residents. Cached once written. */
 export const requestIdeaReason = spacetimedb.reducer({ ideaId: t.u64(), memberId: t.u32() }, (ctx, { ideaId, memberId }) => {

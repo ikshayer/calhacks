@@ -19,7 +19,7 @@ import type {
   VideoAnalysis,
   VideoInput,
 } from '@/data/types'
-import { buildMillbrookAudience, fetchMillbrookWorld } from '@/data/millbrook'
+import { buildMillbrookAudience, fetchMillbrookWorld, TOWN_SIZE } from '@/data/millbrook'
 import { predictionProfile } from '@/data/predictionProfile'
 import { simulationProfile } from '@/data/simulationProfile'
 import type { MillbrookWorld } from '@/data/millbrookTypes'
@@ -41,6 +41,7 @@ import type {
 export const DEMO_VIDEOS = [
   { file: 'original.mp4', label: 'Original', durationSec: 18 },
   { file: 'revised.mp4', label: 'Revision', durationSec: 18 },
+  { file: 'reworked.mp4', label: 'Reworked', durationSec: 20 },
 ] as const
 
 /** The worker's local upload endpoint, used when the store passes no VITE_UPLOAD_URL. */
@@ -57,6 +58,7 @@ const TABLES = [
   'decision',
   'report',
   'chat_message',
+  'idea_chat_message',
   'job',
   'comparison',
   'idea_test',
@@ -107,7 +109,7 @@ export class SpacetimeDataSource implements SimDataSource {
     })
     // With audience groups switched off, the simulation sees one neutral group (simulationProfile).
     const simulated = simulationProfile(structuredClone(profile))
-    const audience = buildMillbrookAudience(await this.world, simulated)
+    const audience = buildMillbrookAudience(await this.world, simulated, TOWN_SIZE.total)
     if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     const profileId = `${profile.id}-${this.identityHex.slice(0, 16)}`
     const isNew = !conn.db.companyProfile.id.find(profileId)
@@ -178,7 +180,12 @@ export class SpacetimeDataSource implements SimDataSource {
     const row = await this.waitFor(WAIT.analysis, 'the video analysis', () => {
       const v = [...conn.db.video.iter()].find((row) => row.clientKey === clientKey)
       if (!v || (v.status !== 'ready' && v.status !== 'failed')) return undefined
-      if (v.status === 'failed') throw new Error(`Video analysis failed: ${v.error ?? 'unknown error'}`)
+      if (v.status === 'failed') {
+        if (sourceUrl.startsWith('upload:') && /Video file is not readable at\b/i.test(v.error ?? '')) {
+          throw new Error('The uploaded video was unavailable to the worker that picked it up. Restart connected workers with the latest code, then re-upload the original video.')
+        }
+        throw new Error(`Video analysis failed: ${v.error ?? 'unknown error'}`)
+      }
       return v
     })
     return toVideo(row, this.uploadUrl)
@@ -278,12 +285,21 @@ export class SpacetimeDataSource implements SimDataSource {
     return row ? toRunSummary(row) : undefined
   }
 
-  async getReport(runId: RunId): Promise<Report> {
+  async getReport(runId: RunId, retryFailed = false): Promise<Report> {
     const conn = await this.connect()
     const id = BigInt(runId)
+    let previousFailure: ReportRow | undefined
+    if (retryFailed) {
+      const report = conn.db.report.runId.find(id)
+      if (!report || report.status === 'failed') {
+        previousFailure = report ?? undefined
+        await conn.reducers.requestReport({ runId: id })
+      }
+    }
     const row = await this.waitFor(WAIT.report, 'the report', () => {
       const r = conn.db.report.runId.find(id)
       if (!r || r.status === 'writing') return undefined
+      if (previousFailure && r.status === 'failed' && r.updatedAt.microsSinceUnixEpoch === previousFailure.updatedAt.microsSinceUnixEpoch) return undefined
       if (r.status === 'failed') throw new Error(`The report could not be written: ${r.error ?? 'unknown error'}`)
       return r
     })
@@ -301,6 +317,20 @@ export class SpacetimeDataSource implements SimDataSource {
       if (!m || m.status === 'pending') return undefined
       if (m.status === 'failed') throw new Error(`The assistant could not answer: ${m.content}`)
       return m
+    })
+    return reply.content
+  }
+
+  async chatIdea(ideaId: string, _history: ChatTurn[], message: string): Promise<string> {
+    const conn = await this.connect()
+    const id = BigInt(ideaId)
+    const before = [...conn.db.ideaChatMessage.iter()].reduce((max, row) => row.ideaId === id ? Math.max(max, row.sequence) : max, 0)
+    await conn.reducers.sendIdeaChatMessage({ ideaId: id, content: message })
+    const reply = await this.waitFor(WAIT.reply, 'an idea-report reply', () => {
+      const row = [...conn.db.ideaChatMessage.iter()].find((candidate) => candidate.ideaId === id && candidate.sequence === before + 2 && candidate.role === 'assistant')
+      if (!row || row.status === 'pending') return undefined
+      if (row.status === 'failed') throw new Error(`The assistant could not answer: ${row.content}`)
+      return row
     })
     return reply.content
   }
@@ -411,14 +441,41 @@ export class SpacetimeDataSource implements SimDataSource {
   }
 
   private connect(): Promise<DbConnection> {
-    this.connection ??= new Promise<DbConnection>((resolve, reject) => {
-      const tokenKey = `spacetime-token:${this.database}`
-      DbConnection.builder()
+    if (this.connection) return this.connection
+
+    let resolveConnection!: (connection: DbConnection) => void
+    let rejectConnection!: (error: Error) => void
+    const pending = new Promise<DbConnection>((resolve, reject) => {
+      resolveConnection = resolve
+      rejectConnection = reject
+    })
+    // Cache before starting the SDK: even a synchronous builder error must be
+    // able to clear this exact attempt so the next action can retry.
+    this.connection = pending
+    let connection: DbConnection | undefined
+    let failed = false
+    const fail = (error: Error, conn = connection) => {
+      if (failed) return
+      failed = true
+      if (this.connection === pending) this.connection = undefined
+      rejectConnection(error)
+      // A rejected subscription is terminal for this attempt. Explicitly stop
+      // automatic reconnect rather than retaining a socket with an empty cache.
+      conn?.disconnect()
+    }
+
+    const tokenKey = `spacetime-token:${this.database}`
+    try {
+      connection = DbConnection.builder()
         .withUri(this.host)
         .withDatabaseName(this.database)
         .withToken(readStorage(tokenKey))
         .withAutomaticReconnect()
         .onConnect((conn, identity, token) => {
+          if (failed || this.connection !== pending) {
+            conn.disconnect()
+            return
+          }
           writeStorage(tokenKey, token)
           this.identityHex = identity.toHexString()
           const notify = () => {
@@ -437,6 +494,8 @@ export class SpacetimeDataSource implements SimDataSource {
           conn.db.report.onUpdate(notify)
           conn.db.chatMessage.onInsert(notify)
           conn.db.chatMessage.onUpdate(notify)
+          conn.db.ideaChatMessage.onInsert(notify)
+          conn.db.ideaChatMessage.onUpdate(notify)
           conn.db.job.onInsert(notify)
           conn.db.job.onUpdate(notify)
           conn.db.comparison.onInsert(notify)
@@ -445,17 +504,22 @@ export class SpacetimeDataSource implements SimDataSource {
           conn.db.ideaTest.onUpdate(notify)
           conn
             .subscriptionBuilder()
-            .onApplied(() => resolve(conn))
-            .onError(() => reject(new Error(`Could not subscribe to SpacetimeDB database ${this.database}.`)))
+            .onApplied(() => {
+              if (!failed && this.connection === pending) resolveConnection(conn)
+            })
+            .onError((ctx) => fail(subscriptionError(this.database, ctx.event), conn))
             .subscribe(TABLES.map((t) => `SELECT * FROM ${t}`))
         })
         .onConnectError((_ctx, error) => {
-          this.connection = undefined
-          reject(new Error(`Could not connect to SpacetimeDB at ${this.host}: ${error.message}`))
+          fail(new Error(`Could not connect to SpacetimeDB at ${this.host}: ${error.message}`, { cause: error }))
         })
         .build()
-    })
-    return this.connection
+      // A builder may report an error before returning its connection handle.
+      if (failed) connection.disconnect()
+    } catch (cause: unknown) {
+      fail(new Error(`Could not initialize SpacetimeDB at ${this.host}: ${errorText(cause, 'unknown error')}`, { cause }))
+    }
+    return pending
   }
 
   /**
@@ -609,6 +673,16 @@ function toReport(r: ReportRow): Report {
 
 function errorText(cause: unknown, fallback: string): string {
   return cause instanceof Error ? cause.message : fallback
+}
+
+function subscriptionError(database: string, cause: unknown): Error {
+  const detail = cause instanceof Error ? cause.message
+    : typeof cause === 'string' && cause ? cause : 'The server did not provide an error reason.'
+  const missingSchema = /no such table|unknown table|table[^\n]*(?:not found|does not exist)|schema[^\n]*mismatch/i.test(detail)
+  const action = missingSchema
+    ? ' The deployed database schema does not match this app. Publish the updated SpacetimeDB module to this database, then restart the worker and reload the page.'
+    : ''
+  return new Error(`Could not subscribe to SpacetimeDB database ${database}: ${detail}${action}`, { cause })
 }
 
 /** Per-browser token storage. Private windows can throw; the connection then just gets a fresh identity. */

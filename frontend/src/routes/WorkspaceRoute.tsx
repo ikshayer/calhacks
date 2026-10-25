@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   AUDIENCE_SIZE,
-  closeAllRunSubscriptions,
   selectActiveRun,
   useAppStore,
 } from '@/store/useAppStore'
@@ -13,7 +12,6 @@ import { useCascadePlayback } from '@/island/useCascadePlayback'
 import { hashSeed } from '@/lib/rng'
 import { verdictOf, type IdeaVerdict } from '@/data/ideaVerdict'
 import { Sidebar } from '@/sidebar/Sidebar'
-import { PlaybackBar } from '@/sidebar/PlaybackBar'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 /**
@@ -50,7 +48,6 @@ export function WorkspaceRoute() {
     return grouped
   }, [ideaResult])
 
-  const [shadows, setShadows] = useState(true)
   // The town degrades to an empty island rather than failing the whole scene, so
   // the loss has to be stated somewhere the user will actually see it.
   const [townError, setTownError] = useState<string | null>(null)
@@ -58,8 +55,6 @@ export function WorkspaceRoute() {
   useEffect(() => {
     void loadAudience()
   }, [loadAudience, profile])
-
-  useEffect(() => closeAllRunSubscriptions, [])
 
   // The island is generated once and never regenerated: its shape is the set
   // the town is built on, and moving the coastline mid-session would relocate
@@ -78,12 +73,11 @@ export function WorkspaceRoute() {
       island,
       homesByGroup,
       hashSeed(`town-${audience.version}`),
-      import.meta.env.DEV && new URLSearchParams(location.search).get('residents') === 'kenney'
-        ? undefined : { min: 0.50, max: 0.75 },
+      { min: 0.50, max: 0.75 },
     )
   }, [audience, island, homesByGroup])
 
-  const currentRun = run?.options.audienceKey === audience?.key ? run : undefined
+  const currentRun = !idea && run?.status === 'complete' && run.report && !run.error && run.options.audienceKey === audience?.key ? run : undefined
   useCascadePlayback(sim, currentRun?.rounds ?? [], currentRun?.id ?? null)
 
   // The island indexes villagers densely; the rest of the app speaks member ids.
@@ -147,7 +141,7 @@ export function WorkspaceRoute() {
               highlightGroupId={highlightedGroupId}
               highlightColor={highlightColor}
               verdicts={verdicts}
-              shadows={shadows}
+              shadows={true}
               paused={false}
               onTownError={(error) =>
                 setTownError(error instanceof Error ? error.message : String(error))
@@ -170,14 +164,9 @@ export function WorkspaceRoute() {
           </div>
         )}
 
-        {sim && currentRun && !idea && <PlaybackBar run={currentRun} />}
       </main>
 
-      <Sidebar
-        shadows={shadows}
-        onShadowsChange={setShadows}
-        playing={playing}
-      />
+      <Sidebar playing={playing} />
     </div>
   )
 }

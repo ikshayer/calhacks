@@ -37,7 +37,7 @@ if (!apiKey) throw new Error('Missing JEV_API_KEY in .env');
 const groups = suggestedGroups();
 const profile: CompanyProfile = { ...emptyProfile(), id: 'calibration', name: 'calibration', groups };
 // The same 50 Millbrook residents the app simulates, with the same profile JEV sees in a live run.
-const world: unknown = JSON.parse(readFileSync(new URL('../../../frontend/public/millbrook-50/data/personas.json', import.meta.url), 'utf8'));
+const world: unknown = JSON.parse(readFileSync(new URL('../../../frontend/public/millbrook-50/millbrook.json', import.meta.url), 'utf8'));
 validateMillbrookWorld(world);
 const audience = buildMillbrookAudience(world, profile);
 const profiles = audience.members.map((m) => {

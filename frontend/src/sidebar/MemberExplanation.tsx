@@ -35,7 +35,7 @@ export function MemberExplanation({ decision }: { decision: Decision }) {
   const current = fetched?.memberId === decision.memberId ? fetched : null
   const text = decision.explanation || current?.text || ''
   const error = current?.error
-  if (error) return <p className="text-[12px] leading-relaxed text-bloom">{error}</p>
-  if (!text) return <p className="text-[12.5px] leading-relaxed text-faint">Writing an explanation…</p>
-  return <p className="text-[12.5px] leading-relaxed text-muted">{text}</p>
+  if (error) return <p className="text-[12px] leading-relaxed text-ui-danger">{error}</p>
+  if (!text) return <p className="text-[12.5px] leading-relaxed text-ui-faint">Writing an explanation…</p>
+  return <p className="text-[12.5px] leading-relaxed text-ui-muted">{text}</p>
 }

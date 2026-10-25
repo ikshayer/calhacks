@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create, type StoreApi } from 'zustand'
 import { MockDataSource } from '@/data/mock/MockDataSource'
 import { SpacetimeDataSource } from '@/data/spacetime/SpacetimeDataSource'
 import type { SimDataSource } from '@/data/SimDataSource'
@@ -7,7 +7,6 @@ import type {
   Campaign,
   CampaignId,
   CompanyProfile,
-  ContentSignals,
   Decision,
   IdeaTestInput,
   IdeaTestResult,
@@ -22,20 +21,21 @@ import type {
 } from '@/data/types'
 import { capturePoster } from '@/data/videoPoster'
 import { hashSeed } from '@/lib/rng'
-import { MILLBROOK_SIZE } from '@/data/millbrook'
+import { TOWN_SIZE } from '@/data/millbrook'
 
 /**
  * How many audience members exist, and how many get a body on the island.
  *
  * Every supplied Millbrook resident has a body on the island and is simulated.
  */
-export const AUDIENCE_SIZE = MILLBROOK_SIZE
+export const AUDIENCE_SIZE = TOWN_SIZE
 
 export const DEFAULT_RUN_OPTIONS: RunOptions = {
   seed: 1337,
   audienceVersion: 1,
-  // 40% of the 50 Millbrook residents (20) see it first; at 10% only 5 did, too few to separate two cuts.
-  seedExposure: 0.4,
+  // 10% of the 300-person town (30) see it first. With only the 50 residents, 10% was 5 people and
+  // 40% left nobody new to spread to, so the cascade stopped after two rounds.
+  seedExposure: 0.1,
   maxRounds: 6,
 }
 
@@ -71,6 +71,31 @@ export type IdeaViewState = {
   error?: string
 }
 
+/** One side of an A/B test: its own campaign (one video) and the run made from it. */
+export interface AbSide {
+  campaignId: CampaignId
+  runId: RunId
+}
+
+/**
+ * Two videos tested side by side. Both runs share the audience, seed and starting exposure
+ * (startRun derives them from the profile), so any difference comes from the videos.
+ */
+export interface AbPair {
+  /** What the user is trying to achieve, shown beside the results. The simulation does not read it. */
+  goal: string
+  a: AbSide
+  b: AbSide
+  /** The side the island is showing. */
+  active: 'a' | 'b'
+}
+
+export interface AbTestInput {
+  goal: string
+  a: VideoInput
+  b: VideoInput
+}
+
 interface PlaybackState {
   /** How many rounds have been applied: 0 means nothing has happened yet. */
   round: number
@@ -91,6 +116,7 @@ interface AppState {
   campaigns: Record<CampaignId, Campaign>
   /** The campaign the workspace is a view of. New runs are filed under it. */
   activeCampaignId: CampaignId | null
+  videoPreparations: Record<CampaignId, { status: 'preparing' | 'failed'; error?: string }>
 
   runs: Record<RunId, RunState>
   /** The run the island is showing. */
@@ -101,6 +127,9 @@ interface AppState {
   /** The idea test the island is showing, if any. */
   idea: IdeaViewState | null
 
+  /** The A/B test in progress or finished, if any. */
+  ab: AbPair | null
+
   selectedMemberId: number | null
   /** Group whose villagers are ringed on the island, while a sidebar row is pointed at. */
   highlightedGroupId: string | null
@@ -110,11 +139,11 @@ interface AppState {
   loadAudience(): Promise<void>
 
   analyseUpload(input: VideoInput, label: string): Promise<string>
-  reviseSignals(videoId: string, patch: Partial<ContentSignals>): Promise<void>
   setActiveVideo(videoId: string): void
 
-  /** Analyse an upload and create the campaign that owns it. Returns its id. */
+  /** Analyse, simulate once and wait for the complete video result. */
   createCampaign(input: VideoInput, title: string): Promise<CampaignId>
+  prepareVideoResult(campaignId: CampaignId): Promise<RunId>
   /** Make a campaign current and point the workspace at its latest run. */
   openCampaign(id: CampaignId): void
   /** Re-attach a video file to a campaign restored without one. */
@@ -123,12 +152,16 @@ interface AppState {
   /** Replace campaign history with what persistence read back. Boot-time only. */
   restoreCampaigns(campaigns: Campaign[], runs: StoredRun[]): void
 
-  startRun(label: string, overrides?: Partial<RunOptions>): Promise<RunId | null>
+  startRun(label: string, overrides?: Partial<RunOptions>, campaignId?: CampaignId): Promise<RunId | null>
   /** Ask the simulated town about an idea that has no video yet. */
   testIdea(input: IdeaTestInput, onProgress: (stage: string) => void): Promise<IdeaTestResult>
   /** Run an idea test and show it on the island; progress and the result land in `idea`. */
   startIdeaTest(input: IdeaTestInput): Promise<void>
   clearIdeaTest(): void
+  /** Analyses both videos in parallel, then starts one run for each. Resolves once both runs are started. */
+  startAbTest(input: AbTestInput): Promise<void>
+  showAbSide(side: 'a' | 'b'): void
+  clearAb(): void
   setActiveRun(runId: RunId): void
   setCompareRun(runId: RunId | null): void
 
@@ -153,6 +186,63 @@ async function ensureAudience(get: () => AppState): Promise<void> {
 
 /** Live subscriptions, keyed by run. Kept outside the store: not render state. */
 const subscriptions = new Map<RunId, () => void>()
+const videoPreparations = new Map<CampaignId, Promise<RunId>>()
+
+export class VideoResultError extends Error {
+  readonly campaignId: CampaignId
+  constructor(campaignId: CampaignId, cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'The video result could not be prepared.', { cause })
+    this.name = 'VideoResultError'
+    this.campaignId = campaignId
+  }
+}
+
+async function loadRunDetails(runId: RunId, source: SimDataSource, set: StoreApi<AppState>['setState'], retryFailed = false) {
+  try {
+    const [decisions, report] = await Promise.all([source.getDecisions(runId), source.getReport(runId, retryFailed)])
+    set((state) => {
+      const run = state.runs[runId]
+      if (!run || state.source !== source) return state
+      const current = state.activeRunId === runId && state.activeCampaignId === run.campaignId && !state.idea
+      const owner = state.campaigns[run.campaignId]
+      const metrics = run.metrics
+      return {
+        runs: { ...state.runs, [runId]: { ...run, decisions, report, error: undefined } },
+        ...(owner?.runIds.at(-1) === runId && metrics ? { campaigns: { ...state.campaigns, [run.campaignId]: {
+          ...owner, headline: { runId, uniqueExposed: metrics.uniqueExposed, likes: metrics.likes, comments: metrics.comments, shares: metrics.shares, coverage: metrics.coverage },
+        } } } : {}),
+        ...(current ? { playback: { ...state.playback, round: run.rounds.length, playing: false } } : {}),
+      }
+    })
+  } catch (cause: unknown) {
+    set((state) => {
+      const run = state.runs[runId]
+      return run && state.source === source ? { runs: { ...state.runs, [runId]: { ...run, error: cause instanceof Error ? cause.message : 'The report could not be loaded.' } } } : state
+    })
+    throw cause
+  }
+}
+
+/** Independent of route mount/unmount; synchronous cached completion is valid. */
+function waitForRunResult(runId: RunId): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const done = (error?: Error) => {
+      unsubscribe()
+      clearTimeout(timer)
+      if (error) reject(error)
+      else resolve()
+    }
+    const check = () => {
+      const run = useAppStore.getState().runs[runId]
+      if (!run) return done(new Error('This video result was removed.'))
+      if (run.status === 'failed' || run.error) return done(new Error(run.error || 'The simulation failed.'))
+      if (run.status === 'complete' && run.report && run.decisions !== undefined) done()
+    }
+    const unsubscribe = useAppStore.subscribe(check)
+    const timer = setTimeout(() => done(new Error('Preparing results timed out. Check the worker and retry.')), 180_000)
+    check()
+  })
+}
 
 /**
  * `VITE_DATA_SOURCE=spacetime` uses the live backend; anything else, the local
@@ -194,12 +284,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   campaigns: {},
   activeCampaignId: null,
+  videoPreparations: {},
 
   runs: {},
   activeRunId: null,
   compareRunId: null,
 
   idea: null,
+  ab: null,
 
   selectedMemberId: null,
   highlightedGroupId: null,
@@ -231,19 +323,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeVideoId: analysis.id,
     }))
     return analysis.id
-  },
-
-  async reviseSignals(videoId, patch) {
-    // Merge against the current analysis rather than one captured at render
-    // time: dragging a second slider before the first has landed would
-    // otherwise write back the stale value and undo it.
-    const current = get().videos[videoId]
-    if (!current) return
-    const updated = await get().source.reviseSignals(videoId, {
-      ...current.signals,
-      ...patch,
-    })
-    set((state) => ({ videos: { ...state.videos, [updated.id]: updated } }))
   },
 
   async testIdea(input, onProgress) {
@@ -283,8 +362,64 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ activeVideoId: videoId })
   },
 
+  async startAbTest({ goal, a, b }) {
+    // The audience is saved once, before the two analyses race each other to save it.
+    await ensureAudience(get)
+    const [campaignA, campaignB] = await Promise.all([
+      get().createCampaign(a, `Video A · ${a.name}`),
+      get().createCampaign(b, `Video B · ${b.name}`),
+    ])
+    // startRun files the run under the active campaign, so each side is opened in turn.
+    get().openCampaign(campaignA)
+    const runA = await get().startRun('Video A')
+    get().openCampaign(campaignB)
+    const runB = await get().startRun('Video B')
+    if (!runA || !runB) throw new Error('The A/B test could not start both runs.')
+
+    set({
+      ab: {
+        goal: goal.trim(),
+        a: { campaignId: campaignA, runId: runA },
+        b: { campaignId: campaignB, runId: runB },
+        active: 'a',
+      },
+    })
+    get().showAbSide('a')
+  },
+
+  showAbSide(side) {
+    const { ab, campaigns } = get()
+    if (!ab) return
+    const mine = ab[side]
+    const other = ab[side === 'a' ? 'b' : 'a']
+    const campaign = campaigns[mine.campaignId]
+    if (!campaign) {
+      console.warn(`showAbSide: campaign ${mine.campaignId} no longer exists`)
+      return
+    }
+    set((state) => {
+      const rounds = state.runs[mine.runId]?.rounds.length ?? 0
+      return {
+        ab: { ...ab, active: side },
+        activeCampaignId: mine.campaignId,
+        activeVideoId: campaign.videoId,
+        activeRunId: mine.runId,
+        compareRunId: other.runId,
+        idea: null,
+        selectedMemberId: null,
+        // Replay a run still arriving; jump to the end of one already received.
+        playback: { ...state.playback, round: rounds, playing: rounds === 0 },
+      }
+    })
+  },
+
+  clearAb() {
+    set({ ab: null })
+  },
+
   async createCampaign(input, title) {
     const { source, profile } = get()
+    const view = { campaignId: get().activeCampaignId, idea: get().idea }
     if (!profile) throw new Error('createCampaign: no company profile is loaded')
 
     // The id is minted before analysis so the analysis can carry it. Going
@@ -305,23 +440,70 @@ export const useAppStore = create<AppState>((set, get) => ({
       videoName: analysis.name,
       durationSec: analysis.durationSec,
       posterDataUrl,
-      videoAvailable: input.file !== undefined,
+      videoAvailable: input.file !== undefined || Boolean(analysis.objectUrl),
       signals: analysis.signals,
       summary: analysis.summary,
       runIds: [],
     }
 
+    if (get().source !== source || get().profile !== profile) throw new Error('The profile changed while preparing this video.')
     set((state) => ({
       campaigns: { ...state.campaigns, [id]: campaign },
       videos: { ...state.videos, [analysis.id]: analysis },
-      activeCampaignId: id,
-      activeVideoId: analysis.id,
-      activeRunId: null,
-      compareRunId: null,
-      selectedMemberId: null,
-      playback: { ...state.playback, round: 0, playing: true },
+      ...(state.activeCampaignId === view.campaignId && state.idea === view.idea ? {
+        activeCampaignId: id, activeVideoId: analysis.id, activeRunId: null,
+        compareRunId: null, selectedMemberId: null, idea: null,
+        playback: { ...state.playback, round: 0, playing: false },
+      } : {}),
     }))
+    try { await get().prepareVideoResult(id) }
+    catch (cause: unknown) { throw new VideoResultError(id, cause) }
     return id
+  },
+
+  prepareVideoResult(campaignId) {
+    const existing = videoPreparations.get(campaignId)
+    if (existing) return existing
+    const source = get().source
+    const profile = get().profile
+    const pending = Promise.resolve().then(async () => {
+      const campaign = get().campaigns[campaignId]
+      if (!campaign) throw new Error('This campaign is no longer available.')
+      const last = [...campaign.runIds].reverse().map((id) => get().runs[id]).find(Boolean)
+      if (last?.status === 'complete' && last.report && last.metrics && !last.error) return last.id
+      if (last?.status === 'complete') {
+        set((state) => ({ runs: { ...state.runs, [last.id]: { ...state.runs[last.id], error: undefined } } }))
+        await loadRunDetails(last.id, source, set, true)
+        return last.id
+      }
+      if (last && last.status !== 'failed') {
+        await waitForRunResult(last.id)
+        return last.id
+      }
+      if (!campaign.videoAvailable) throw new Error('Re-attach the video to prepare its result.')
+      await ensureAudience(get)
+      if (get().source !== source || get().profile !== profile) throw new Error('The profile changed while preparing this video.')
+      const runId = await get().startRun(last?.label ?? 'Original', undefined, campaignId)
+      if (!runId) throw new Error('The video result could not be started.')
+      await waitForRunResult(runId)
+      return runId
+    }).then((runId) => {
+      set((state) => {
+        const next = { ...state.videoPreparations }; delete next[campaignId]
+        return { videoPreparations: next }
+      })
+      return runId
+    }).catch((cause: unknown) => {
+      set((state) => state.campaigns[campaignId] ? { videoPreparations: {
+        ...state.videoPreparations, [campaignId]: { status: 'failed', error: cause instanceof Error ? cause.message : 'The video result could not be prepared.' },
+      } } : state)
+      throw cause
+    }).finally(() => {
+      if (videoPreparations.get(campaignId) === pending) videoPreparations.delete(campaignId)
+    })
+    videoPreparations.set(campaignId, pending)
+    set((state) => ({ videoPreparations: { ...state.videoPreparations, [campaignId]: { status: 'preparing' } } }))
+    return pending
   },
 
   openCampaign(id) {
@@ -340,6 +522,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeVideoId: campaign.videoId,
         activeRunId,
         compareRunId: null,
+        idea: null,
         selectedMemberId: null,
         // Jump to the end of a finished run, as `setActiveRun` does, so opening
         // a campaign from history does not replay its cascade.
@@ -350,6 +533,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       }
     })
+    const latest = [...campaign.runIds].reverse().map((runId) => get().runs[runId]).find(Boolean)
+    if ((!latest && campaign.videoAvailable) || (latest?.status === 'complete' && !latest.report && !latest.error)) {
+      void get().prepareVideoResult(id).catch((cause: unknown) => console.error('Could not prepare saved video result', cause))
+    }
   },
 
   async attachVideo(id, input) {
@@ -359,9 +546,30 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { file } = input
     if (!file) throw new Error('attachVideo: a video file is required')
 
+    const complete = campaign.runIds.some((runId) => {
+      const run = get().runs[runId]
+      return run?.status === 'complete' && run.metrics && run.report
+    })
+    if (complete) {
+      // Reattaching the original file only restores playback. The saved result
+      // still refers to its original video and never starts another paid run.
+      const posterDataUrl = campaign.posterDataUrl || await capturePoster(file)
+      const objectUrl = URL.createObjectURL(file)
+      set((state) => {
+        const current = state.campaigns[id]
+        const video = current && state.videos[current.videoId]
+        if (!current || !video) { URL.revokeObjectURL(objectUrl); return state }
+        return {
+          campaigns: { ...state.campaigns, [id]: { ...current, videoAvailable: true, posterDataUrl } },
+          videos: { ...state.videos, [current.videoId]: { ...video, objectUrl } },
+        }
+      })
+      return
+    }
+
     // The source has forgotten the old video along with the page, so it is
-    // analysed afresh and the stored signals are written back over the result:
-    // the user's corrections to the signals must survive re-attaching the file.
+    // analysed afresh and the stored signals are written back over the result
+    // so reattachment preserves the campaign's original simulation inputs.
     const [analysed, posterDataUrl] = await Promise.all([
       ensureAudience(get).then(() => source.analyseVideo(id, input, 'Original')),
       campaign.posterDataUrl ? Promise.resolve(campaign.posterDataUrl) : capturePoster(file),
@@ -391,6 +599,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeVideoId: state.activeCampaignId === id ? analysis.id : state.activeVideoId,
       }
     })
+    await get().prepareVideoResult(id)
   },
 
   deleteCampaign(id) {
@@ -460,12 +669,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
   },
 
-  async startRun(label, overrides) {
-    const { source, profile, audience, activeVideoId, activeCampaignId } = get()
+  async startRun(label, overrides, forCampaignId) {
+    const { source, profile, audience, activeCampaignId, idea } = get()
+    const campaignId = forCampaignId ?? activeCampaignId
+    const activeVideoId = campaignId ? get().campaigns[campaignId]?.videoId : undefined
     // Every run belongs to a campaign: the workspace is unreachable without
     // one, so a missing id here is a routing bug rather than a state to render.
-    if (!profile || !audience || !activeVideoId || !activeCampaignId) return null
-    const campaignId: CampaignId = activeCampaignId
+    if (!profile || !audience || !activeVideoId || !campaignId) return null
 
     const options: RunOptions = {
       ...DEFAULT_RUN_OPTIONS,
@@ -482,6 +692,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set((state) => {
       const owner = state.campaigns[campaignId]
+      if (!owner || state.source !== source || state.profile !== profile) return state
+      const current = state.activeCampaignId === campaignId && state.activeVideoId === activeVideoId && !idea && !state.idea
       return {
         campaigns: owner
           ? {
@@ -501,10 +713,10 @@ export const useAppStore = create<AppState>((set, get) => ({
             rounds: [],
           },
         },
-        activeRunId: runId,
-        idea: null,
-        selectedMemberId: null,
-        playback: { ...state.playback, round: 0, playing: true },
+        ...(current ? {
+          activeRunId: runId, idea: null, selectedMemberId: null,
+          playback: { ...state.playback, round: 0, playing: false },
+        } : {}),
       }
     })
 
@@ -517,10 +729,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       })
 
+    if (!get().runs[runId]) throw new Error('The campaign changed before its result could be prepared.')
+    let terminal = false
+    const stop = () => {
+      terminal = true
+      subscriptions.get(runId)?.()
+      subscriptions.delete(runId)
+    }
     subscriptions.get(runId)?.()
-    subscriptions.set(
-      runId,
-      source.subscribeRun(runId, (event) => {
+    const unsubscribe = source.subscribeRun(runId, (event) => {
+        if (terminal) return
         switch (event.type) {
           case 'status':
             patch({ status: event.status, note: event.note })
@@ -538,46 +756,19 @@ export const useAppStore = create<AppState>((set, get) => ({
             })
             break
           case 'complete':
+            stop()
             patch({ status: 'complete', metrics: event.metrics })
-            set((state) => {
-              const owner = state.campaigns[campaignId]
-              if (!owner) return state
-              const { metrics } = event
-              return {
-                campaigns: {
-                  ...state.campaigns,
-                  [campaignId]: {
-                    ...owner,
-                    headline: {
-                      runId,
-                      uniqueExposed: metrics.uniqueExposed,
-                      likes: metrics.likes,
-                      comments: metrics.comments,
-                      shares: metrics.shares,
-                      coverage: metrics.coverage,
-                    },
-                  },
-                },
-              }
-            })
-            void Promise.all([source.getDecisions(runId), source.getReport(runId)])
-              .then(([decisions, report]) => patch({ decisions, report }))
-              .catch((cause: unknown) => {
-                console.error('Could not load run details', cause)
-                patch({
-                  error:
-                    cause instanceof Error
-                      ? cause.message
-                      : 'The run finished but its report could not be loaded.',
-                })
-              })
+            void loadRunDetails(runId, source, set).catch((cause: unknown) => console.error('Could not load video result', cause))
             break
           case 'failed':
+            stop()
             patch({ status: 'failed', error: event.reason })
             break
         }
-      }),
-    )
+      })
+    // Cached live results are allowed to emit completion during subscribeRun.
+    if (terminal) unsubscribe()
+    else subscriptions.set(runId, unsubscribe)
 
     return runId
   },
@@ -624,7 +815,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 }))
 
-/** Tear down every live subscription. Called when the workspace unmounts. */
+/** Explicit teardown for tests/sign-out. Route changes must not cancel preparation. */
 export function closeAllRunSubscriptions() {
   for (const unsubscribe of subscriptions.values()) unsubscribe()
   subscriptions.clear()

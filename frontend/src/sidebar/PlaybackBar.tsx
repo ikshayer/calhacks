@@ -24,8 +24,8 @@ export function PlaybackBar({ run }: { run: RunState }) {
   if (run.status === 'failed') {
     return (
       <div className="over-canvas absolute bottom-5 left-5 max-w-[42ch] rounded-xl px-4 py-3">
-        <p className="display text-[14px] text-bloom">This run did not produce a result</p>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{run.error}</p>
+        <p className="display text-[14px] text-ui-danger">This run did not produce a result</p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-ui-muted">{run.error}</p>
       </div>
     )
   }
@@ -36,8 +36,8 @@ export function PlaybackBar({ run }: { run: RunState }) {
   if (run.status === 'complete' && received === 0) {
     return (
       <div className="over-canvas absolute bottom-5 left-5 max-w-[42ch] rounded-xl px-4 py-3">
-        <p className="display text-[14px] text-paper">Cascade not stored</p>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+        <p className="display text-[14px] text-ui-text">Cascade not stored</p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-ui-muted">
           This run was restored from history, so the round-by-round spread cannot be replayed. Its
           report and totals are unchanged.
         </p>
@@ -54,21 +54,21 @@ export function PlaybackBar({ run }: { run: RunState }) {
             if (atEnd && received > 0) seekRound(0)
             setPlaying(!playing)
           }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-sun text-ink transition-[filter] hover:brightness-105"
+          className="grid h-9 w-9 place-items-center rounded-full bg-ui-accent text-ui-on-accent transition-[filter] hover:brightness-105"
           aria-label={playing ? 'Pause the cascade' : atEnd ? 'Replay the cascade' : 'Play the cascade'}
         >
           {playing ? <PauseIcon /> : atEnd && received > 0 ? <ReplayIcon /> : <PlayIcon />}
         </button>
 
         <div>
-          <p className="display text-[14px] leading-none text-paper">
+          <p className="display text-[14px] leading-none text-ui-text">
             {run.status === 'scoring'
               ? 'Scoring the audience'
               : round === 0
                 ? 'Before anyone has seen it'
                 : `Round ${round} of ${received}`}
           </p>
-          <p className="mt-1 text-[11.5px] leading-none text-muted">
+          <p className="mt-1 text-[11.5px] leading-none text-ui-muted">
             {round === 0
               ? run.label
               : round === 1
@@ -77,7 +77,7 @@ export function PlaybackBar({ run }: { run: RunState }) {
           </p>
         </div>
 
-        <div className="ml-2 flex items-center gap-1 border-l border-line pl-3">
+        <div className="ml-2 flex items-center gap-1 border-l border-ui-border pl-3">
           {SPEEDS.map((option) => (
             <button
               key={option}
@@ -85,7 +85,7 @@ export function PlaybackBar({ run }: { run: RunState }) {
               aria-pressed={speed === option}
               className={
                 'tnum rounded px-1.5 py-0.5 text-[11.5px] transition-colors ' +
-                (speed === option ? 'bg-raised text-sun' : 'text-faint hover:text-paper')
+                (speed === option ? 'bg-ui-raised text-ui-accent' : 'text-ui-faint hover:text-ui-text')
               }
             >
               {option}×
@@ -112,13 +112,13 @@ export function PlaybackBar({ run }: { run: RunState }) {
                 <span
                   className={
                     'h-1 w-full rounded-full transition-colors ' +
-                    (reached ? 'bg-sun' : 'bg-line group-hover:bg-faint')
+                    (reached ? 'bg-ui-accent' : 'bg-line group-hover:bg-faint')
                   }
                 />
                 <span
                   className={
                     'tnum text-[10px] leading-none transition-colors ' +
-                    (reached ? 'text-sun' : 'text-faint')
+                    (reached ? 'text-ui-accent' : 'text-ui-faint')
                   }
                 >
                   {index}

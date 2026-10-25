@@ -11,3 +11,11 @@ __pycache__/
 /.playwright-mcp/
 /artifacts/
 uploads/
+
+# uagents writes agent private keys next to the code -- never commit these
+private_keys.json
+agents/private_keys.json
+
+# python
+*.pyc
+.venv/

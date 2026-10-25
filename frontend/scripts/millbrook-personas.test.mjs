@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { allocateGroups, buildMillbrookAudience, fetchMillbrookWorld, validateMillbrookWorld } from '../src/data/millbrook.ts'
+import { allocateGroups, buildMillbrookAudience, fetchMillbrookWorld, TOWN_SIZE, validateMillbrookWorld } from '../src/data/millbrook.ts'
 import { sameRunAudience } from '../src/data/runCompatibility.ts'
 import { runCascade, scoreAudience } from '../src/data/mock/scriptedCascade.ts'
 import { residentAppearance, RESIDENT_IDS } from '../src/island/residentAppearance.ts'
 import { MockDataSource } from '../src/data/mock/MockDataSource.ts'
+import { predictionProfile } from '../src/data/predictionProfile.ts'
 
-const source = JSON.parse(readFileSync(new URL('../public/millbrook-50/data/personas.json', import.meta.url), 'utf8'))
+const source = JSON.parse(readFileSync(new URL('../public/millbrook-50/millbrook.json', import.meta.url), 'utf8'))
 const group = (id, share) => ({ id, share, label: id, color: '#779988', blurb: '', interests: ['community', 'gardening'] })
 const profile = {
   id: 'test-profile', name: 'Test garden', pitch: 'Grow together', objective: 'engagement', tone: [],
@@ -20,7 +21,8 @@ test('supplied snapshot has 50 complete residents with valid households and link
   validateMillbrookWorld(source)
   const audience = buildMillbrookAudience(source, profile)
   assert.equal(audience.members.length, 50)
-  assert.equal(source.households.length, 19)
+  assert.equal(source.households.length, 20)
+  assert.match(audience.key, /^millbrook-v2:/)
   assert.equal(new Set(audience.members.map((member) => member.millbrook.persona.id)).size, 50)
   audience.members.forEach((member, index) => {
     assert.equal(member.id, index)
@@ -32,26 +34,38 @@ test('supplied snapshot has 50 complete residents with valid households and link
     assert.ok(RESIDENT_IDS.includes(residentAppearance(member, 'any-context')))
     assert.equal(residentAppearance(member, 'old-context'), residentAppearance(member, 'new-context'))
   })
-  assert.ok(audience.members.some((member) => member.millbrook.persona.age === 0))
+  assert.ok(audience.members.some((member) => member.millbrook.persona.age === 1))
+  assert.equal(audience.members[0].millbrook.persona.id, 'm01')
+  assert.equal(audience.members[0].millbrook.persona.family.m03, 'child')
+  assert.equal(audience.members[2].millbrook.persona.family.m01, 'parent')
 })
 
 test('validation rejects malformed fields and inconsistent identities, memberships and relationships', () => {
   const invalid = [
-    (world) => { world.schemaVersion = 2 },
+    (world) => { world.schemaVersion = 1 },
+    (world) => { world.relationConvention = 'the opposite convention' },
     (world) => { world.personas.pop() },
     (world) => { world.personas[1].id = world.personas[0].id },
     (world) => { world.personas[0].personality.extraversion = 2 },
     (world) => { world.personas[0].age = -1 },
     (world) => { world.personas[0].money = NaN },
+    (world) => { world.personas[0].annualIncome = -1 },
+    (world) => { delete world.personas[0].annualIncome },
+    (world) => { world.personas[0].techSavvy = 1.1 },
+    (world) => { world.personas[0].techSavvy = null },
+    (world) => { world.personas[0].adoptionStyle = 'unknown' },
+    (world) => { delete world.personas[0].adoptionStyle },
     (world) => { world.personas[0].beliefs = 'bad' },
     (world) => { world.personas[0].memories = [{ id: 'm', tick: 0, text: 'memory', importance: 2, tags: [] }] },
     (world) => { world.households[0].memberIds.push(world.households[0].memberIds[0]) },
     (world) => { world.households[0].memberIds.pop() },
-    (world) => { world.personas[0].family.agent_02 = 'sibling' },
-    (world) => { world.personas[0].family.agent_99 = 'parent' },
-    (world) => { world.personas[0].friends.agent_99 = .5 },
-    (world) => { world.personas[0].friends.agent_01 = .5 },
-    (world) => { world.personas[0].friends.agent_05 = -2 },
+    (world) => { world.personas[0].family.m02 = 'sibling' },
+    (world) => { world.personas[0].family.m99 = 'parent' },
+    (world) => { world.personas[0].friends.m99 = .5 },
+    (world) => { world.personas[0].friends.m01 = .5 },
+    (world) => { world.personas[0].friends.m07 = -2 },
+    (world) => { world.personas[4].family.m08 = 'grandparent' },
+    (world) => { world.personas[6].family.m10 = 'partner' },
   ]
   for (const mutate of invalid) {
     const world = structuredClone(source)
@@ -66,7 +80,7 @@ test('loader fetches only JSON and surfaces HTTP, JSON and schema failures', asy
     requests.push(url)
     return new Response(JSON.stringify(source))
   })
-  assert.deepEqual(requests, ['/millbrook-50/data/personas.json'])
+  assert.deepEqual(requests, ['/millbrook-50/millbrook.json'])
   assert.deepEqual(world, source)
   await assert.rejects(fetchMillbrookWorld(async () => new Response('', { status: 404 })), /HTTP 404/)
   await assert.rejects(fetchMillbrookWorld(async () => new Response('not json')), SyntaxError)
@@ -114,6 +128,7 @@ test('sharing graph is exactly the deduplicated family/friend union with recipro
   }
   assert.deepEqual(new Set(audience.edges.map(({ a, b }) => `${a}:${b}`)), expected)
   assert.equal(audience.edges.length, expected.size)
+  assert.equal(audience.edges.length, 125)
   for (const { a, b } of audience.edges) {
     assert.ok(a < b && a >= 0 && b < 50)
     assert.ok(audience.adjacency[a].includes(b))
@@ -148,11 +163,39 @@ test('50-resident cascade is deterministic, follows supplied edges and leaves pe
 test('comparison requires dataset identity and matching settings, including after persistence', () => {
   const options = optionsFor(buildMillbrookAudience(source, profile))
   assert.ok(sameRunAudience(options, JSON.parse(JSON.stringify(options))))
-  for (const change of [{ audienceKey: undefined }, { audienceKey: 'another-dataset' }, { audienceVersion: 2 }, { seed: 9 }, { seedExposure: .3 }, { maxRounds: 3 }]) {
+  for (const change of [{ audienceKey: undefined }, { audienceKey: 'another-dataset' }, { audienceKey: 'millbrook-v1:old-snapshot' }, { audienceVersion: 2 }, { seed: 9 }, { seedExposure: .3 }, { maxRounds: 3 }]) {
     assert.equal(sameRunAudience(options, { ...options, ...change }), false)
   }
   const legacy = { ...options, audienceKey: undefined }
   assert.equal(sameRunAudience(legacy, legacy), false)
+})
+
+test('v2 relationships retain grandparents, former spouses and partners with the supplied convention', () => {
+  const audience = buildMillbrookAudience(source, profile)
+  const byId = new Map(audience.members.map((member) => [member.millbrook.persona.id, member]))
+  for (const [from, to, relation] of [
+    ['m01', 'm03', 'child'], ['m03', 'm01', 'parent'],
+    ['m05', 'm08', 'grandchild'], ['m08', 'm05', 'grandparent'],
+    ['m07', 'm10', 'ex-spouse'], ['m39', 'm40', 'partner'],
+  ]) {
+    const member = byId.get(from), other = byId.get(to)
+    assert.equal(member.millbrook.persona.family[to], relation)
+    assert.ok(audience.adjacency[member.id].includes(other.id))
+  }
+})
+
+test('prediction profiles preserve new financial and technology data, including null adoption style', () => {
+  const audience = buildMillbrookAudience(source, profile)
+  let unspecified = 0
+  for (const member of audience.members) {
+    const persona = member.millbrook.persona
+    const predicted = JSON.parse(predictionProfile(member))
+    for (const field of ['money', 'annualIncome', 'techSavvy', 'adoptionStyle', 'location']) {
+      assert.equal(predicted[field], persona[field])
+    }
+    if (persona.adoptionStyle === null) unspecified++
+  }
+  assert.equal(unspecified, 13)
 })
 
 test('data source shares reads, retries failures and keeps reports tied to their original audience and video', async (t) => {
@@ -173,9 +216,33 @@ test('data source shares reads, retries failures and keeps reports tied to their
   const run = await driver.startRun('campaign', video.id, 'Original', options)
   const report = await driver.getReport(run)
   const reply = await driver.chat(run, [], 'What happened?')
-  assert.equal((await driver.getDecisions(run)).length, 50)
+  assert.equal((await driver.getDecisions(run)).length, TOWN_SIZE.total)
   await driver.loadAudience({ ...profile, audienceVersion: 2, groups: [group('replacement', 1)] })
   await driver.reviseSignals(video.id, { ...video.signals, hookStrength: 0, clarityOfAsk: 0, topics: ['other'] })
   assert.deepEqual(await driver.getReport(run), report)
   assert.equal(await driver.chat(run, [], 'What happened?'), reply)
+})
+
+test('the 300-person town keeps the 50 residents on the island and derives unique, connected neighbours', () => {
+  const town = buildMillbrookAudience(source, profile, TOWN_SIZE.total)
+  const again = buildMillbrookAudience(source, profile, TOWN_SIZE.total)
+  assert.deepEqual(town, again)
+  assert.equal(town.members.length, TOWN_SIZE.total)
+  assert.equal(town.members.filter((member) => member.onIsland).length, TOWN_SIZE.onIsland)
+  assert.ok(town.members.slice(0, 50).every((member) => member.onIsland))
+  assert.equal(new Set(town.members.map((member) => member.name)).size, TOWN_SIZE.total)
+  assert.equal(new Set(town.members.map((member) => member.millbrook.persona.id)).size, TOWN_SIZE.total)
+  for (const member of town.members.slice(50)) {
+    const source = member.millbrook.persona
+    assert.ok(source.age >= 0 && source.age <= 90)
+    assert.ok(town.adjacency[member.id].length >= 1, `neighbour ${member.id} is isolated`)
+    assert.ok(Object.values(source.personality).every((score) => score >= 0 && score <= 1))
+  }
+  // Group counts follow the onboarding shares across all 300.
+  const counts = new Map()
+  for (const member of town.members) counts.set(member.groupId, (counts.get(member.groupId) ?? 0) + 1)
+  assert.deepEqual(profile.groups.map((entry) => counts.get(entry.id)), allocateGroups(profile.groups, TOWN_SIZE.total))
+  // The snapshot residents are unchanged by the expansion.
+  assert.deepEqual(town.members.slice(0, 50).map((member) => member.millbrook.persona), buildMillbrookAudience(source, profile).members.map((member) => member.millbrook.persona))
+  assert.throws(() => buildMillbrookAudience(source, profile, 49), /at least 50/)
 })

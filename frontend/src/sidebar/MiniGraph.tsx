@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { selectActiveRun, useAppStore } from '@/store/useAppStore'
 import { createRng } from '@/lib/rng'
-import { Section } from '@/components/ui'
 
 const WIDTH = 344
-const HEIGHT = 196
+const HEIGHT = 148
 
 interface Node {
   x: number
@@ -133,25 +132,18 @@ export function MiniGraph() {
     .reduce((sum, event) => sum + event.shares.reduce((inner, s) => inner + s.to.length, 0), 0)
 
   return (
-    <Section
-      title="The network"
-      aside={
-        <span className="tnum text-[11.5px] text-faint">
-          {audience?.edges.length ?? 0} links
-        </span>
-      }
-    >
+    <details className="border-b border-ui-border px-4 py-3">
+      <summary className="cursor-pointer text-[11.5px] text-ui-muted">Sharing network · {audience?.edges.length ?? 0} connections</summary>
       <canvas
         ref={canvasRef}
-        style={{ width: WIDTH, height: HEIGHT }}
-        className="w-full rounded-lg border border-line bg-ink"
+        style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}
+        className="mt-2 block h-auto w-full rounded-lg border border-ui-border bg-ui-well"
         role="img"
         aria-label={`Network of ${audience?.members.length ?? 0} audience members, with ${sharesSoFar} shares so far`}
       />
-      <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
-        All {audience?.members.length ?? 0} members, grouped into clusters. Gold lines are shares
-        that reached someone new. All {audience?.members.length ?? 0} residents walk around town.
+      <p className="mt-1.5 text-[10.5px] text-ui-faint">
+        Gold lines: shares that reached someone new
       </p>
-    </Section>
+    </details>
   )
 }

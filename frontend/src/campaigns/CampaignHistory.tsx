@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/useAppStore'
 import type { CampaignId } from '@/data/types'
 import { EmptyState } from '@/components/ui'
 import { CampaignCard } from './CampaignCard'
+import { Stagger } from '@/components/Reveal'
 
 /**
  * Previous analyses, newest first.
@@ -21,7 +22,7 @@ export function CampaignHistory({ onOpen }: { onOpen(id: CampaignId): void }) {
 
   return (
     <section aria-labelledby="history-heading">
-      <h2 id="history-heading" className="display text-[17px] text-paper">
+      <h2 id="history-heading" className="display text-[20px] text-title">
         Previous analyses
       </h2>
       <div className="mt-3">
@@ -30,7 +31,7 @@ export function CampaignHistory({ onOpen }: { onOpen(id: CampaignId): void }) {
             Your first upload will appear here, with its runs, so you can come back to it.
           </EmptyState>
         ) : (
-          <ul className="space-y-2.5">
+          <Stagger className="space-y-2.5">
             {history.map((campaign) => (
               <CampaignCard
                 key={campaign.id}
@@ -39,7 +40,7 @@ export function CampaignHistory({ onOpen }: { onOpen(id: CampaignId): void }) {
                 onDelete={() => deleteCampaign(campaign.id)}
               />
             ))}
-          </ul>
+          </Stagger>
         )}
       </div>
     </section>

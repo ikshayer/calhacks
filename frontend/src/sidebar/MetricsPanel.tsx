@@ -1,117 +1,49 @@
-import { useAppStore, selectActiveRun } from '@/store/useAppStore'
-import { EmptyState, Section, Stat } from '@/components/ui'
-import type { RoundEvent } from '@/data/types'
+﻿import { useAppStore, selectActiveRun } from '@/store/useAppStore'
+import { Section, Stat } from '@/components/ui'
+import { chartNumber, nonnegative, visibleRunResults } from '@/data/overviewStats'
+import { ChartBar } from './OverviewCharts'
 
-/**
- * Live run totals.
- *
- * Counted from the rounds actually played back, so the numbers climb in step
- * with the island rather than appearing complete before the cascade has
- * finished animating.
- *
- * Reach and interactions are shown in separate blocks and never added
- * together: unique exposure, watch-throughs and shares are different
- * quantities, and summing them into one "score" would be the quickest way to
- * make this tool lie.
- */
+/** Independent action counts; one resident can take several different actions. */
 export function MetricsPanel() {
   const run = useAppStore(selectActiveRun)
   const round = useAppStore((state) => state.playback.round)
-  const audienceSize = useAppStore((state) => state.audience?.members.length ?? 0)
-
-  if (!run) {
-    return (
-      <Section title="Results">
-        <EmptyState title="Nothing has run yet">
-          Upload a video and start a simulation to see how the audience responds.
-        </EmptyState>
-      </Section>
-    )
-  }
-
-  const visible = run.rounds.slice(0, round)
-  const live = tally(visible)
-  const finished = run.status === 'complete' && round >= run.rounds.length
-  const metrics = run.metrics
+  const audience = useAppStore((state) => state.audience)
+  if (!run) return null
+  const result = visibleRunResults(run, round)
+  const compatible = Boolean(run.options.audienceKey) && run.options.audienceKey === audience?.key
+  const size = compatible ? audience?.members.length : undefined
+  const actions = [
+    { label: 'Watched', value: result.watch, color: '#6aa9c9' },
+    { label: 'Liked', value: result.likes, color: '#7fb069' },
+    { label: 'Commented', value: result.comments, color: '#f2b53c' },
+    { label: 'Shared', value: result.shares, color: '#e2735f' },
+  ]
+  const max = Math.max(1, ...actions.map((action) => nonnegative(action.value) ?? 0))
+  const spread = run.metrics?.spread
+  const low = nonnegative(spread?.p10)
+  const median = nonnegative(spread?.p50)
+  const high = nonnegative(spread?.p90)
+  const spreadValid = low !== undefined && median !== undefined && high !== undefined && low <= median && median <= high
 
   return (
-    <Section
-      title="Results"
-      aside={
-        <span className="tnum text-[11.5px] text-faint">
-          {finished ? 'final' : `round ${round}`}
-        </span>
-      }
-    >
-      <div className="rounded-lg border border-line bg-ink px-3.5 py-3">
-        <div className="flex items-end justify-between gap-3">
-          <Stat
-            label={`of ${audienceSize} members have seen it`}
-            value={live.exposed}
-            tone="water"
-          />
-          <p className="tnum text-[12.5px] text-muted">
-            {audienceSize > 0 ? `${((live.exposed / audienceSize) * 100).toFixed(0)}%` : '—'}
-          </p>
+    <Section title="Simulation results" className="py-3" aside={<span className="text-[11px] text-ui-faint">{result.final ? (run.rounds.length ? 'Final' : 'Saved result') : `Round ${round}`}</span>}>
+      <div className="mb-3 flex items-end justify-between gap-4 rounded-lg border border-ui-border bg-ui-well px-3 py-2.5">
+        <Stat label={size === undefined ? 'Residents reached' : `Reached · ${size} residents`} value={nonnegative(result.exposed) ?? '—'} tone="water" />
+        {size !== undefined && size > 0 && nonnegative(result.exposed) !== undefined && <span className="tnum text-[16px] text-ui-muted">{Math.round(result.exposed / size * 100)}%</span>}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+        {actions.map((action) => <ChartBar key={action.label} {...action} max={max} />)}
+      </div>
+      {spreadValid && <div className="mt-4">
+        <div className="mb-1.5 flex justify-between text-[10.5px] text-ui-faint"><span>200 trials · actions</span><span>P10 / P50 / P90</span></div>
+        <div role="img" aria-label={`Actions across 200 trials: P10 ${low}, median ${median}, P90 ${high}. Simulation variability.`}>
+          <div className="relative h-3 rounded-full bg-ui-accent/20">
+            <span className="absolute inset-y-0 w-0.5 bg-ui-accent" style={{ left: `${high > low ? Math.min(99, (median - low) / (high - low) * 100) : 50}%` }} />
+          </div>
+          <div className="tnum mt-1 flex justify-between text-[10.5px] text-ui-muted"><span>P10 {chartNumber(low)}</span><span>P50 {chartNumber(median)}</span><span>P90 {chartNumber(high)}</span></div>
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-faint">
-          Distinct members reached, counted once each. Not views — one person can watch twice.
-        </p>
-      </div>
-
-      <div className="mt-3 grid grid-cols-4 gap-2 rounded-lg border border-line bg-ink px-3.5 py-3">
-        <Stat label="watched" value={live.watch} />
-        <Stat label="liked" value={live.likes} tone="leaf" />
-        <Stat label="replied" value={live.comments} tone="sun" />
-        <Stat label="shared" value={live.shares} tone="bloom" />
-      </div>
-
-      {metrics && (
-        <dl className="mt-3 space-y-1.5 text-[11.5px]">
-          <Row
-            label="Prediction coverage"
-            value={`${(metrics.coverage * 100).toFixed(1)}%`}
-            note={
-              metrics.missing > 0
-                ? `${metrics.missing} members returned no prediction and are excluded from the totals`
-                : undefined
-            }
-          />
-          <Row
-            label="Spread across 200 trials"
-            value={`${metrics.spread.p10}–${metrics.spread.p90} actions`}
-            note="Variability within these assumptions, not a prediction interval"
-          />
-        </dl>
-      )}
+      </div>}
+      <p className="mt-2 text-[10.5px] text-ui-faint">Actions overlap · {run.metrics?.missing ?? 0} unscored, excluded</p>
     </Section>
   )
-}
-
-function Row({ label, value, note }: { label: string; value: string; note?: string }) {
-  return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3">
-        <dt className="text-muted">{label}</dt>
-        <dd className="tnum text-paper">{value}</dd>
-      </div>
-      {note && <p className="mt-0.5 text-[10.5px] leading-snug text-faint">{note}</p>}
-    </div>
-  )
-}
-
-function tally(rounds: RoundEvent[]) {
-  const totals = { exposed: 0, watch: 0, likes: 0, comments: 0, shares: 0 }
-  for (const round of rounds) {
-    totals.exposed += round.exposed.length
-    for (const act of round.acted) {
-      for (const kind of act.kinds) {
-        if (kind === 'watch') totals.watch++
-        else if (kind === 'like') totals.likes++
-        else if (kind === 'comment') totals.comments++
-        else totals.shares++
-      }
-    }
-  }
-  return totals
 }

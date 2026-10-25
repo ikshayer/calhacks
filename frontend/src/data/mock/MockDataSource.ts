@@ -16,7 +16,7 @@ import type {
   VideoAnalysis,
   VideoInput,
 } from '@/data/types'
-import { buildMillbrookAudience, fetchMillbrookWorld } from '../millbrook.ts'
+import { buildMillbrookAudience, fetchMillbrookWorld, TOWN_SIZE } from '../millbrook.ts'
 import { simulationProfile } from '../simulationProfile.ts'
 import type { MillbrookWorld } from '../millbrookTypes'
 import { runCascade, scoreAudience, type CascadeResult } from './scriptedCascade.ts'
@@ -75,7 +75,7 @@ export class MockDataSource implements SimDataSource {
       this.world = undefined
       throw cause
     })
-    const audience = buildMillbrookAudience(await this.world, simulationProfile(snapshot))
+    const audience = buildMillbrookAudience(await this.world, simulationProfile(snapshot), TOWN_SIZE.total)
     this.profile = snapshot
     if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     this.audience = audience
@@ -230,6 +230,10 @@ export class MockDataSource implements SimDataSource {
     const stored = this.runs.get(runId)
     if (!stored) return 'That run is no longer loaded, so I cannot ground an answer in it.'
     return answerFromRun(message, stored.video.signals, stored.cascade.metrics, stored.audience, stored.groupLabels)
+  }
+
+  async chatIdea(): Promise<string> {
+    throw new Error('Idea-report chat needs the live backend (VITE_DATA_SOURCE=spacetime) and its worker. This demo source does not store idea reports or provide live AI.')
   }
 
   /** The mock writes every explanation at scoring time. */

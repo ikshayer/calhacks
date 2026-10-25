@@ -15,7 +15,7 @@ import { VerdictRings } from './fx/VerdictRings'
 import { VERDICT_STYLE, type IdeaVerdict } from '@/data/ideaVerdict'
 import { ISLAND_SPACING, type Island } from './scene/island'
 import type { IslandSim } from './scene/IslandSim'
-import { residentAppearance, RESIDENT_IDS } from './residentAppearance'
+import { residentAppearance } from './residentAppearance'
 import { ISLAND_VIEW } from './scene/islandView'
 
 export interface IslandCanvasProps {
@@ -101,9 +101,7 @@ export function IslandCanvas({
 
   const models = useMemo(() => {
     const byId = new Map(members.map((member) => [member.id, member]))
-    const roster = import.meta.env.DEV && new URLSearchParams(location.search).get('residents') === 'roster'
     return Array.from({ length: sim.count }, (_, index) => {
-      if (roster) return RESIDENT_IDS[index % RESIDENT_IDS.length]!
       const member = byId.get(sim.memberOfIndex(index))
       return member ? residentAppearance(member, appearanceContext) : 'resident'
     })
