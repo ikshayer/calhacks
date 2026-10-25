@@ -143,7 +143,7 @@ function Marquee() {
         />
       </div>
 
-      <p className="relative text-[14px] font-medium text-white/80">Simthetic</p>
+      <p className="relative text-[14px] font-medium text-white/80">Symthetic</p>
 
       <div className="relative max-w-[40rem]">
         <h1 className="display text-[clamp(2.2rem,3.7vw,3.3rem)] leading-[1.04] text-white">
