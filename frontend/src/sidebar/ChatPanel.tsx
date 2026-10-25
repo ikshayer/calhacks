@@ -65,7 +65,7 @@ export function ChatPanel() {
       <div ref={scrollRef} className="scroll-slim flex-1 space-y-3 px-4 py-4">
         {history.length === 0 && (
           <div>
-            <p className="text-[12.5px] leading-relaxed text-muted">
+            <p className="text-[12.5px] leading-relaxed text-ui-muted">
               Ask about the result and the answer is drawn from this run: the audience you
               confirmed, the video as analysed, and what happened in the cascade.
             </p>
@@ -74,7 +74,7 @@ export function ChatPanel() {
                 <button
                   key={suggestion}
                   onClick={() => void ask(suggestion)}
-                  className="block w-full rounded-md border border-line bg-ink px-3 py-2 text-left text-[12.5px] text-muted transition-colors hover:border-faint hover:text-paper"
+                  className="block w-full rounded-md border border-ui-border bg-ui-well px-3 py-2 text-left text-[12.5px] text-ui-muted transition-colors hover:border-ui-edge hover:text-ui-text"
                 >
                   {suggestion}
                 </button>
@@ -88,17 +88,17 @@ export function ChatPanel() {
             key={index}
             className={
               turn.role === 'user'
-                ? 'ml-6 rounded-lg rounded-br-sm bg-raised px-3 py-2'
-                : 'mr-2 rounded-lg rounded-bl-sm border border-line bg-ink px-3 py-2.5'
+                ? 'ml-6 rounded-lg rounded-br-sm bg-ui-raised px-3 py-2'
+                : 'mr-2 rounded-lg rounded-bl-sm border border-ui-border bg-ui-well px-3 py-2.5'
             }
           >
-            <p className="text-[12.5px] leading-relaxed text-paper">{turn.content}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-text">{turn.content}</p>
           </div>
         ))}
 
-        {busy && <p className="text-[12px] text-faint">Looking at the run…</p>}
+        {busy && <p className="text-[12px] text-ui-faint">Looking at the run…</p>}
         {error && (
-          <p role="alert" className="text-[12.5px] text-bloom">
+          <p role="alert" className="text-[12.5px] text-ui-danger">
             {error}
           </p>
         )}
@@ -109,7 +109,7 @@ export function ChatPanel() {
           event.preventDefault()
           void ask(draft)
         }}
-        className="flex shrink-0 items-center gap-2 border-t border-line px-4 py-3"
+        className="flex shrink-0 items-center gap-2 border-t border-ui-border px-4 py-3"
       >
         <Input
           value={draft}

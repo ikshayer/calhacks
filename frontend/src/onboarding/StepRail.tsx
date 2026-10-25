@@ -47,9 +47,9 @@ export function StepRail({
                 className={
                   'transition-colors ' +
                   (index === current
-                    ? 'font-medium text-graphite'
+                    ? 'font-medium text-title'
                     : visited
-                      ? 'text-subtle hover:text-graphite'
+                      ? 'text-subtle hover:text-title'
                       : 'text-subtle/70')
                 }
               >

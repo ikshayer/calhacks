@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useAppStore } from '@/store/useAppStore'
 import type { CompanyProfile } from '@/data/types'
 import { deriveGroups, emptyProfile, normaliseShares } from '@/onboarding/suggestAudience'
-import { PaperShell } from '@/components/PaperShell'
+import { LobbyShell } from '@/components/LobbyShell'
 import { StepRail } from '@/onboarding/StepRail'
 import { NextPanel } from '@/onboarding/NextPanel'
 import { NameStep } from '@/onboarding/steps/NameStep'
@@ -84,7 +84,7 @@ export function OnboardingRoute() {
   )
 
   return (
-    <PaperShell>
+    <LobbyShell>
       <StepRail labels={STEPS} current={step} onJump={setStep} />
 
       <div
@@ -127,7 +127,7 @@ export function OnboardingRoute() {
             {step > 0 && (
               <button
                 onClick={() => setStep(step - 1)}
-                className="h-12 rounded-md px-4 text-[15px] font-medium text-subtle transition-colors hover:text-graphite"
+                className="h-12 rounded-md px-4 text-[15px] font-medium text-subtle transition-colors hover:text-title"
               >
                 Back
               </button>
@@ -144,7 +144,7 @@ export function OnboardingRoute() {
             {step === LAST && (
               <button
                 onClick={finish}
-                className="text-[15px] text-subtle underline-offset-4 transition-colors hover:text-graphite hover:underline"
+                className="text-[15px] text-subtle underline-offset-4 transition-colors hover:text-title hover:underline"
               >
                 Skip for now
               </button>
@@ -156,6 +156,6 @@ export function OnboardingRoute() {
           <NextPanel />
         </div>
       </div>
-    </PaperShell>
+    </LobbyShell>
   )
 }

@@ -43,33 +43,41 @@
   --color-ui-accent: #f2b53c;
   --color-ui-on-accent: #121a16;
   --color-ui-danger: #e2735f;
+  /* The panel a group of controls sits on, and the inset wells inside it
+     (meter tracks, scrubbers). Distinct from `surface`, which is the fill of
+     an input: on paper those are both white, but a well must stay darker. */
+  --color-ui-panel: #1b2520;
+  --color-ui-well: #121a16;
 
   /*
-    The paper palette, carried over from the CareWindow project so the two
-    products read as siblings. Burgundy is the only action colour; horizon
-    orange is decorative and fails contrast as small text, so it is never used
-    for one. These are fixed light values — only the `--color-ui-*` roles above
-    switch between themes.
+    The lobby palette: sign-in, onboarding and the campaign hub.
+
+    Carried over from the CareWindow project so the two products read as
+    siblings: warm paper, burgundy as the only action colour, horizon orange
+    kept for decoration because it fails contrast as small text. The dithered
+    backdrop these screens run is tinted to match rather than fighting it —
+    ink dots on paper, closer to risograph than to a glowing shader.
   */
   --color-canvas: #f4f3f2;
   --color-card: #ffffff;
   --color-rule: #dcdee0;
-  --color-graphite: #231f20;
+  --color-title: #231f20;
   --color-subtle: #5c656c;
   --color-primary: #650030;
-  --color-horizon: #ff4f17;
+  --color-ember: #ff4f17;
+  --color-deep: #650030;
 
   --font-display: 'Fraunces', Georgia, serif;
   --font-ui: 'Archivo', system-ui, sans-serif;
-  --font-paper: 'Source Serif 4', Georgia, serif;
+  --font-lobby: 'Source Serif 4', Georgia, serif;
 }
 
 /*
-  Sign-in, onboarding and the campaign hub.
+  The paper theme.
 
-  Everything inside this scope reads the same role tokens the workspace does,
-  pointed at the paper palette. A screen opts in by rendering inside
-  `<PaperShell>`; the workspace never does, so it is untouched.
+  Anything inside this scope reads the same role tokens the rest of the app
+  does, pointed at the paper palette: the lobby screens via `<LobbyShell>`,
+  and the workspace sidebar directly. The 3D island is never inside it.
 */
 .paper {
   --color-ui-surface: #ffffff;
@@ -82,12 +90,42 @@
   --color-ui-accent: #650030;
   --color-ui-on-accent: #ffffff;
   --color-ui-danger: #c4321e;
+  --color-ui-panel: #ffffff;
+  --color-ui-well: #e7e4e2;
+
+  /*
+    The four reading colours, re-cut for paper.
+
+    These keep their names because the names are still true — sun is still the
+    warm one, leaf the green one — but the workspace values are tuned to glow
+    on near-black and several of them fail outright on white: marigold text on
+    a white panel lands around 1.9:1. These are the same hues at a legible
+    weight, so `text-sun` means the same thing in both themes.
+  */
+  --color-sun: #8a5a00;
+  --color-leaf: #2f6b43;
+  --color-water: #1f6b8a;
+  --color-bloom: #b23c28;
 }
 
-/* The focus ring and selection are set globally in marigold; on paper they
-   belong to the action colour instead. */
+/* The focus ring and selection are marigold in the workspace; in the lobby
+   they belong to the action colour. */
 .paper :focus-visible {
   outline-color: var(--color-primary);
+}
+
+/*
+  One focus indicator, not two.
+
+  Text fields in the lobby draw their own: the border turns to the action
+  colour and a soft ring spreads outside it. The global outline below then
+  added a second hard box around that, so a focused field came up ringed
+  twice, in two different colours. Everything else here still gets the
+  outline — only the controls that already announce focus opt out.
+*/
+.paper input:focus-visible,
+.paper textarea:focus-visible {
+  outline: none;
 }
 
 .paper ::selection {
@@ -95,12 +133,19 @@
   color: #fff;
 }
 
-/* Fraunces is the workspace's voice. The paper screens speak in Source Serif. */
-.paper .display {
-  font-family: var(--font-paper);
+/*
+  Typography is a separate opt-in from the palette.
+
+  `.paper` is only colour, because the workspace sidebar now uses it too and
+  its headings should stay in the app's own Fraunces. The Source Serif voice
+  belongs to the lobby screens, which add `.lobby` alongside it.
+*/
+.lobby .display {
+  font-family: var(--font-lobby);
   font-variation-settings: normal;
   letter-spacing: -0.014em;
 }
+
 
 * {
   box-sizing: border-box;

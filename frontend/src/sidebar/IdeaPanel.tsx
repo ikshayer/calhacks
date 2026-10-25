@@ -39,7 +39,7 @@ export function IdeaPanel() {
   const result = idea.status === 'ready' ? idea.result : undefined
 
   return (
-    <div className="border-b border-line bg-panel">
+    <div className="border-b border-ui-border bg-ui-panel">
       <Section
         title="Idea test"
         aside={
@@ -48,21 +48,21 @@ export function IdeaPanel() {
           </Button>
         }
       >
-        <p className="text-[12.5px] leading-relaxed text-paper">{idea.input.prompt}</p>
+        <p className="text-[12.5px] leading-relaxed text-ui-text">{idea.input.prompt}</p>
         {idea.status === 'running' && (
-          <p className="mt-2 text-[12px] leading-relaxed text-sun">{idea.stage || 'Starting…'}</p>
+          <p className="mt-2 text-[12px] leading-relaxed text-ui-accent">{idea.stage || 'Starting…'}</p>
         )}
         {idea.status === 'failed' && (
-          <p className="mt-2 text-[12px] leading-relaxed text-bloom">
+          <p className="mt-2 text-[12px] leading-relaxed text-ui-danger">
             {idea.error ?? 'The idea test failed.'}
           </p>
         )}
         {idea.status === 'ready' && !result && (
-          <p className="mt-2 text-[12px] leading-relaxed text-bloom">The idea test finished without a result.</p>
+          <p className="mt-2 text-[12px] leading-relaxed text-ui-danger">The idea test finished without a result.</p>
         )}
       </Section>
       {result && <IdeaResult result={result} options={idea.input.options} onSelect={selectMember} />}
-      <p className="px-4 pb-4 text-[11px] leading-relaxed text-faint">{DISCLOSURE}</p>
+      <p className="px-4 pb-4 text-[11px] leading-relaxed text-ui-faint">{DISCLOSURE}</p>
     </div>
   )
 }
@@ -106,26 +106,26 @@ function IdeaResult({
   return (
     <>
       <Section title="The answer">
-        <p className="text-[13px] leading-relaxed text-paper">
+        <p className="text-[13px] leading-relaxed text-ui-text">
           We asked {people(town.scored)} in town. {VERDICT_EMOJI.going} {town.counts.going} would go,{' '}
           {VERDICT_EMOJI.maybe} {town.counts.maybe} maybe, {VERDICT_EMOJI.not} {town.counts.not} would not.
         </p>
         {!targetsEveryone &&
           (target.scored === 0 ? (
-            <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+            <p className="mt-1.5 text-[12px] leading-relaxed text-ui-muted">
               Nobody in town is {result.targetLabel}, so this is everyone&apos;s answer.
             </p>
           ) : (
-            <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+            <p className="mt-1.5 text-[12px] leading-relaxed text-ui-muted">
               Of the {people(target.scored)} who are {result.targetLabel}: {target.counts.going} would go.
               {target.scored < SMALL_SAMPLE ? ' That is a very small group.' : ''}
             </p>
           ))}
         <VerdictBar counts={town.counts} scored={town.scored} />
-        <p className="mt-2 text-[11px] text-faint">The coloured rings on the island match these.</p>
+        <p className="mt-2 text-[11px] text-ui-faint">The coloured rings on the island match these.</p>
         {plain && (
           <div className="mt-3">
-            <p className="text-[12.5px] leading-relaxed text-paper">{plain.answer.text}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-text">{plain.answer.text}</p>
             <Why>{plain.answer.because}</Why>
           </div>
         )}
@@ -134,16 +134,16 @@ function IdeaResult({
       {plain && (
         <>
           <Section title="Best bet">
-            <p className="text-[12.5px] leading-relaxed text-paper">{plain.bestBet.what}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-text">{plain.bestBet.what}</p>
             <Why>{plain.bestBet.because}</Why>
             <OptionTable options={options}visits={result.metrics?.optionVisits ?? []} />
           </Section>
           <Section title="Try this first">
-            <p className="text-[12.5px] leading-relaxed text-paper">{plain.experiment.what}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-text">{plain.experiment.what}</p>
             <Why>{plain.experiment.because}</Why>
           </Section>
           <Section title="How you'll know it worked">
-            <p className="text-[12.5px] leading-relaxed text-paper">{plain.howYouKnow.what}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-text">{plain.howYouKnow.what}</p>
             <Why>{plain.howYouKnow.because}</Why>
           </Section>
           {plain.objections.length > 0 && (
@@ -151,7 +151,7 @@ function IdeaResult({
               <ul className="space-y-3">
                 {plain.objections.map((objection) => (
                   <li key={objection.reason}>
-                    <p className="text-[12.5px] leading-relaxed text-paper">{objection.reason}</p>
+                    <p className="text-[12.5px] leading-relaxed text-ui-text">{objection.reason}</p>
                     <Why>{objection.because}</Why>
                   </li>
                 ))}
@@ -165,16 +165,16 @@ function IdeaResult({
         <Section title="What to try">
           <dl className="space-y-2 text-[12.5px] leading-relaxed">
             <div>
-              <dt className="text-[11px] text-faint">Best bet</dt>
-              <dd className="text-paper">{firstSentence(analysis.recommendedCampaign)}</dd>
+              <dt className="text-[11px] text-ui-faint">Best bet</dt>
+              <dd className="text-ui-text">{firstSentence(analysis.recommendedCampaign)}</dd>
             </div>
             <div>
-              <dt className="text-[11px] text-faint">Try this first, for real</dt>
-              <dd className="text-muted">{firstSentence(analysis.experiment)}</dd>
+              <dt className="text-[11px] text-ui-faint">Try this first, for real</dt>
+              <dd className="text-ui-muted">{firstSentence(analysis.experiment)}</dd>
             </div>
             <div>
-              <dt className="text-[11px] text-faint">How you will know it worked</dt>
-              <dd className="text-muted">{firstSentence(analysis.successMetric)}</dd>
+              <dt className="text-[11px] text-ui-faint">How you will know it worked</dt>
+              <dd className="text-ui-muted">{firstSentence(analysis.successMetric)}</dd>
             </div>
           </dl>
         </Section>
@@ -182,7 +182,7 @@ function IdeaResult({
 
       {!plain && analysis && analysis.objections.length > 0 && (
         <Section title="Why some would say no">
-          <ul className="space-y-1 text-[12.5px] leading-relaxed text-muted">
+          <ul className="space-y-1 text-[12.5px] leading-relaxed text-ui-muted">
             {analysis.objections.map((objection) => (
               <li key={objection}>• {firstSentence(objection.split(':')[0] ?? objection)}</li>
             ))}
@@ -191,7 +191,7 @@ function IdeaResult({
       )}
 
       <Section title="Who said what">
-        <p className="mb-2 text-[11.5px] text-faint">Tap a name to see why.</p>
+        <p className="mb-2 text-[11.5px] text-ui-faint">Tap a name to see why.</p>
         <div className="space-y-3">
           {VERDICTS.map((verdict) => {
             const residents = byVerdict[verdict]
@@ -207,13 +207,13 @@ function IdeaResult({
                     <button
                       key={resident.memberId}
                       onClick={() => onSelect(resident.memberId)}
-                      className="rounded-full bg-raised px-2 py-0.5 text-[11.5px] text-muted transition-colors hover:text-paper"
+                      className="rounded-full bg-ui-raised px-2 py-0.5 text-[11.5px] text-ui-muted transition-colors hover:text-ui-text"
                     >
                       {resident.name}
                     </button>
                   ))}
                   {residents.length > shown.length && (
-                    <span className="px-1 py-0.5 text-[11.5px] text-faint">
+                    <span className="px-1 py-0.5 text-[11.5px] text-ui-faint">
                       +{residents.length - shown.length} more
                     </span>
                   )}
@@ -225,10 +225,10 @@ function IdeaResult({
       </Section>
 
       {analysis && (
-        <div className="border-b border-line px-4 py-3">
+        <div className="border-b border-ui-border px-4 py-3">
           <button
             onClick={() => setShowAll((open) => !open)}
-            className="text-[12px] text-sun transition-colors hover:brightness-110"
+            className="text-[12px] text-ui-accent transition-colors hover:brightness-110"
             aria-expanded={showAll}
           >
             {showAll ? 'Hide the full analysis' : 'Show the full analysis'}
@@ -238,19 +238,19 @@ function IdeaResult({
       {analysis && showAll && (
         <>
           <Section title="Recommended campaign">
-            <p className="text-[12.5px] leading-relaxed text-muted">{analysis.recommendedCampaign}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-muted">{analysis.recommendedCampaign}</p>
           </Section>
           <ListSection title="Evidence" items={analysis.evidence} />
           <ListSection title="Segments" items={analysis.segments} />
           <ListSection title="Objections" items={analysis.objections} />
           <Section title="Budget allocation">
-            <p className="text-[12.5px] leading-relaxed text-muted">{analysis.budgetAllocation}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-muted">{analysis.budgetAllocation}</p>
           </Section>
           <Section title="Experiment">
-            <p className="text-[12.5px] leading-relaxed text-muted">{analysis.experiment}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-muted">{analysis.experiment}</p>
           </Section>
           <Section title="Success metric">
-            <p className="text-[12.5px] leading-relaxed text-muted">{analysis.successMetric}</p>
+            <p className="text-[12.5px] leading-relaxed text-ui-muted">{analysis.successMetric}</p>
           </Section>
           <ListSection title="Assumptions" items={analysis.assumptions} />
           <ListSection title="Limitations" items={analysis.limitations} />
@@ -262,8 +262,8 @@ function IdeaResult({
 
 function Why({ children }: { children: string }) {
   return (
-    <p className="mt-1 text-[12px] leading-relaxed text-muted">
-      <span className="font-medium text-faint">Why: </span>
+    <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
+      <span className="font-medium text-ui-faint">Why: </span>
       {children}
     </p>
   )
@@ -275,7 +275,7 @@ function OptionTable({ options, visits }: { options: IdeaOption[]; visits: numbe
   return (
     <table className="mt-3 w-full text-[11.5px]">
       <thead>
-        <tr className="text-left text-faint">
+        <tr className="text-left text-ui-faint">
           <th className="pb-1 font-normal">Option</th>
           <th className="pb-1 text-right font-normal">Cost</th>
           <th className="pb-1 text-right font-normal">Simulated visits</th>
@@ -286,7 +286,7 @@ function OptionTable({ options, visits }: { options: IdeaOption[]; visits: numbe
           const value = visits[i]
           const best = value !== undefined && value === max
           return (
-            <tr key={option.name} className={best ? 'font-medium text-sun' : 'text-muted'}>
+            <tr key={option.name} className={best ? 'font-medium text-ui-accent' : 'text-ui-muted'}>
               <td className="py-0.5 pr-2">{option.name}</td>
               <td className="py-0.5 text-right tabular-nums">${option.costUsd}</td>
               <td className="py-0.5 text-right tabular-nums">{value === undefined ? '—' : value.toFixed(1)}</td>
@@ -300,7 +300,7 @@ function OptionTable({ options, visits }: { options: IdeaOption[]; visits: numbe
 
 function VerdictBar({ counts, scored }: { counts: Counts; scored: number }) {
   return (
-    <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-ink">
+    <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-ui-well">
       {VERDICTS.map((verdict) => (
         <span
           key={verdict}
@@ -319,7 +319,7 @@ function ListSection({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null
   return (
     <Section title={title}>
-      <ul className="list-disc space-y-1 pl-4 text-[12.5px] leading-relaxed text-muted">
+      <ul className="list-disc space-y-1 pl-4 text-[12.5px] leading-relaxed text-ui-muted">
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}

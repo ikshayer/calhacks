@@ -50,8 +50,8 @@ export function IdeaTestCard() {
   }
 
   return (
-    <section className="rounded-xl bg-card p-6 ring-1 ring-black/10">
-      <h2 className="display text-[20px] leading-tight text-graphite">No video yet? Test an idea.</h2>
+    <section className="rounded-xl bg-card p-6 ring-1 ring-black/10 shadow-[0_20px_48px_-28px_rgba(101,0,48,0.28)]">
+      <h2 className="display text-[20px] leading-tight text-title">No video yet? Test an idea.</h2>
       <p className="mt-1.5 text-[15px] leading-relaxed text-subtle">
         Ask the simulated town whether an idea would land, before you shoot anything.
       </p>
@@ -77,7 +77,7 @@ export function IdeaTestCard() {
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[14px] font-medium text-graphite">Campaigns to compare (optional)</p>
+          <p className="mb-1.5 text-[14px] font-medium text-title">Campaigns to compare (optional)</p>
           <div className="space-y-2">
             {options.map((row, index) => (
               <div key={index} className="flex items-center gap-2">

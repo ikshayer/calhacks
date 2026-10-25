@@ -56,7 +56,7 @@ export function RunPanel() {
       title="Simulation"
       aside={
         activeRun && (
-          <span className="text-[11.5px] text-faint">
+          <span className="text-[11.5px] text-ui-faint">
             {activeRun.status === 'scoring' && 'Scoring…'}
             {activeRun.status === 'cascading' && 'Spreading…'}
             {activeRun.status === 'complete' && 'Done'}
@@ -74,7 +74,7 @@ export function RunPanel() {
       </Button>
 
       {!ready && (
-        <p className="mt-2.5 text-[12px] leading-relaxed text-faint">
+        <p className="mt-2.5 text-[12px] leading-relaxed text-ui-faint">
           {needsVideo
             ? 'Re-attach the video above to run this campaign again. The saved report stays readable either way.'
             : 'Upload a video first. The audience is already built and waiting.'}
@@ -82,14 +82,14 @@ export function RunPanel() {
       )}
 
       {error && (
-        <p role="alert" className="mt-2.5 text-[12.5px] leading-snug text-bloom">
+        <p role="alert" className="mt-2.5 text-[12.5px] leading-snug text-ui-danger">
           {error}
         </p>
       )}
 
       {ordered.length > 1 && (
         <div className="mt-4">
-          <p className="mb-2 text-[12px] text-paper">Runs</p>
+          <p className="mb-2 text-[12px] text-ui-text">Runs</p>
           <div className="space-y-1.5">
             {ordered.map((run) => {
               const active = run.id === activeRun?.id
@@ -99,11 +99,11 @@ export function RunPanel() {
                   onClick={() => setActiveRun(run.id)}
                   className={
                     'flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left transition-colors ' +
-                    (active ? 'border-sun bg-sun/[0.07]' : 'border-line bg-ink hover:border-faint')
+                    (active ? 'border-ui-accent bg-ui-accent/[0.07]' : 'border-ui-border bg-ui-well hover:border-ui-edge')
                   }
                 >
-                  <span className="truncate text-[12.5px] text-paper">{run.label}</span>
-                  <span className="tnum shrink-0 text-[11.5px] text-muted">
+                  <span className="truncate text-[12.5px] text-ui-text">{run.label}</span>
+                  <span className="tnum shrink-0 text-[11.5px] text-ui-muted">
                     {run.metrics
                       ? `${run.metrics.likes + run.metrics.shares + run.metrics.comments} actions`
                       : '—'}
@@ -116,7 +116,7 @@ export function RunPanel() {
       )}
 
       {activeRun && (
-        <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-line pt-3.5 text-[11.5px]">
+        <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-ui-border pt-3.5 text-[11.5px]">
           <Detail label="Seed" value={String(activeRun.options.seed)} />
           <Detail
             label="Seeded exposure"
@@ -128,14 +128,14 @@ export function RunPanel() {
       )}
 
       {activeRun && activeRun.options.audienceKey !== audience?.key && (
-        <p className="mt-3 rounded-lg border border-line px-3 py-2.5 text-[12px] leading-relaxed text-muted">
+        <p className="mt-3 rounded-lg border border-ui-border px-3 py-2.5 text-[12px] leading-relaxed text-ui-muted">
           {activeRun.options.audienceKey ? 'This run used a different audience configuration.' : 'This saved run belongs to the previous audience.'}
           {' '}Its results are preserved. Run this version again to see responses from the current residents.
         </p>
       )}
 
       {ordered.length > 1 && (
-        <p className="mt-3 text-[11px] leading-relaxed text-faint">
+        <p className="mt-3 text-[11px] leading-relaxed text-ui-faint">
           Compare runs with matching audience and exposure settings to isolate changes in the video.
         </p>
       )}
@@ -146,8 +146,8 @@ export function RunPanel() {
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-faint">{label}</dt>
-      <dd className="tnum mt-0.5 text-muted">{value}</dd>
+      <dt className="text-ui-faint">{label}</dt>
+      <dd className="tnum mt-0.5 text-ui-muted">{value}</dd>
     </div>
   )
 }

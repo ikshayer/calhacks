@@ -35,12 +35,12 @@ export function LoginRoute() {
   }
 
   return (
-    <main className="paper grid h-full lg:grid-cols-[1.1fr_minmax(420px,0.9fr)]">
+    <main className="paper lobby grid h-full lg:grid-cols-[1.1fr_minmax(420px,0.9fr)]">
       <Marquee />
 
       <div className="flex items-center justify-center bg-canvas px-6 py-10">
         <form onSubmit={submit} className="w-full max-w-[380px]">
-          <h2 className="display text-[30px] leading-tight text-graphite">
+          <h2 className="display text-[30px] leading-tight text-title">
             {mode === 'in' ? 'Sign in' : 'Create an account'}
           </h2>
           <p className="mt-2.5 text-[15px] leading-relaxed text-subtle">
@@ -83,7 +83,7 @@ export function LoginRoute() {
           <button
             type="button"
             onClick={() => setMode(mode === 'in' ? 'up' : 'in')}
-            className="mt-4 w-full text-[14px] text-subtle transition-colors hover:text-graphite"
+            className="mt-4 w-full text-[14px] text-subtle transition-colors hover:text-title"
           >
             {mode === 'in' ? 'No account yet? Create one' : 'Already have an account? Sign in'}
           </button>

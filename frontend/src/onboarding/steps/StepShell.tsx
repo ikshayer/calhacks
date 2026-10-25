@@ -26,7 +26,7 @@ export function StepShell({
       <p className="text-[14px] text-subtle">
         Step {step} of {total}
       </p>
-      <h2 className="display mt-2 max-w-[18ch] text-[34px] leading-[1.1] tracking-tight text-graphite md:text-[42px]">
+      <h2 className="display mt-2 max-w-[18ch] text-[34px] leading-[1.1] tracking-tight text-title md:text-[42px]">
         {question}
       </h2>
       {help && <p className="mt-3 max-w-[52ch] text-[16px] leading-relaxed text-subtle">{help}</p>}
@@ -45,7 +45,10 @@ export function StepShell({
 const FIELD_BASE =
   'w-full rounded-lg border border-ui-border bg-ui-surface px-4 text-[17px] text-ui-text ' +
   'placeholder:text-ui-faint transition-colors hover:border-ui-edge ' +
-  'focus:border-ui-accent focus:outline-none focus:ring-3 focus:ring-primary/20'
+  // An explicit shadow rather than `ring-*`: the ring utilities were not
+  // being generated here, so the focus state was a border colour change and
+  // nothing else — too quiet to be the only cue.
+  'focus:border-ui-accent focus:outline-none focus:shadow-[0_0_0_3px_rgba(101,0,48,0.16)]'
 
 export function BigInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   const { className, ...rest } = props

@@ -136,7 +136,7 @@ export function MiniGraph() {
     <Section
       title="The network"
       aside={
-        <span className="tnum text-[11.5px] text-faint">
+        <span className="tnum text-[11.5px] text-ui-faint">
           {audience?.edges.length ?? 0} links
         </span>
       }
@@ -144,11 +144,11 @@ export function MiniGraph() {
       <canvas
         ref={canvasRef}
         style={{ width: WIDTH, height: HEIGHT }}
-        className="w-full rounded-lg border border-line bg-ink"
+        className="w-full rounded-lg border border-ui-border bg-ui-well"
         role="img"
         aria-label={`Network of ${audience?.members.length ?? 0} audience members, with ${sharesSoFar} shares so far`}
       />
-      <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
+      <p className="mt-2.5 text-[11px] leading-relaxed text-ui-faint">
         All {audience?.members.length ?? 0} members, grouped into clusters. Gold lines are shares
         that reached someone new. All {audience?.members.length ?? 0} residents walk around town.
       </p>

@@ -61,19 +61,19 @@ export function Sidebar({
   const { session, signOut } = useAuth()
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-line bg-panel lg:w-[384px] lg:border-l">
-      <header className="border-b border-line px-4 pb-3 pt-3">
+    <aside className="paper flex w-full shrink-0 flex-col border-ui-border bg-ui-panel lg:w-[384px] lg:border-l">
+      <header className="border-b border-ui-border px-4 pb-3 pt-3">
         <div className="flex items-start justify-between gap-3">
           <button
             onClick={() => navigate('/campaigns')}
-            className="-ml-1.5 rounded px-1.5 py-0.5 text-[12px] text-faint transition-colors hover:text-paper"
+            className="-ml-1.5 rounded px-1.5 py-0.5 text-[12px] text-ui-faint transition-colors hover:text-ui-text"
           >
             ← Campaigns
           </button>
           <button
             onClick={() => void signOut()}
             title={session?.email ?? undefined}
-            className="shrink-0 rounded px-1.5 py-0.5 text-[12px] text-faint transition-colors hover:text-paper"
+            className="shrink-0 rounded px-1.5 py-0.5 text-[12px] text-ui-faint transition-colors hover:text-ui-text"
           >
             Sign out
           </button>
@@ -83,14 +83,14 @@ export function Sidebar({
             <img
               src={campaign.posterDataUrl}
               alt=""
-              className="h-[34px] w-[60px] shrink-0 rounded border border-line bg-ink object-cover"
+              className="h-[34px] w-[60px] shrink-0 rounded border border-ui-border bg-ui-well object-cover"
             />
           )}
           <div className="min-w-0">
-            <h1 className="display truncate text-[17px] leading-tight text-paper">
+            <h1 className="display truncate text-[17px] leading-tight text-ui-text">
               {campaign?.title ?? 'No campaign open'}
             </h1>
-            <p className="mt-0.5 truncate text-[12px] text-muted">
+            <p className="mt-0.5 truncate text-[12px] text-ui-muted">
               {profile?.name || 'Untitled organisation'}
             </p>
           </div>
@@ -98,7 +98,7 @@ export function Sidebar({
       </header>
 
       {selectedMemberId === null ? (
-        <nav className="flex shrink-0 border-b border-line px-2" aria-label="Panels">
+        <nav className="flex shrink-0 border-b border-ui-border px-2" aria-label="Panels">
           {TABS.map((entry) => {
             const active = tab === entry.id
             return (
@@ -108,22 +108,22 @@ export function Sidebar({
                 aria-current={active ? 'page' : undefined}
                 className={
                   'relative px-3 py-2.5 text-[13px] font-medium transition-colors ' +
-                  (active ? 'text-paper' : 'text-faint hover:text-muted')
+                  (active ? 'text-ui-text' : 'text-ui-faint hover:text-ui-muted')
                 }
               >
                 {entry.label}
                 {active && (
-                  <span className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-sun" />
+                  <span className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-ui-accent" />
                 )}
               </button>
             )
           })}
         </nav>
       ) : (
-        <nav className="flex shrink-0 border-b border-line px-2" aria-label="Member report">
+        <nav className="flex shrink-0 border-b border-ui-border px-2" aria-label="Member report">
           <button
             onClick={() => selectMember(null)}
-            className="px-3 py-2.5 text-[13px] font-medium text-muted transition-colors hover:text-paper"
+            className="px-3 py-2.5 text-[13px] font-medium text-ui-muted transition-colors hover:text-ui-text"
           >
             ← Everyone
           </button>
@@ -160,12 +160,18 @@ export function Sidebar({
             </>
           )}
         </div>
+        {/*
+          Shorter and weaker than it was on the dark panel. The fade is only
+          meant to say "this scrolls"; at 4rem and full strength against white
+          it smeared the last heading badly enough to look like a rendering
+          fault rather than a hint.
+        */}
         <GradualBlur
           position="bottom"
           target="parent"
-          height="4rem"
-          strength={1}
-          tint="var(--color-panel)"
+          height="2.25rem"
+          strength={0.45}
+          tint="var(--color-ui-panel)"
           zIndex={10}
         />
       </div>

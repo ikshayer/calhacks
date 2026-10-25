@@ -97,23 +97,23 @@ export function MemberPanel({ memberId }: { memberId: number }) {
     <div>
       {/* The way back out is the pinned row the sidebar puts where the tabs
           were, so this panel starts straight in on the person. */}
-      <div className="border-b border-line px-4 pt-4 pb-4">
+      <div className="border-b border-ui-border px-4 pt-4 pb-4">
         <header className="flex items-start gap-3">
           <img
             src={portrait}
             alt=""
             width={44}
             height={44}
-            className="shrink-0 rounded-full bg-raised"
+            className="shrink-0 rounded-full bg-ui-raised"
           />
           <div className="min-w-0 flex-1">
-            <h3 className="display truncate text-[16px] leading-tight text-paper">{member.name}</h3>
+            <h3 className="display truncate text-[16px] leading-tight text-ui-text">{member.name}</h3>
             {member.millbrook && (
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+              <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
                 Age {member.millbrook.persona.age} · {member.millbrook.persona.occupation}
               </p>
             )}
-            <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
+            <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-ui-muted">
               <span
                 aria-hidden
                 className="inline-block h-2 w-2 rounded-full"
@@ -130,19 +130,19 @@ export function MemberPanel({ memberId }: { memberId: number }) {
         <IdeaVerdictSection result={ideaResult} resident={ideaResident} />
       )}
 
-      <div className="border-b border-line px-4 pb-4">
-        <p className="mt-3 text-[12.5px] leading-relaxed text-muted">{member.persona}</p>
+      <div className="border-b border-ui-border px-4 pb-4">
+        <p className="mt-3 text-[12.5px] leading-relaxed text-ui-muted">{member.persona}</p>
         {member.millbrook && (
           <div className="mt-3">
-            <p className="mb-1.5 text-[11px] text-faint">Values</p>
+            <p className="mb-1.5 text-[11px] text-ui-faint">Values</p>
             <div className="flex flex-wrap gap-1.5">
               {member.millbrook.persona.values.length
                 ? member.millbrook.persona.values.map((value) => <Pill key={value}>{value}</Pill>)
-                : <p className="text-[12px] text-muted">No values recorded.</p>}
+                : <p className="text-[12px] text-ui-muted">No values recorded.</p>}
             </div>
           </div>
         )}
-        <p className="mt-3 text-[11px] text-faint">Assumed audience interests</p>
+        <p className="mt-3 text-[11px] text-ui-faint">Assumed audience interests</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {member.interests.map((interest) => (
             <Pill key={interest}>{interest}</Pill>
@@ -153,12 +153,12 @@ export function MemberPanel({ memberId }: { memberId: number }) {
       <PersonaDetails member={member} audience={audience} onSelect={selectMember} />
       {!run ? (
         ideaResident ? null : (
-          <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
+          <p className="mx-4 mt-4 rounded-lg border border-dashed border-ui-border px-3 py-2.5 text-[12px] leading-relaxed text-ui-faint">
             Run a simulation to see how this member would respond.
           </p>
         )
       ) : !compatibleRun ? (ideaResident ? null : (
-        <p className="mx-4 mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[12px] leading-relaxed text-faint">
+        <p className="mx-4 mt-4 rounded-lg border border-dashed border-ui-border px-3 py-2.5 text-[12px] leading-relaxed text-ui-faint">
           {run.options.audienceKey ? 'This run used a different audience configuration.' : 'This saved run belongs to the previous audience.'}
           {' '}Run this version again to see this resident’s response.
         </p>
@@ -168,7 +168,7 @@ export function MemberPanel({ memberId }: { memberId: number }) {
             {timeline ? (
               <TimelineSummary timeline={timeline} nameOf={nameOf} />
             ) : (
-              <p className="text-[12px] leading-relaxed text-faint">
+              <p className="text-[12px] leading-relaxed text-ui-faint">
                 The cascade was not stored for this run, so there is no round-by-round record for
                 this member.
               </p>
@@ -178,16 +178,16 @@ export function MemberPanel({ memberId }: { memberId: number }) {
           {decision && (
             <Section title="Chance of each action">
               {decision.missing ? (
-                <div className="rounded-lg border border-line bg-panel px-3 py-2.5">
-                  <p className="text-[12.5px] font-medium text-paper">No prediction</p>
-                  <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+                <div className="rounded-lg border border-ui-border bg-ui-panel px-3 py-2.5">
+                  <p className="text-[12.5px] font-medium text-ui-text">No prediction</p>
+                  <p className="mt-1 text-[11.5px] leading-relaxed text-ui-muted">
                     Scoring failed for this member. They are counted as exposed but excluded from
                     the action totals rather than counted as a zero.
                   </p>
                 </div>
               ) : (
                 <>
-                  <p className="mb-2 text-[11.5px] text-faint">Chance of each action, if they see it</p>
+                  <p className="mb-2 text-[11.5px] text-ui-faint">Chance of each action, if they see it</p>
                   <div className="space-y-1.5">
                     <Probability label="Watches it through" value={decision.pWatch} color="#6aa9c9" />
                     <Probability label="Likes it" value={decision.pLike} color="#7fb069" />
@@ -202,7 +202,7 @@ export function MemberPanel({ memberId }: { memberId: number }) {
           {decision && !decision.missing && (
             <Section title="Why">
               <MemberExplanation decision={decision} />
-              <p className="mt-2 text-[11px] leading-relaxed text-faint">
+              <p className="mt-2 text-[11px] leading-relaxed text-ui-faint">
                 A generated rationale for a simulated decision, not something this person did.
               </p>
             </Section>
@@ -223,10 +223,10 @@ export function MemberPanel({ memberId }: { memberId: number }) {
                     : 'Simulated, but without a body on the island — the camera stays where it is.'
                 }
                 className={
-                  'rounded-full px-2 py-0.5 text-[11.5px] transition-colors hover:text-paper ' +
+                  'rounded-full px-2 py-0.5 text-[11.5px] transition-colors hover:text-ui-text ' +
                   (neighbour.onIsland
-                    ? 'bg-raised text-muted'
-                    : 'border border-dashed border-line text-faint')
+                    ? 'bg-ui-raised text-ui-muted'
+                    : 'border border-dashed border-ui-border text-ui-faint')
                 }
               >
                 {neighbour.name}
@@ -234,7 +234,7 @@ export function MemberPanel({ memberId }: { memberId: number }) {
             ))}
           </div>
           {offIsland > 0 && (
-            <p className="mt-2 text-[11px] leading-relaxed text-faint">
+            <p className="mt-2 text-[11px] leading-relaxed text-ui-faint">
               Outlined names are simulated but have no body on the island, so selecting them leaves
               the camera where it is.
             </p>
@@ -257,9 +257,9 @@ function IdeaVerdictSection({
   return (
     <Section title="Idea verdict">
       {verdict === undefined ? (
-        <div className="rounded-lg border border-line bg-panel px-3 py-2.5">
-          <p className="text-[12.5px] font-medium text-paper">No prediction</p>
-          <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+        <div className="rounded-lg border border-ui-border bg-ui-panel px-3 py-2.5">
+          <p className="text-[12.5px] font-medium text-ui-text">No prediction</p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-ui-muted">
             This resident’s profile lacked what the question needed, so they are left out of the
             counts rather than counted as a no.
           </p>
@@ -281,7 +281,7 @@ function IdeaVerdictSection({
           </div>
           {input && input.options.length > 0 && resident.optionInterest.length > 0 && (
             <div className="mt-3">
-              <p className="mb-1.5 text-[11.5px] text-faint">Interest in each option</p>
+              <p className="mb-1.5 text-[11.5px] text-ui-faint">Interest in each option</p>
               <div className="space-y-1.5">
                 {input.options.map((option, index) => (
                   <Probability
@@ -296,7 +296,7 @@ function IdeaVerdictSection({
           )}
           <div className="mt-3">
             <IdeaReason ideaId={result.id} resident={resident} />
-            <p className="mt-2 text-[11px] leading-relaxed text-faint">
+            <p className="mt-2 text-[11px] leading-relaxed text-ui-faint">
               A generated rationale for a simulated decision, not something this person did.
             </p>
           </div>
@@ -336,9 +336,9 @@ function IdeaReason({ ideaId, resident }: { ideaId: string; resident: IdeaReside
 
   const current = fetched?.memberId === memberId ? fetched : null
   const text = resident.reason || current?.text || ''
-  if (current?.error) return <p className="text-[12px] leading-relaxed text-bloom">{current.error}</p>
-  if (!text) return <p className="text-[12.5px] leading-relaxed text-faint">Writing a reason…</p>
-  return <p className="text-[12.5px] leading-relaxed text-muted">{text}</p>
+  if (current?.error) return <p className="text-[12px] leading-relaxed text-ui-danger">{current.error}</p>
+  if (!text) return <p className="text-[12.5px] leading-relaxed text-ui-faint">Writing a reason…</p>
+  return <p className="text-[12.5px] leading-relaxed text-ui-muted">{text}</p>
 }
 
 function TimelineSummary({
@@ -349,7 +349,7 @@ function TimelineSummary({
   nameOf: (id: number) => string
 }) {
   if (timeline.exposedAtRound === null) {
-    return <p className="text-[12px] leading-relaxed text-muted">The cascade never reached them.</p>
+    return <p className="text-[12px] leading-relaxed text-ui-muted">The cascade never reached them.</p>
   }
 
   const seen =
@@ -369,7 +369,7 @@ function TimelineSummary({
       : null
 
   return (
-    <ul className="space-y-1 text-[12.5px] leading-relaxed text-muted">
+    <ul className="space-y-1 text-[12.5px] leading-relaxed text-ui-muted">
       <li>{seen}</li>
       {did && <li>{did}</li>}
       {reach && <li>{reach}</li>}
@@ -395,14 +395,14 @@ function capitalise(text: string): string {
 function Probability({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex-1 truncate text-[12px] text-paper">{label}</span>
-      <span className="h-1.5 w-[74px] overflow-hidden rounded-full bg-ink">
+      <span className="flex-1 truncate text-[12px] text-ui-text">{label}</span>
+      <span className="h-1.5 w-[74px] overflow-hidden rounded-full bg-ui-well">
         <span
           className="block h-full rounded-full"
           style={{ width: `${Math.round(value * 100)}%`, background: color }}
         />
       </span>
-      <span className="tnum w-8 text-right text-[12px] text-muted">{Math.round(value * 100)}%</span>
+      <span className="tnum w-8 text-right text-[12px] text-ui-muted">{Math.round(value * 100)}%</span>
     </div>
   )
 }

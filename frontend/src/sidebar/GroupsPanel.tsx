@@ -71,7 +71,7 @@ export function GroupsPanel() {
   const ranked = [...rows].sort((a, b) => b.actions - a.actions)
 
   return (
-    <Section title="Who responded" aside={<span className="text-[11.5px] text-faint">by actions</span>}>
+    <Section title="Who responded" aside={<span className="text-[11.5px] text-ui-faint">by actions</span>}>
       {rows.length > 0 && (
         <>
           <ul className="space-y-2.5">
@@ -100,10 +100,10 @@ export function GroupsPanel() {
                   />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-[12.5px] text-paper transition-colors group-hover:text-sun">
+                      <span className="truncate text-[12.5px] text-ui-text transition-colors group-hover:text-ui-accent">
                         {row.label}
                       </span>
-                      <span className="tnum shrink-0 text-[11.5px] text-muted">
+                      <span className="tnum shrink-0 text-[11.5px] text-ui-muted">
                         {row.actions} from {row.seen}
                       </span>
                     </span>
@@ -115,7 +115,7 @@ export function GroupsPanel() {
               </motion.li>
             ))}
           </ul>
-          <p className="mt-3 text-[11px] leading-relaxed text-faint">
+          <p className="mt-3 text-[11px] leading-relaxed text-ui-faint">
             The bar is how much of each group has seen it. Point at a row to find those residents in
             town. Group sizes are inferred from the audience you described, and are assumptions
             rather than measured demographics — edit them below.

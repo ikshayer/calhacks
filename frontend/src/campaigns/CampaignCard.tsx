@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { motion } from 'motion/react'
+import { STAGGER_ITEM } from '@/lib/motion'
 import type { Campaign } from '@/data/types'
 import { Button } from '@/components/ui'
 
@@ -45,7 +47,10 @@ export function CampaignCard({
   const { headline, runIds } = campaign
 
   return (
-    <li className="flex items-center gap-4 rounded-xl bg-card p-3.5 ring-1 ring-black/10 transition-shadow hover:ring-black/25">
+    <motion.li
+      variants={STAGGER_ITEM}
+      className="flex items-center gap-4 rounded-xl bg-card p-3.5 ring-1 ring-black/10 shadow-[0_14px_30px_-20px_rgba(35,31,32,0.35)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:ring-black/25"
+    >
       <button onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-4 text-left">
         {campaign.posterDataUrl ? (
           <img
@@ -62,7 +67,7 @@ export function CampaignCard({
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className="display block truncate text-[17px] text-graphite">{campaign.title}</span>
+          <span className="display block truncate text-[17px] text-title">{campaign.title}</span>
           <span className="mt-0.5 block text-[13.5px] text-subtle">
             {formatDate(campaign.createdAt)} · {formatDuration(campaign.durationSec)} ·{' '}
             {plural(runIds.length, 'run')}
@@ -118,6 +123,6 @@ export function CampaignCard({
           </>
         )}
       </div>
-    </li>
+    </motion.li>
   )
 }

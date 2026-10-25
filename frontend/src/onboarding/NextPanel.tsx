@@ -64,7 +64,7 @@ function Item({ title, children }: { title: string; children: React.ReactNode })
     <li className="flex gap-3">
       <span
         aria-hidden
-        className="mt-[3px] grid size-6 shrink-0 place-items-center rounded-full bg-white/15 text-[12px] ring-1 ring-white/25"
+        className="mt-[3px] grid size-6 shrink-0 place-items-center rounded-full bg-white/15 text-[12px] ring-1 ring-black/25"
       >
         ◦
       </span>

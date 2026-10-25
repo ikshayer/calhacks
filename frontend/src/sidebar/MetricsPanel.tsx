@@ -38,28 +38,28 @@ export function MetricsPanel() {
     <Section
       title="Results"
       aside={
-        <span className="tnum text-[11.5px] text-faint">
+        <span className="tnum text-[11.5px] text-ui-faint">
           {finished ? 'final' : `round ${round}`}
         </span>
       }
     >
-      <div className="rounded-lg border border-line bg-ink px-3.5 py-3">
+      <div className="rounded-lg border border-ui-border bg-ui-well px-3.5 py-3">
         <div className="flex items-end justify-between gap-3">
           <Stat
             label={`of ${audienceSize} members have seen it`}
             value={live.exposed}
             tone="water"
           />
-          <p className="tnum text-[12.5px] text-muted">
+          <p className="tnum text-[12.5px] text-ui-muted">
             {audienceSize > 0 ? `${((live.exposed / audienceSize) * 100).toFixed(0)}%` : '—'}
           </p>
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-faint">
+        <p className="mt-2 text-[11px] leading-relaxed text-ui-faint">
           Distinct members reached, counted once each. Not views — one person can watch twice.
         </p>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-2 rounded-lg border border-line bg-ink px-3.5 py-3">
+      <div className="mt-3 grid grid-cols-4 gap-2 rounded-lg border border-ui-border bg-ui-well px-3.5 py-3">
         <Stat label="watched" value={live.watch} />
         <Stat label="liked" value={live.likes} tone="leaf" />
         <Stat label="replied" value={live.comments} tone="sun" />
@@ -92,10 +92,10 @@ function Row({ label, value, note }: { label: string; value: string; note?: stri
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <dt className="text-muted">{label}</dt>
-        <dd className="tnum text-paper">{value}</dd>
+        <dt className="text-ui-muted">{label}</dt>
+        <dd className="tnum text-ui-text">{value}</dd>
       </div>
-      {note && <p className="mt-0.5 text-[10.5px] leading-snug text-faint">{note}</p>}
+      {note && <p className="mt-0.5 text-[10.5px] leading-snug text-ui-faint">{note}</p>}
     </div>
   )
 }

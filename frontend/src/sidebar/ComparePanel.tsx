@@ -70,12 +70,12 @@ export function ComparePanel() {
     <>
       <Section title="Compare versions">
         <div className="flex items-center gap-2">
-          <p className="flex-1 truncate text-[12.5px] text-paper">{left.label}</p>
-          <span className="text-[11px] text-faint">against</span>
+          <p className="flex-1 truncate text-[12.5px] text-ui-text">{left.label}</p>
+          <span className="text-[11px] text-ui-faint">against</span>
           <select
             value={right.id}
             onChange={(event) => setCompareRun(event.target.value)}
-            className="min-w-0 flex-1 rounded-md border border-line bg-ink px-2 py-1.5 text-[12.5px] text-paper focus:border-sun focus:outline-none"
+            className="min-w-0 flex-1 rounded-md border border-ui-border bg-ui-well px-2 py-1.5 text-[12.5px] text-ui-text focus:border-ui-accent focus:outline-none"
             aria-label="Version to compare against"
           >
             {complete
@@ -91,21 +91,21 @@ export function ComparePanel() {
         <div
           className={
             'mt-4 rounded-lg border px-3.5 py-3 ' +
-            (winner ? 'border-sun/30 bg-sun/[0.07]' : 'border-line bg-ink')
+            (winner ? 'border-ui-accent/30 bg-ui-accent/[0.07]' : 'border-ui-border bg-ui-well')
           }
         >
           {!sameAudience ? (
             <>
-              <p className="display text-[14px] text-paper">Different simulation settings</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+              <p className="display text-[14px] text-ui-text">Different simulation settings</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
                 These results cannot establish a winner. Run both versions against the same
                 Millbrook audience and exposure settings to compare them.
               </p>
             </>
           ) : winner ? (
             <>
-              <p className="display text-[14px] text-sun">{winner.label} does better</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+              <p className="display text-[14px] text-ui-accent">{winner.label} does better</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
                 About {margin} more simulated actions in a typical run, with each version's
                 typical result outside the other's range across 200 trials. A modelled ranking,
                 not a measured improvement.
@@ -113,8 +113,8 @@ export function ComparePanel() {
             </>
           ) : (
             <>
-              <p className="display text-[14px] text-paper">Too close to call</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+              <p className="display text-[14px] text-ui-text">Too close to call</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-ui-muted">
                 Across 200 trials these two land inside each other's range, so this simulation
                 cannot separate them. Either change something bigger, or treat them as
                 equivalent.
@@ -132,7 +132,7 @@ export function ComparePanel() {
         )}
 
         {!sameAudience && (
-          <p className="mt-3 rounded-lg border border-bloom/30 bg-bloom/[0.07] px-3 py-2.5 text-[11.5px] leading-relaxed text-muted">
+          <p className="mt-3 rounded-lg border border-bloom/30 bg-bloom/[0.07] px-3 py-2.5 text-[11.5px] leading-relaxed text-ui-muted">
             {!left.options.audienceKey || !right.options.audienceKey
               ? 'A saved run belongs to the previous audience. Its original results remain available.'
               : 'These runs used different audience or exposure settings.'}
@@ -143,7 +143,7 @@ export function ComparePanel() {
       <Section title="Side by side">
         <table className="w-full text-[12.5px]">
           <thead>
-            <tr className="text-[11px] text-faint">
+            <tr className="text-[11px] text-ui-faint">
               <th className="pb-2 text-left font-normal" />
               <th className="pb-2 text-right font-normal">{left.label}</th>
               <th className="pb-2 text-right font-normal">{right.label}</th>
@@ -159,7 +159,7 @@ export function ComparePanel() {
           </tbody>
         </table>
 
-        <p className="mt-3 text-[11px] leading-relaxed text-faint">
+        <p className="mt-3 text-[11px] leading-relaxed text-ui-faint">
           Across 200 trials, a typical run produced {leftSpread.p50} actions for {left.label} (range {leftSpread.p10}–{leftSpread.p90}) and{' '}
           {rightSpread.p50} for {right.label} (range {rightSpread.p10}–{rightSpread.p90}). Reach and
           interactions are listed separately and are not added together.
@@ -194,17 +194,17 @@ function WrittenComparison({ baseRunId, revisedRunId }: { baseRunId: string; rev
   }, [source, baseRunId, revisedRunId, key])
 
   const current = result?.key === key ? result : null
-  if (current?.error) return <p className="mt-3 text-[12px] leading-relaxed text-bloom">{current.error}</p>
+  if (current?.error) return <p className="mt-3 text-[12px] leading-relaxed text-ui-danger">{current.error}</p>
   if (!current) {
     return source.kind === 'spacetime' ? (
-      <p className="mt-3 text-[12px] leading-relaxed text-faint">Writing up the difference…</p>
+      <p className="mt-3 text-[12px] leading-relaxed text-ui-faint">Writing up the difference…</p>
     ) : null
   }
   if (!current.text) return null
   return (
     <div className="mt-3">
-      <p className="text-[12.5px] leading-relaxed text-muted">{current.text}</p>
-      <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+      <p className="text-[12.5px] leading-relaxed text-ui-muted">{current.text}</p>
+      <p className="mt-1.5 text-[11px] leading-relaxed text-ui-faint">
         Written by Claude from the two analyses and the simulated results.
       </p>
     </div>
@@ -213,10 +213,10 @@ function WrittenComparison({ baseRunId, revisedRunId }: { baseRunId: string; rev
 
 function ComparisonRow({ label, a, b }: { label: string; a: number; b: number }) {
   return (
-    <tr className="border-t border-line">
-      <td className="py-1.5 text-muted">{label}</td>
-      <td className="py-1.5 text-right text-paper">{a}</td>
-      <td className="py-1.5 text-right text-paper">{b}</td>
+    <tr className="border-t border-ui-border">
+      <td className="py-1.5 text-ui-muted">{label}</td>
+      <td className="py-1.5 text-right text-ui-text">{a}</td>
+      <td className="py-1.5 text-right text-ui-text">{b}</td>
     </tr>
   )
 }

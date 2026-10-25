@@ -84,7 +84,9 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
         // card and stretches to match it, so top-aligned content left a pool of
         // empty white under the button.
         'flex h-full flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center transition-colors ' +
-        (dragging ? 'border-primary bg-primary/[0.04]' : 'border-rule bg-card')
+        (dragging
+          ? 'border-primary bg-primary/[0.05]'
+          : 'border-rule bg-card shadow-[0_20px_48px_-28px_rgba(101,0,48,0.28)]')
       }
     >
       <input
@@ -98,7 +100,7 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
           event.target.value = ''
         }}
       />
-      <p className="display text-[20px] text-graphite" aria-live="polite">
+      <p className="display text-[20px] text-title" aria-live="polite">
         {busy ? (live ? 'Analysing… about 20–40 seconds' : 'Reading the file…') : 'Drop a video here'}
       </p>
       <p className="mx-auto mt-1.5 max-w-[40ch] text-[15px] leading-relaxed text-subtle">

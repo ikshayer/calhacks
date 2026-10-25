@@ -87,7 +87,7 @@ export function DetailsStep({
             <button
               type="button"
               onClick={addAccount}
-              className="h-14 shrink-0 rounded-lg border border-ui-border px-4 text-[15px] font-medium text-graphite transition-colors hover:border-ui-edge"
+              className="h-14 shrink-0 rounded-lg border border-ui-border px-4 text-[15px] font-medium text-title transition-colors hover:border-ui-edge"
             >
               Add
             </button>
@@ -103,7 +103,7 @@ export function DetailsStep({
                       inspirationAccounts: draft.inspirationAccounts.filter((a) => a !== handle),
                     })
                   }
-                  className="group flex items-center gap-1.5 rounded-full bg-ui-raised px-3 py-1 text-[14px] text-subtle transition-colors hover:text-graphite"
+                  className="group flex items-center gap-1.5 rounded-full bg-ui-raised px-3 py-1 text-[14px] text-subtle transition-colors hover:text-title"
                 >
                   @{handle}
                   <span aria-hidden className="text-[16px] leading-none">
@@ -133,7 +133,7 @@ export function DetailsStep({
                       : 'border-ui-border bg-card hover:border-ui-edge')
                   }
                 >
-                  <span className="block text-[15px] font-medium text-graphite">{option.label}</span>
+                  <span className="block text-[15px] font-medium text-title">{option.label}</span>
                   <span className="mt-0.5 block text-[13.5px] text-subtle">{option.blurb}</span>
                 </button>
               )
@@ -156,7 +156,7 @@ function Labelled({
 }) {
   return (
     <div>
-      <p className="mb-2 text-[15px] font-medium text-graphite">{label}</p>
+      <p className="mb-2 text-[15px] font-medium text-title">{label}</p>
       {hint && <p className="mb-2.5 max-w-[56ch] text-[13.5px] leading-relaxed text-subtle">{hint}</p>}
       {children}
     </div>

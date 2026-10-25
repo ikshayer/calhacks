@@ -10,16 +10,16 @@ const FAMILY_RELATION: Record<FamilyRelation, string> = {
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-[11px] text-faint">{label}</dt>
-      <dd className="mt-0.5 break-words text-[12px] leading-relaxed text-muted">{children}</dd>
+      <dt className="text-[11px] text-ui-faint">{label}</dt>
+      <dd className="mt-0.5 break-words text-[12px] leading-relaxed text-ui-muted">{children}</dd>
     </div>
   )
 }
 
 function Expandable({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <details className="border-b border-line px-4 py-3">
-      <summary className="cursor-pointer text-[12.5px] font-medium text-paper focus-visible:outline-sun">{title}</summary>
+    <details className="border-b border-ui-border px-4 py-3">
+      <summary className="cursor-pointer text-[12.5px] font-medium text-ui-text focus-visible:outline-ui-accent">{title}</summary>
       <div className="mt-3 space-y-3">{children}</div>
     </details>
   )
@@ -37,7 +37,7 @@ export function PersonaDetails({ member, audience, onSelect }: {
   const personLink = (id: string) => {
     const target = bySourceId.get(id)
     return target ? (
-      <button onClick={() => onSelect(target.id)} className="rounded text-left text-paper underline decoration-line underline-offset-2 hover:text-sun focus-visible:outline-sun">
+      <button onClick={() => onSelect(target.id)} className="rounded text-left text-ui-text underline decoration-ui-border underline-offset-2 hover:text-ui-accent focus-visible:outline-ui-accent">
         {target.name}
       </button>
     ) : <span>{id}</span>
@@ -75,14 +75,14 @@ export function PersonaDetails({ member, audience, onSelect }: {
           <Detail label="Household">{household.surname} · {household.id}</Detail>
           <Detail label="Address">{household.address}</Detail>
         </dl>
-        <div className="text-[12px] leading-relaxed text-muted">
-          <p className="mb-1 text-[11px] text-faint">Household residents</p>
+        <div className="text-[12px] leading-relaxed text-ui-muted">
+          <p className="mb-1 text-[11px] text-ui-faint">Household residents</p>
           <ul className="space-y-1">
             {household.memberIds.map((id) => <li key={id}>{personLink(id)}</li>)}
           </ul>
         </div>
-        <div className="text-[12px] leading-relaxed text-muted">
-          <p className="mb-1 text-[11px] text-faint">Family · relation to this resident</p>
+        <div className="text-[12px] leading-relaxed text-ui-muted">
+          <p className="mb-1 text-[11px] text-ui-faint">Family · relation to this resident</p>
           {Object.keys(persona.family).length ? (
             <ul className="space-y-1">
               {Object.entries(persona.family).map(([id, relation]) => (
@@ -91,12 +91,12 @@ export function PersonaDetails({ member, audience, onSelect }: {
             </ul>
           ) : <p>No family links recorded.</p>}
         </div>
-        <div className="text-[12px] leading-relaxed text-muted">
-          <p className="mb-1 text-[11px] text-faint">Friends · affinity from −1 to +1</p>
+        <div className="text-[12px] leading-relaxed text-ui-muted">
+          <p className="mb-1 text-[11px] text-ui-faint">Friends · affinity from −1 to +1</p>
           {Object.keys(persona.friends).length ? (
             <ul className="space-y-1">
               {Object.entries(persona.friends).map(([id, affinity]) => (
-                <li key={id}>{personLink(id)} <span className="text-faint">({affinity > 0 ? '+' : ''}{affinity.toFixed(2)})</span></li>
+                <li key={id}>{personLink(id)} <span className="text-ui-faint">({affinity > 0 ? '+' : ''}{affinity.toFixed(2)})</span></li>
               ))}
             </ul>
           ) : <p>No friendships recorded.</p>}
@@ -104,7 +104,7 @@ export function PersonaDetails({ member, audience, onSelect }: {
       </Expandable>
 
       <Expandable title="Current state and memories">
-        <p className="text-[11px] leading-relaxed text-faint">Read-only persona snapshot. Runs do not update these fields.</p>
+        <p className="text-[11px] leading-relaxed text-ui-faint">Read-only persona snapshot. Runs do not update these fields.</p>
         <dl className="grid grid-cols-2 gap-3">
           <Detail label="Mood">{persona.mood}</Detail>
           <Detail label="Location">{persona.location}</Detail>
@@ -115,15 +115,15 @@ export function PersonaDetails({ member, audience, onSelect }: {
           <Detail label="Goals">{persona.goals.join('; ') || 'No goals recorded.'}</Detail>
           <Detail label="Beliefs">{persona.beliefs.join('; ') || 'No beliefs recorded.'}</Detail>
         </dl>
-        <div className="text-[12px] leading-relaxed text-muted">
-          <p className="mb-1 text-[11px] text-faint">Memories</p>
+        <div className="text-[12px] leading-relaxed text-ui-muted">
+          <p className="mb-1 text-[11px] text-ui-faint">Memories</p>
           {persona.memories.length ? (
             <ul className="space-y-3">
               {persona.memories.map((memory) => (
                 <li key={memory.id}>
                   <p>{memory.text}</p>
-                  <p className="text-[11px] text-faint">{memory.id} · Tick {memory.tick} · Importance {memory.importance}</p>
-                  <p className="text-[11px] text-faint">{memory.tags.join(', ') || 'No tags.'}</p>
+                  <p className="text-[11px] text-ui-faint">{memory.id} · Tick {memory.tick} · Importance {memory.importance}</p>
+                  <p className="text-[11px] text-ui-faint">{memory.tags.join(', ') || 'No tags.'}</p>
                 </li>
               ))}
             </ul>
