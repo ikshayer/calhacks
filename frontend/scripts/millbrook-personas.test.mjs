@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { allocateGroups, buildMillbrookAudience, fetchMillbrookWorld, validateMillbrookWorld } from '../src/data/millbrook.ts'
+import { allocateGroups, buildMillbrookAudience, fetchMillbrookWorld, TOWN_SIZE, validateMillbrookWorld } from '../src/data/millbrook.ts'
 import { sameRunAudience } from '../src/data/runCompatibility.ts'
 import { runCascade, scoreAudience } from '../src/data/mock/scriptedCascade.ts'
 import { residentAppearance, RESIDENT_IDS } from '../src/island/residentAppearance.ts'
@@ -173,9 +173,33 @@ test('data source shares reads, retries failures and keeps reports tied to their
   const run = await driver.startRun('campaign', video.id, 'Original', options)
   const report = await driver.getReport(run)
   const reply = await driver.chat(run, [], 'What happened?')
-  assert.equal((await driver.getDecisions(run)).length, 50)
+  assert.equal((await driver.getDecisions(run)).length, TOWN_SIZE.total)
   await driver.loadAudience({ ...profile, audienceVersion: 2, groups: [group('replacement', 1)] })
   await driver.reviseSignals(video.id, { ...video.signals, hookStrength: 0, clarityOfAsk: 0, topics: ['other'] })
   assert.deepEqual(await driver.getReport(run), report)
   assert.equal(await driver.chat(run, [], 'What happened?'), reply)
+})
+
+test('the 300-person town keeps the 50 residents on the island and derives unique, connected neighbours', () => {
+  const town = buildMillbrookAudience(source, profile, TOWN_SIZE.total)
+  const again = buildMillbrookAudience(source, profile, TOWN_SIZE.total)
+  assert.deepEqual(town, again)
+  assert.equal(town.members.length, TOWN_SIZE.total)
+  assert.equal(town.members.filter((member) => member.onIsland).length, TOWN_SIZE.onIsland)
+  assert.ok(town.members.slice(0, 50).every((member) => member.onIsland))
+  assert.equal(new Set(town.members.map((member) => member.name)).size, TOWN_SIZE.total)
+  assert.equal(new Set(town.members.map((member) => member.millbrook.persona.id)).size, TOWN_SIZE.total)
+  for (const member of town.members.slice(50)) {
+    const source = member.millbrook.persona
+    assert.ok(source.age >= 0 && source.age <= 90)
+    assert.ok(town.adjacency[member.id].length >= 1, `neighbour ${member.id} is isolated`)
+    assert.ok(Object.values(source.personality).every((score) => score >= 0 && score <= 1))
+  }
+  // Group counts follow the onboarding shares across all 300.
+  const counts = new Map()
+  for (const member of town.members) counts.set(member.groupId, (counts.get(member.groupId) ?? 0) + 1)
+  assert.deepEqual(profile.groups.map((entry) => counts.get(entry.id)), allocateGroups(profile.groups, TOWN_SIZE.total))
+  // The snapshot residents are unchanged by the expansion.
+  assert.deepEqual(town.members.slice(0, 50).map((member) => member.millbrook.persona), buildMillbrookAudience(source, profile).members.map((member) => member.millbrook.persona))
+  assert.throws(() => buildMillbrookAudience(source, profile, 49), /at least 50/)
 })

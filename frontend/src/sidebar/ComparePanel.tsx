@@ -4,6 +4,7 @@ import { EmptyState, Section } from '@/components/ui'
 import type { RunMetrics } from '@/data/types'
 import type { RunState } from '@/store/useAppStore'
 import { sameRunAudience } from '@/data/runCompatibility'
+import type { GroupMetrics } from '@/data/types'
 
 /**
  * Original against revision.
@@ -165,6 +166,8 @@ export function ComparePanel() {
           interactions are listed separately and are not added together.
         </p>
       </Section>
+
+      <AbBreakdown decisive={decisive} />
     </>
   )
 }
@@ -208,6 +211,78 @@ function WrittenComparison({ baseRunId, revisedRunId }: { baseRunId: string; rev
         Written by Claude from the two analyses and the simulated results.
       </p>
     </div>
+  )
+}
+
+/**
+ * Where video A and video B differ: who only one of them reached, and each audience group's
+ * reach and likes. Shown only for an A/B test. When the overall result is inside the trial
+ * spread, the gaps here are described as noise, not as wins.
+ */
+function AbBreakdown({ decisive }: { decisive: boolean }) {
+  const ab = useAppStore((state) => state.ab)
+  const runs = useAppStore((state) => state.runs)
+  const groups = useAppStore((state) => state.profile?.groups)
+  if (!ab) return null
+  const a = runs[ab.a.runId]
+  const b = runs[ab.b.runId]
+  if (!a?.metrics || !b?.metrics || a.status !== 'complete' || b.status !== 'complete') return null
+
+  const reached = (run: RunState) => new Set(run.rounds.flatMap((round) => round.exposed))
+  const reachedA = reached(a)
+  const reachedB = reached(b)
+  // Rounds are not stored across a reload, so without them the overlap cannot be computed.
+  const haveRounds = reachedA.size > 0 && reachedB.size > 0
+  const onlyA = [...reachedA].filter((id) => !reachedB.has(id)).length
+  const onlyB = [...reachedB].filter((id) => !reachedA.has(id)).length
+  const both = reachedA.size - onlyA
+
+  const byGroup = new Map<string, { a?: GroupMetrics; b?: GroupMetrics }>()
+  for (const row of a.metrics.byGroup) byGroup.set(row.groupId, { ...byGroup.get(row.groupId), a: row })
+  for (const row of b.metrics.byGroup) byGroup.set(row.groupId, { ...byGroup.get(row.groupId), b: row })
+  const label = (id: string) => groups?.find((group) => group.id === id)?.label ?? id
+
+  const lead = (x: number, y: number) => (x === y ? '=' : x > y ? 'A' : 'B')
+
+  return (
+    <Section title="Where each one wins">
+      {haveRounds && (
+        <p className="text-[12.5px] leading-relaxed text-muted">
+          {onlyA} residents saw only Video A, {onlyB} saw only Video B, and {both} saw both.
+        </p>
+      )}
+      <table className="mt-3 w-full text-[12px]">
+        <thead>
+          <tr className="text-[11px] text-faint">
+            <th className="pb-2 text-left font-normal">Group</th>
+            <th className="pb-2 text-right font-normal" colSpan={2}>Reached A / B</th>
+            <th className="pb-2 text-right font-normal" colSpan={2}>Likes A / B</th>
+          </tr>
+        </thead>
+        <tbody className="tnum">
+          {[...byGroup.entries()].map(([id, row]) => {
+            const reachA = row.a?.exposed ?? 0
+            const reachB = row.b?.exposed ?? 0
+            const likesA = row.a?.likes ?? 0
+            const likesB = row.b?.likes ?? 0
+            return (
+              <tr key={id} className="border-t border-line">
+                <td className="py-1.5 text-muted">{label(id)}</td>
+                <td className="py-1.5 text-right text-paper">{reachA} / {reachB}</td>
+                <td className="w-6 py-1.5 text-right text-sun">{lead(reachA, reachB)}</td>
+                <td className="py-1.5 text-right text-paper">{likesA} / {likesB}</td>
+                <td className="w-6 py-1.5 text-right text-sun">{lead(likesA, likesB)}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      <p className="mt-3 text-[11px] leading-relaxed text-faint">
+        {decisive
+          ? 'The overall result is outside the trial spread; per-group gaps are smaller samples and less certain.'
+          : 'The overall result is inside the trial spread, so treat these gaps as noise, not as wins.'}
+      </p>
+    </Section>
   )
 }
 

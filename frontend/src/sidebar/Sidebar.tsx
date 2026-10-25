@@ -13,6 +13,7 @@ import { MiniGraph } from './MiniGraph'
 import { ReportPanel } from './ReportPanel'
 import { ChatPanel } from './ChatPanel'
 import { ComparePanel } from './ComparePanel'
+import { AbBar } from './AbBar'
 import { AssumptionsStrip } from './AssumptionsStrip'
 import { ViewOptions } from './ViewOptions'
 
@@ -96,6 +97,8 @@ export function Sidebar({
           </div>
         </div>
       </header>
+
+      <AbBar onCompare={() => setTab('compare')} />
 
       {selectedMemberId === null ? (
         <nav className="flex shrink-0 border-b border-line px-2" aria-label="Panels">

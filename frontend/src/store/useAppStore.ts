@@ -22,20 +22,21 @@ import type {
 } from '@/data/types'
 import { capturePoster } from '@/data/videoPoster'
 import { hashSeed } from '@/lib/rng'
-import { MILLBROOK_SIZE } from '@/data/millbrook'
+import { TOWN_SIZE } from '@/data/millbrook'
 
 /**
  * How many audience members exist, and how many get a body on the island.
  *
  * Every supplied Millbrook resident has a body on the island and is simulated.
  */
-export const AUDIENCE_SIZE = MILLBROOK_SIZE
+export const AUDIENCE_SIZE = TOWN_SIZE
 
 export const DEFAULT_RUN_OPTIONS: RunOptions = {
   seed: 1337,
   audienceVersion: 1,
-  // 40% of the 50 Millbrook residents (20) see it first; at 10% only 5 did, too few to separate two cuts.
-  seedExposure: 0.4,
+  // 10% of the 300-person town (30) see it first. With only the 50 residents, 10% was 5 people and
+  // 40% left nobody new to spread to, so the cascade stopped after two rounds.
+  seedExposure: 0.1,
   maxRounds: 6,
 }
 
@@ -71,6 +72,31 @@ export type IdeaViewState = {
   error?: string
 }
 
+/** One side of an A/B test: its own campaign (one video) and the run made from it. */
+export interface AbSide {
+  campaignId: CampaignId
+  runId: RunId
+}
+
+/**
+ * Two videos tested side by side. Both runs share the audience, seed and starting exposure
+ * (startRun derives them from the profile), so any difference comes from the videos.
+ */
+export interface AbPair {
+  /** What the user is trying to achieve, shown beside the results. The simulation does not read it. */
+  goal: string
+  a: AbSide
+  b: AbSide
+  /** The side the island is showing. */
+  active: 'a' | 'b'
+}
+
+export interface AbTestInput {
+  goal: string
+  a: VideoInput
+  b: VideoInput
+}
+
 interface PlaybackState {
   /** How many rounds have been applied: 0 means nothing has happened yet. */
   round: number
@@ -101,6 +127,9 @@ interface AppState {
   /** The idea test the island is showing, if any. */
   idea: IdeaViewState | null
 
+  /** The A/B test in progress or finished, if any. */
+  ab: AbPair | null
+
   selectedMemberId: number | null
   /** Group whose villagers are ringed on the island, while a sidebar row is pointed at. */
   highlightedGroupId: string | null
@@ -129,6 +158,10 @@ interface AppState {
   /** Run an idea test and show it on the island; progress and the result land in `idea`. */
   startIdeaTest(input: IdeaTestInput): Promise<void>
   clearIdeaTest(): void
+  /** Analyses both videos in parallel, then starts one run for each. Resolves once both runs are started. */
+  startAbTest(input: AbTestInput): Promise<void>
+  showAbSide(side: 'a' | 'b'): void
+  clearAb(): void
   setActiveRun(runId: RunId): void
   setCompareRun(runId: RunId | null): void
 
@@ -200,6 +233,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   compareRunId: null,
 
   idea: null,
+  ab: null,
 
   selectedMemberId: null,
   highlightedGroupId: null,
@@ -281,6 +315,61 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setActiveVideo(videoId) {
     set({ activeVideoId: videoId })
+  },
+
+  async startAbTest({ goal, a, b }) {
+    // The audience is saved once, before the two analyses race each other to save it.
+    await ensureAudience(get)
+    const [campaignA, campaignB] = await Promise.all([
+      get().createCampaign(a, `Video A · ${a.name}`),
+      get().createCampaign(b, `Video B · ${b.name}`),
+    ])
+    // startRun files the run under the active campaign, so each side is opened in turn.
+    get().openCampaign(campaignA)
+    const runA = await get().startRun('Video A')
+    get().openCampaign(campaignB)
+    const runB = await get().startRun('Video B')
+    if (!runA || !runB) throw new Error('The A/B test could not start both runs.')
+
+    set({
+      ab: {
+        goal: goal.trim(),
+        a: { campaignId: campaignA, runId: runA },
+        b: { campaignId: campaignB, runId: runB },
+        active: 'a',
+      },
+    })
+    get().showAbSide('a')
+  },
+
+  showAbSide(side) {
+    const { ab, campaigns } = get()
+    if (!ab) return
+    const mine = ab[side]
+    const other = ab[side === 'a' ? 'b' : 'a']
+    const campaign = campaigns[mine.campaignId]
+    if (!campaign) {
+      console.warn(`showAbSide: campaign ${mine.campaignId} no longer exists`)
+      return
+    }
+    set((state) => {
+      const rounds = state.runs[mine.runId]?.rounds.length ?? 0
+      return {
+        ab: { ...ab, active: side },
+        activeCampaignId: mine.campaignId,
+        activeVideoId: campaign.videoId,
+        activeRunId: mine.runId,
+        compareRunId: other.runId,
+        idea: null,
+        selectedMemberId: null,
+        // Replay a run still arriving; jump to the end of one already received.
+        playback: { ...state.playback, round: rounds, playing: rounds === 0 },
+      }
+    })
+  },
+
+  clearAb() {
+    set({ ab: null })
   },
 
   async createCampaign(input, title) {

@@ -19,7 +19,7 @@ import type {
   VideoAnalysis,
   VideoInput,
 } from '@/data/types'
-import { buildMillbrookAudience, fetchMillbrookWorld } from '@/data/millbrook'
+import { buildMillbrookAudience, fetchMillbrookWorld, TOWN_SIZE } from '@/data/millbrook'
 import { predictionProfile } from '@/data/predictionProfile'
 import { simulationProfile } from '@/data/simulationProfile'
 import type { MillbrookWorld } from '@/data/millbrookTypes'
@@ -41,6 +41,7 @@ import type {
 export const DEMO_VIDEOS = [
   { file: 'original.mp4', label: 'Original', durationSec: 18 },
   { file: 'revised.mp4', label: 'Revision', durationSec: 18 },
+  { file: 'reworked.mp4', label: 'Reworked', durationSec: 20 },
 ] as const
 
 /** The worker's local upload endpoint, used when the store passes no VITE_UPLOAD_URL. */
@@ -107,7 +108,7 @@ export class SpacetimeDataSource implements SimDataSource {
     })
     // With audience groups switched off, the simulation sees one neutral group (simulationProfile).
     const simulated = simulationProfile(structuredClone(profile))
-    const audience = buildMillbrookAudience(await this.world, simulated)
+    const audience = buildMillbrookAudience(await this.world, simulated, TOWN_SIZE.total)
     if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     const profileId = `${profile.id}-${this.identityHex.slice(0, 16)}`
     const isNew = !conn.db.companyProfile.id.find(profileId)

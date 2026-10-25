@@ -7,7 +7,8 @@
     "voice": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tts.ps1",
     "render:original": "remotion render src/index.ts original out/original.mp4",
     "render:revised": "remotion render src/index.ts revised out/revised.mp4",
-    "render": "npm run render:original && npm run render:revised"
+    "render:reworked": "remotion render src/index.ts reworked out/reworked.mp4",
+    "render": "npm run render:original && npm run render:revised && npm run render:reworked"
   },
   "dependencies": {
     "@remotion/cli": "4.0.538",

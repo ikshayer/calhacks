@@ -1,5 +1,6 @@
 import { Composition } from "remotion";
 import { CampaignVideo, totalFrames, type Scene } from "./CampaignVideo";
+import { GivingGardenReworked } from "./GivingGardenReworked";
 import campaigns from "./campaigns.json";
 
 const FPS = 30;
@@ -19,5 +20,13 @@ export const RemotionRoot = () => (
         defaultProps={{ scenes }}
       />
     ))}
+    <Composition
+      id="reworked"
+      component={GivingGardenReworked}
+      durationInFrames={20 * FPS}
+      fps={FPS}
+      width={1080}
+      height={1920}
+    />
   </>
 );

@@ -8,6 +8,7 @@ import DotGrid from '@/components/reactbits/DotGrid'
 import { themeHex } from '@/lib/themeHex'
 import { CampaignDropzone } from '@/campaigns/CampaignDropzone'
 import { IdeaTestCard } from '@/campaigns/IdeaTestCard'
+import { AbTestCard } from '@/campaigns/AbTestCard'
 import { CampaignHistory } from '@/campaigns/CampaignHistory'
 
 /**
@@ -86,6 +87,10 @@ export function CampaignsRoute() {
 
         <div className="mt-5">
           <CampaignDropzone onCreated={enter} />
+        </div>
+
+        <div className="mt-5">
+          <AbTestCard />
         </div>
 
         <div className="mt-9 border-t border-line pb-4 pt-6">

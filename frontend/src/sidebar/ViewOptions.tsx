@@ -51,9 +51,10 @@ export function ViewOptions({
       </dl>
 
       <p className="mt-3 text-[11px] leading-relaxed text-faint">
-        All {AUDIENCE_SIZE.total} fictional Millbrook residents live in town, are simulated and
-        appear in the network view. Audience groups follow your onboarding shares, rounded to
-        whole people.
+        {AUDIENCE_SIZE.onIsland} fictional Millbrook residents are drawn in town. The other{' '}
+        {AUDIENCE_SIZE.total - AUDIENCE_SIZE.onIsland} are neighbours derived from them with
+        small differences; they are simulated and counted in every result but not drawn. Audience
+        groups follow your onboarding shares, rounded to whole people.
       </p>
       <p className="mt-2 text-[11px] leading-relaxed text-faint">
         Residents chat among themselves for atmosphere. That small talk is decoration — only the

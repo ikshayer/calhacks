@@ -16,7 +16,7 @@ import type {
   VideoAnalysis,
   VideoInput,
 } from '@/data/types'
-import { buildMillbrookAudience, fetchMillbrookWorld } from '../millbrook.ts'
+import { buildMillbrookAudience, fetchMillbrookWorld, TOWN_SIZE } from '../millbrook.ts'
 import { simulationProfile } from '../simulationProfile.ts'
 import type { MillbrookWorld } from '../millbrookTypes'
 import { runCascade, scoreAudience, type CascadeResult } from './scriptedCascade.ts'
@@ -75,7 +75,7 @@ export class MockDataSource implements SimDataSource {
       this.world = undefined
       throw cause
     })
-    const audience = buildMillbrookAudience(await this.world, simulationProfile(snapshot))
+    const audience = buildMillbrookAudience(await this.world, simulationProfile(snapshot), TOWN_SIZE.total)
     this.profile = snapshot
     if (this.audience && this.audience.key === audience.key && this.audience.version === audience.version) return this.audience
     this.audience = audience
