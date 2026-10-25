@@ -80,8 +80,13 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
         if (file && !busy) void accept(file)
       }}
       className={
-        'rounded-xl border border-dashed px-6 py-9 text-center transition-colors ' +
-        (dragging ? 'border-sun bg-sun/[0.06]' : 'border-line bg-panel/60')
+        // Centred rather than top-aligned: this sits beside the taller idea
+        // card and stretches to match it, so top-aligned content left a pool of
+        // empty white under the button.
+        'flex h-full flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center transition-colors ' +
+        (dragging
+          ? 'border-primary bg-primary/[0.05]'
+          : 'border-rule bg-card shadow-[0_20px_48px_-28px_rgba(101,0,48,0.28)]')
       }
     >
       <input
@@ -95,32 +100,36 @@ export function CampaignDropzone({ onCreated }: { onCreated(id: CampaignId): voi
           event.target.value = ''
         }}
       />
-      <p className="display text-[17px] text-paper" aria-live="polite">
+      <p className="display text-[20px] text-title" aria-live="polite">
         {busy ? (live ? 'Analysing… about 20–40 seconds' : 'Reading the file…') : 'Drop a video here'}
       </p>
-      <p className="mx-auto mt-1.5 max-w-[34ch] text-[12.5px] leading-relaxed text-faint">
+      <p className="mx-auto mt-1.5 max-w-[40ch] text-[15px] leading-relaxed text-subtle">
         {live
           ? 'Sent only to the worker on this laptop for analysis. Never posted.'
           : 'It stays in this browser. Nothing is uploaded, posted or shared.'}
       </p>
       <Button
         variant="secondary"
-        className="mt-4"
+        className="mt-5 h-11 px-5 text-[15px]"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
       >
         Choose a file
       </Button>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-[12px] text-faint">or try a demo:</span>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <span className="text-[13.5px] text-subtle">or try a demo:</span>
         {DEMO_VIDEOS.map((demo) => (
-          <Button key={demo.file} variant="secondary" disabled={busy} onClick={() => void pickDemo(demo.file)}>
+          <Button
+            key={demo.file}
+            variant="secondary"
+            className="h-10 text-[14px]"
+            disabled={busy} onClick={() => void pickDemo(demo.file)}>
             {demo.label}
           </Button>
         ))}
       </div>
       {error && (
-        <p role="alert" className="mt-3.5 text-[12.5px] leading-snug text-bloom">
+        <p role="alert" className="mt-3.5 text-[13.5px] leading-snug text-ui-danger">
           {error}
         </p>
       )}

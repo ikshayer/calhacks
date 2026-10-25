@@ -1,173 +1,40 @@
-import { useState } from 'react'
-import type { AudienceGroup } from '@/data/types'
-import { Button, Input, Meter } from '@/components/ui'
-import { PALETTE, normaliseShares } from '@/onboarding/suggestAudience'
-import type { StepProps } from './CompanyStep'
+import type { CompanyProfile } from '@/data/types'
+import { BigTextarea, StepShell } from './StepShell'
 
 /**
- * Confirm or edit the suggested audience groups.
+ * Who the campaign is for, in the user's own words.
  *
- * The shares are the single most consequential assumption in the product, so
- * this screen is explicit that they are the user's estimate and not measured
- * demographics. The colour on each row is the colour that group's
- * neighbourhood will have on the island, which makes the legend learnable here
- * rather than later.
+ * This replaces a screen that asked people to name audience segments and set
+ * each one's percentage with a slider, before they had seen a single
+ * simulation. That is a question about our data model, not about their
+ * business. The sentence they write here is turned into segments by
+ * `deriveGroups`, and the groups stay editable in the workspace once there are
+ * numbers on screen to edit them against.
  */
-export function AudienceStep({ draft, patch }: StepProps) {
-  const [newLabel, setNewLabel] = useState('')
-  const total = draft.groups.reduce((sum, group) => sum + group.share, 0)
-
-  const update = (id: string, changes: Partial<AudienceGroup>) =>
-    patch({
-      groups: draft.groups.map((group) => (group.id === id ? { ...group, ...changes } : group)),
-    })
-
-  const remove = (id: string) =>
-    patch({ groups: draft.groups.filter((group) => group.id !== id) })
-
-  const add = () => {
-    const label = newLabel.trim()
-    if (!label) return
-    const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    if (draft.groups.some((group) => group.id === id)) return
-    patch({
-      groups: [
-        ...draft.groups,
-        {
-          id,
-          label,
-          share: 0.1,
-          color: PALETTE[draft.groups.length % PALETTE.length] as string,
-          blurb: 'Added during onboarding.',
-          interests: [label.toLowerCase()],
-        },
-      ],
-    })
-    setNewLabel('')
-  }
-
-  // Off means the groups below are kept but ignored: every resident is simulated as "Everyone".
-  const enabled = draft.useAudienceGroups !== false
-
+export function AudienceStep({
+  draft,
+  patch,
+  total,
+}: {
+  draft: CompanyProfile
+  patch(changes: Partial<CompanyProfile>): void
+  total: number
+}) {
   return (
-    <div>
-      <label className="mb-4 flex cursor-pointer items-start justify-between gap-4 rounded-lg border border-line bg-panel px-3.5 py-3">
-        <span>
-          <span className="block text-[13.5px] font-medium text-paper">Use audience groups</span>
-          <span className="mt-0.5 block text-[12px] leading-relaxed text-faint">
-            {enabled
-              ? 'Residents are sorted into these groups, and each group’s interests shape the prediction.'
-              : 'Off: the groups have no effect. Each resident is judged only on their own profile.'}
-          </span>
-        </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          onClick={() => patch({ useAudienceGroups: !enabled })}
-          className={
-            'relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors ' +
-            (enabled ? 'bg-sun' : 'bg-line')
-          }
-        >
-          <span
-            aria-hidden
-            className={
-              'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-paper transition-transform ' +
-              (enabled ? 'translate-x-5' : 'translate-x-0')
-            }
-          />
-        </button>
-      </label>
-
-      <fieldset disabled={!enabled} className={enabled ? '' : 'opacity-40'}>
-      <div className="space-y-2.5">
-        {draft.groups.map((group) => (
-          <div
-            key={group.id}
-            className="flex items-center gap-3 rounded-lg border border-line bg-panel px-3 py-2.5"
-          >
-            <span
-              aria-hidden
-              className="h-9 w-[3px] shrink-0 rounded-full"
-              style={{ background: group.color }}
-            />
-
-            <div className="min-w-0 flex-1">
-              <input
-                value={group.label}
-                onChange={(event) => update(group.id, { label: event.target.value })}
-                className="w-full bg-transparent text-[13.5px] font-medium text-paper focus:outline-none"
-                aria-label={`Name of the ${group.label} group`}
-              />
-              <p className="truncate text-[11.5px] text-faint">{group.blurb}</p>
-              <div className="mt-1.5">
-                <Meter value={group.share} color={group.color} />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <input
-                type="range"
-                min={0}
-                max={0.6}
-                step={0.01}
-                value={group.share}
-                onChange={(event) => update(group.id, { share: Number(event.target.value) })}
-                className="w-20"
-                aria-label={`Share of audience in ${group.label}`}
-              />
-              <span className="tnum w-11 text-right text-[12.5px] text-muted">
-                {(group.share * 100).toFixed(0)}%
-              </span>
-            </div>
-
-            <button
-              onClick={() => remove(group.id)}
-              className="shrink-0 rounded px-1.5 text-muted transition-colors hover:text-bloom"
-              aria-label={`Remove ${group.label}`}
-              title={`Remove ${group.label}`}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 flex items-center gap-2">
-        <Input
-          value={newLabel}
-          onChange={(event) => setNewLabel(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              add()
-            }
-          }}
-          placeholder="Add a group, e.g. Dog walkers"
-        />
-        <Button variant="secondary" onClick={add} disabled={!newLabel.trim()}>
-          Add
-        </Button>
-      </div>
-
-      <div className="mt-5 flex items-center justify-between gap-4 border-t border-line pt-4">
-        <p className="tnum text-[13px] text-muted">
-          Shares total {(total * 100).toFixed(0)}%
-        </p>
-        {Math.abs(total - 1) > 0.005 && (
-          <Button variant="secondary" onClick={() => patch({ groups: normaliseShares(draft.groups) })}>
-            Scale to 100%
-          </Button>
-        )}
-      </div>
-
-      <p className="mt-4 rounded-lg border border-sun/25 bg-sun/[0.07] px-3.5 py-3 text-xs leading-relaxed text-muted">
-        These groups and shares are your estimate of who you are reaching. They are not measured
-        follower demographics, and every result in the app inherits that assumption — so it is worth
-        getting them roughly right.
-      </p>
-      </fieldset>
-    </div>
+    <StepShell
+      step={3}
+      total={total}
+      question="Who are you trying to reach?"
+      help="Describe them the way you would to a new volunteer. Ages, where they live, what they care about — whatever actually distinguishes them."
+    >
+      <BigTextarea
+        autoFocus
+        rows={4}
+        value={draft.audienceDescription ?? ''}
+        onChange={(event) => patch({ audienceDescription: event.target.value })}
+        placeholder="Students at the nearby campus, local families with young kids, and retired neighbours who already garden."
+        aria-label="Who you are trying to reach"
+      />
+    </StepShell>
   )
 }

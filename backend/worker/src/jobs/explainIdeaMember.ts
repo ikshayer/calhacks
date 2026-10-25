@@ -36,7 +36,7 @@ export async function explainIdeaMember(conn: DbConnection, job: Job): Promise<v
   const profile = conn.db.companyProfile.id.find(idea.profileId);
   if (!profile) throw new Error(`explain_idea_member: unknown profile ${idea.profileId}`);
   const member = [...conn.db.audienceMember.iter()].find(
-    (m) => m.profileId === idea.profileId && m.audienceVersion === profile.audienceVersion && m.memberId === memberId,
+    (m) => m.profileId === idea.profileId && m.audienceVersion === (idea.audienceVersion ?? profile.audienceVersion) && m.memberId === memberId,
   );
   if (!member) throw new Error(`explain_idea_member: profile ${idea.profileId} has no audience member ${memberId}`);
 

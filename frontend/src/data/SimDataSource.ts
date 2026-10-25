@@ -74,6 +74,9 @@ export interface SimDataSource {
   /** Follow-up chat, grounded in the profile, the upload and the run results. */
   chat(runId: RunId, history: ChatTurn[], message: string): Promise<string>
 
+  /** Follow-up about a ready idea report. No video or video-run ID is required. */
+  chatIdea(ideaId: string, history: ChatTurn[], message: string): Promise<string>
+
   /**
    * Why one simulated member would or would not engage. The live backend writes
    * it on demand (Claude) the first time a villager is opened, then caches it.

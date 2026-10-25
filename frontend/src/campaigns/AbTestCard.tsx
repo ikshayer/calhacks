@@ -46,9 +46,9 @@ export function AbTestCard() {
   }
 
   return (
-    <section className="rounded-lg border border-line bg-panel p-5">
-      <h2 className="display text-[18px] leading-tight text-paper">Compare two videos, side by side.</h2>
-      <p className="mt-1 text-[12.5px] text-muted">
+    <section className="rounded-xl bg-card p-6 ring-1 ring-black/10 shadow-[0_20px_48px_-28px_rgba(101,0,48,0.28)]">
+      <h2 className="display text-[20px] leading-tight text-title">Compare two videos, side by side.</h2>
+      <p className="mt-1 text-[12.5px] text-ui-muted">
         Pick two cuts and say what you are trying to achieve. Both run through the same town at the same time, and you
         see which one reaches more people and where.
       </p>
@@ -72,19 +72,19 @@ export function AbTestCard() {
             Run A/B test
           </Button>
           {busy && (
-            <p className="text-[12.5px] text-muted" aria-live="polite">
+            <p className="text-[12.5px] text-ui-muted" aria-live="polite">
               {live ? 'Analysing both videos together… about 30–60 seconds' : 'Reading the files…'}
             </p>
           )}
         </div>
         {error && (
-          <p role="alert" className="text-[12.5px] leading-snug text-bloom">
+          <p role="alert" className="text-[12.5px] leading-snug text-ui-danger">
             {error}
           </p>
         )}
       </div>
 
-      <p className="mt-4 text-[11.5px] text-faint">
+      <p className="mt-4 text-[11.5px] text-ui-faint">
         The goal is shown with the results; the simulation reacts to what is in the videos. Simulated residents of a
         fictional town — not consumer research, not a sales forecast.
       </p>
@@ -131,8 +131,8 @@ function Slot({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-line bg-ink/40 px-4 py-4">
-      <p className="text-[13px] font-medium text-paper">{label}</p>
+    <div className="rounded-lg border border-dashed border-ui-border bg-ui-well px-4 py-4">
+      <p className="text-[13px] font-medium text-ui-text">{label}</p>
       <input
         ref={inputRef}
         id={`ab-file-${side}`}
@@ -145,7 +145,7 @@ function Slot({
           event.target.value = ''
         }}
       />
-      <p className="mt-1 min-h-[1.25rem] truncate text-[12.5px] text-muted">{file ? file.name : 'No video chosen yet'}</p>
+      <p className="mt-1 min-h-[1.25rem] truncate text-[12.5px] text-ui-muted">{file ? file.name : 'No video chosen yet'}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button variant="secondary" type="button" disabled={disabled} onClick={() => inputRef.current?.click()}>
           Choose a file
@@ -162,7 +162,7 @@ function Slot({
         )}
       </div>
       {error && (
-        <p role="alert" className="mt-2 text-[12px] leading-snug text-bloom">
+        <p role="alert" className="mt-2 text-[12px] leading-snug text-ui-danger">
           {error}
         </p>
       )}

@@ -1,5 +1,11 @@
 # Millbrook | 50-agent persona simulation (TypeScript)
 
+## Frontend dataset
+
+The frontend and worker calibration use `millbrook.json`, the authored schema-v2 snapshot with 50 residents in 20 households. It includes annual income, tech familiarity and nullable adoption styles. Family values describe the referenced person: `family[otherId] = 'child'` means that person is this resident's child.
+
+The generator below produces the older schema-v1 `data/personas.json` and SQLite files. Regenerating those files does not update the frontend dataset.
+
 A reproducible, dependency-free TypeScript generator for 50 fictional residents in 19 households. Uses Node 22.5+ built-in TypeScript stripping and SQLite (`node:sqlite`). Node currently labels these APIs experimental on some releases.
 
 ## Run

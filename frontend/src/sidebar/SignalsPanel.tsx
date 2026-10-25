@@ -74,14 +74,14 @@ export function SignalsPanel() {
           src={video.objectUrl}
           controls
           preload="metadata"
-          className="max-h-[240px] w-full rounded-lg border border-line bg-ink object-contain"
+          className="max-h-[240px] w-full rounded-lg border border-ui-border bg-ui-well object-contain"
         />
       )}
 
       {!editable && (
-        <div className="rounded-lg border border-dashed border-line px-3.5 py-3.5">
-          <p className="text-[12.5px] text-paper">Re-attach the video to play it back</p>
-          <p className="mt-1 text-[11.5px] leading-relaxed text-faint">
+        <div className="rounded-lg border border-dashed border-ui-border px-3.5 py-3.5">
+          <p className="text-[12.5px] text-ui-text">Re-attach the video to play it back</p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-ui-faint">
             Browsers do not keep files across a reload. Choose {campaign.videoName} again to edit
             the signals or run it again. It stays in this browser.
           </p>
@@ -107,19 +107,19 @@ export function SignalsPanel() {
         </div>
       )}
 
-      <p className="mt-3 text-[12.5px] leading-relaxed text-muted">{video.summary}</p>
+      <p className="mt-3 text-[12.5px] leading-relaxed text-ui-muted">{video.summary}</p>
 
       <div className="mt-4">
         <div className="mb-2 flex items-baseline justify-between gap-2">
-          <p className="text-[12px] text-paper">What the analysis found</p>
-          <p className="text-[11px] text-faint">
+          <p className="text-[12px] text-ui-text">What the analysis found</p>
+          <p className="text-[11px] text-ui-faint">
             {editable ? 'Adjust if it read it wrong' : 'Locked until the video is attached'}
           </p>
         </div>
         <div className="space-y-2">
           {SIGNAL_FIELDS.map((field) => (
             <label key={field.key} className="flex items-center gap-2.5">
-              <span className="w-[108px] shrink-0 text-[12px] text-muted">{field.label}</span>
+              <span className="w-[108px] shrink-0 text-[12px] text-ui-muted">{field.label}</span>
               <input
                 type="range"
                 min={0}
@@ -130,20 +130,20 @@ export function SignalsPanel() {
                 onChange={(event) => patchSignal(field.key, Number(event.target.value))}
                 className="flex-1 disabled:opacity-45"
               />
-              <span className="tnum w-8 text-right text-[12px] text-muted">
+              <span className="tnum w-8 text-right text-[12px] text-ui-muted">
                 {Math.round(video.signals[field.key] * 100)}
               </span>
             </label>
           ))}
         </div>
-        <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
+        <p className="mt-2.5 text-[11px] leading-relaxed text-ui-faint">
           These four numbers are everything the simulation sees of the video. Changing one and
           re-running is how you test a cut before you make it.
         </p>
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 text-[12.5px] leading-snug text-bloom">
+        <p role="alert" className="mt-3 text-[12.5px] leading-snug text-ui-danger">
           {error}
         </p>
       )}

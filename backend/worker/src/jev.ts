@@ -4,8 +4,8 @@
  * probabilities the cascade later rolls.
  */
 
-const JEV_URL = 'https://api.typesafe.ai/v1/systemone';
-const JEV_MODEL = 'jev-latest';
+export const JEV_URL = 'https://api.typesafe.ai/v1/systemone';
+export const JEV_MODEL = 'jev-latest';
 const MAX_ATTEMPTS = 5;
 const BACKOFF_MS = 500;
 
@@ -66,15 +66,16 @@ export class JevAuthError extends Error {}
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Calls JEV with the given state and questions. Retries 429s with exponential backoff; any other failure throws. */
-export async function askJev(apiKey: string, state: unknown, questions: object): Promise<JevBody> {
+export async function askJev(apiKey: string, state: unknown, questions: object, transport: { fetch?: typeof fetch; sleep?: (ms: number) => Promise<void>; timeoutMs?: number } = {}): Promise<JevBody> {
   for (let attempt = 1; ; attempt++) {
-    const res = await fetch(JEV_URL, {
+    const res = await (transport.fetch ?? fetch)(JEV_URL, {
+      signal: AbortSignal.timeout(transport.timeoutMs ?? 60_000),
       method: 'POST',
       headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: JEV_MODEL, state, questions }),
     });
     if (res.status === 429 && attempt < MAX_ATTEMPTS) {
-      await sleep(BACKOFF_MS * 2 ** (attempt - 1));
+      await (transport.sleep ?? sleep)(BACKOFF_MS * 2 ** (attempt - 1));
       continue;
     }
     if (res.status === 401 || res.status === 403) {
@@ -96,7 +97,7 @@ export function noulAnswer(body: JevBody, id: string): number {
 
 export function inputTokensOf(body: JevBody): number {
   const inputTokens = body.usage?.input_tokens;
-  if (typeof inputTokens !== 'number') throw new Error(`JEV response has no usage.input_tokens: ${JSON.stringify(body.usage)}`);
+  if (typeof inputTokens !== 'number' || !Number.isSafeInteger(inputTokens) || inputTokens < 0) throw new Error(`JEV response has no usage.input_tokens: ${JSON.stringify(body.usage)}`);
   return inputTokens;
 }
 

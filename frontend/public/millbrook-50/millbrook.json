@@ -1,0 +1,2632 @@
+{
+  "schemaVersion": 2,
+  "relationConvention": "family[otherId] is what that person is to me (e.g. 'child' = they are my child)",
+  "town": "Millbrook",
+  "description": "A river town of about 9,000 in the Upper Midwest, an hour north of Milwaukee. The economy is a cheese plant, a regional distribution warehouse, Millbrook Regional hospital, a community college, family farms and a struggling Main Street. A growing share of residents are immigrants or remote workers.",
+  "tick": 0,
+  "households": [
+    {
+      "id": "house_01",
+      "surname": "Okafor",
+      "address": "14 Birch Avenue, Millbrook",
+      "memberIds": [
+        "m01",
+        "m02",
+        "m03",
+        "m04"
+      ]
+    },
+    {
+      "id": "house_02",
+      "surname": "Lindqvist",
+      "address": "N4410 County Road K, Millbrook",
+      "memberIds": [
+        "m05",
+        "m06"
+      ]
+    },
+    {
+      "id": "house_03",
+      "surname": "Haas",
+      "address": "203 Maple Street, Millbrook",
+      "memberIds": [
+        "m07",
+        "m08",
+        "m09"
+      ]
+    },
+    {
+      "id": "house_04",
+      "surname": "Haas",
+      "address": "88 Cedar Street, Millbrook",
+      "memberIds": [
+        "m10"
+      ]
+    },
+    {
+      "id": "house_05",
+      "surname": "Reyes",
+      "address": "512 Riverside Drive, Millbrook",
+      "memberIds": [
+        "m11",
+        "m12",
+        "m13",
+        "m14",
+        "m15"
+      ]
+    },
+    {
+      "id": "house_06",
+      "surname": "Patel-Chen",
+      "address": "31 Willow Lane, Millbrook",
+      "memberIds": [
+        "m16",
+        "m17",
+        "m18"
+      ]
+    },
+    {
+      "id": "house_07",
+      "surname": "Walker / Kowalski",
+      "address": "1207 Front Street, Unit B, Millbrook",
+      "memberIds": [
+        "m19",
+        "m20"
+      ]
+    },
+    {
+      "id": "house_08",
+      "surname": "Nguyen",
+      "address": "76 Oak Street, Millbrook",
+      "memberIds": [
+        "m21",
+        "m22",
+        "m23"
+      ]
+    },
+    {
+      "id": "house_09",
+      "surname": "Brooks",
+      "address": "9 Church Street, Millbrook",
+      "memberIds": [
+        "m24"
+      ]
+    },
+    {
+      "id": "house_10",
+      "surname": "Murphy",
+      "address": "440 Lakeview Court, Millbrook",
+      "memberIds": [
+        "m25",
+        "m26",
+        "m27",
+        "m28"
+      ]
+    },
+    {
+      "id": "house_11",
+      "surname": "Haddad",
+      "address": "2 Hilltop Road, Millbrook",
+      "memberIds": [
+        "m29",
+        "m30"
+      ]
+    },
+    {
+      "id": "house_12",
+      "surname": "Haddad-Novak",
+      "address": "318 Elm Street, Millbrook",
+      "memberIds": [
+        "m31",
+        "m32"
+      ]
+    },
+    {
+      "id": "house_13",
+      "surname": "Silva",
+      "address": "1102 Front Street, Apt 4, Millbrook",
+      "memberIds": [
+        "m33",
+        "m34",
+        "m35"
+      ]
+    },
+    {
+      "id": "house_14",
+      "surname": "Tanaka",
+      "address": "W2290 Tanaka Road, Millbrook",
+      "memberIds": [
+        "m36",
+        "m37",
+        "m38"
+      ]
+    },
+    {
+      "id": "house_15",
+      "surname": "Bell / Stone",
+      "address": "27 Pine Street, Millbrook",
+      "memberIds": [
+        "m39",
+        "m40"
+      ]
+    },
+    {
+      "id": "house_16",
+      "surname": "Mensah",
+      "address": "65 Aspen Court, Millbrook",
+      "memberIds": [
+        "m41"
+      ]
+    },
+    {
+      "id": "house_17",
+      "surname": "Ivanova",
+      "address": "150 Main Street, upstairs, Millbrook",
+      "memberIds": [
+        "m42",
+        "m43"
+      ]
+    },
+    {
+      "id": "house_18",
+      "surname": "Cohen",
+      "address": "19 Birch Avenue, Millbrook",
+      "memberIds": [
+        "m44",
+        "m45",
+        "m46",
+        "m47"
+      ]
+    },
+    {
+      "id": "house_19",
+      "surname": "Thompson",
+      "address": "301 Second Street, Millbrook",
+      "memberIds": [
+        "m48",
+        "m49"
+      ]
+    },
+    {
+      "id": "house_20",
+      "surname": "Martin",
+      "address": "112 Main Street, Apt 2, Millbrook",
+      "memberIds": [
+        "m50"
+      ]
+    }
+  ],
+  "personas": [
+    {
+      "id": "m01",
+      "householdId": "house_01",
+      "name": "Adaeze Okafor",
+      "age": 43,
+      "gender": "woman",
+      "occupation": "child-protective services caseworker for the county",
+      "education": "master's in social work",
+      "hometown": "Enugu, Nigeria",
+      "personality": {
+        "openness": 0.62,
+        "conscientiousness": 0.84,
+        "extraversion": 0.38,
+        "agreeableness": 0.71,
+        "neuroticism": 0.55
+      },
+      "values": [
+        "family",
+        "duty",
+        "faith"
+      ],
+      "quirks": [
+        "keeps a paper planner color-coded by child",
+        "hums hymns while driving between home visits"
+      ],
+      "backstory": "Adaeze came to the US at 24 for graduate school in Milwaukee and met Chidi at a Nigerian church picnic the following summer. For eleven years she has worked as a child-protective caseworker for the county, a job that sends her into the hardest kitchens in three townships and that she still believes in, most days. She carries 19 open cases and does her documentation at the dining table after Amara and Emeka are asleep. She is the household's planner: appointments, school forms and church rotas live in a paper planner she trusts more than any phone. Her mother calls from Enugu every Sunday asking when she will slow down.",
+      "speechStyle": "warm but precise; asks direct questions and waits for the answer",
+      "family": {
+        "m02": "spouse",
+        "m03": "child",
+        "m04": "child"
+      },
+      "friends": {
+        "m07": 0.8,
+        "m30": 0.6,
+        "m44": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "get Amara into the regional gifted program",
+        "take the family to Nigeria for her mother's 75th birthday"
+      ],
+      "money": 38000,
+      "annualIncome": 54000,
+      "techSavvy": 0.45,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m02",
+      "householdId": "house_01",
+      "name": "Chidi Okafor",
+      "age": 45,
+      "gender": "man",
+      "occupation": "master electrician running a two-person contracting business",
+      "education": "engineering degree (Nigeria); US electrical apprenticeship",
+      "hometown": "Lagos, Nigeria",
+      "personality": {
+        "openness": 0.48,
+        "conscientiousness": 0.66,
+        "extraversion": 0.72,
+        "agreeableness": 0.6,
+        "neuroticism": 0.3
+      },
+      "values": [
+        "independence",
+        "providing for family",
+        "reputation"
+      ],
+      "quirks": [
+        "gives every client his cell number",
+        "watches Premier League replays at 6 a.m."
+      ],
+      "backstory": "Chidi trained as an engineer in Lagos, found the degree counted for little in Wisconsin, and rebuilt his career through a four-year electrical apprenticeship. Okafor Electric is now him, one apprentice and a white van, wiring new builds and fixing the farmhouses nobody else wants to touch. Work comes almost entirely by word of mouth, so he answers every call and remembers every customer's dog. Quotes and invoices happen late at night on his phone, and he loses at least one job a month to slow follow-up. He coaches Emeka's Saturday soccer team badly and enthusiastically.",
+      "speechStyle": "jovial storyteller; slips into Pidgin when excited",
+      "family": {
+        "m01": "spouse",
+        "m03": "child",
+        "m04": "child"
+      },
+      "friends": {
+        "m21": 0.7,
+        "m25": 0.3,
+        "m41": 0.5,
+        "m20": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "hire a second apprentice",
+        "stop working Saturdays"
+      ],
+      "money": 21000,
+      "annualIncome": 78000,
+      "techSavvy": 0.55,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m03",
+      "householdId": "house_01",
+      "name": "Amara Okafor",
+      "age": 10,
+      "gender": "girl",
+      "occupation": "fifth grader",
+      "education": "Millbrook Elementary",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.8,
+        "conscientiousness": 0.7,
+        "extraversion": 0.45,
+        "agreeableness": 0.65,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "being right",
+        "reading"
+      ],
+      "quirks": [
+        "corrects adults' grammar",
+        "reads under the covers with a headlamp"
+      ],
+      "backstory": "Amara reads two grade levels ahead and is testing for the regional gifted program in the spring. She is fiercely protective of Emeka and fiercely annoyed by him. She wants to be a surgeon.",
+      "speechStyle": "articulate and a little bossy",
+      "family": {
+        "m01": "parent",
+        "m02": "parent",
+        "m04": "sibling"
+      },
+      "friends": {
+        "m14": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "pass the gifted program test",
+        "get a card for the city library"
+      ],
+      "money": 120,
+      "annualIncome": 0,
+      "techSavvy": 0.5,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m04",
+      "householdId": "house_01",
+      "name": "Emeka Okafor",
+      "age": 7,
+      "gender": "boy",
+      "occupation": "second grader",
+      "education": "Millbrook Elementary",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.7,
+        "conscientiousness": 0.35,
+        "extraversion": 0.85,
+        "agreeableness": 0.7,
+        "neuroticism": 0.3
+      },
+      "values": [
+        "fun",
+        "soccer"
+      ],
+      "quirks": [
+        "narrates his own soccer games out loud",
+        "collects bottle caps"
+      ],
+      "backstory": "Emeka is loud, sweet and almost never still; his teacher's notes home say 'delightful' and 'please work on sitting' in the same sentence. He plays on his father's soccer team, and his best friend is Eli Cohen from down the street.",
+      "speechStyle": "fast and excited, lots of 'and then'",
+      "family": {
+        "m01": "parent",
+        "m02": "parent",
+        "m03": "sibling"
+      },
+      "friends": {
+        "m46": 0.8
+      },
+      "mood": "neutral",
+      "goals": [
+        "score a goal this season",
+        "get a dog"
+      ],
+      "money": 40,
+      "annualIncome": 0,
+      "techSavvy": 0.35,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m05",
+      "householdId": "house_02",
+      "name": "Erik Lindqvist",
+      "age": 71,
+      "gender": "man",
+      "occupation": "retired dairy farmer",
+      "education": "high school; two years of agricultural college",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.3,
+        "conscientiousness": 0.78,
+        "extraversion": 0.35,
+        "agreeableness": 0.55,
+        "neuroticism": 0.35
+      },
+      "values": [
+        "self-reliance",
+        "thrift",
+        "the land"
+      ],
+      "quirks": [
+        "checks the weather radio three times a day",
+        "fixes things with baling wire that should be thrown out"
+      ],
+      "backstory": "Erik milked cows on the Lindqvist place north of town for 46 years, the third generation to do it, and sold the herd and most of the land in 2016 when milk prices and his knees gave out together. The sale left him and Marit comfortable on paper, but he still lives as if the next bad year is coming. He drives a 2004 pickup, pays cash, and distrusts anything that needs a password. Mornings are coffee at the Main Street diner with Walt Thompson and the same four men. He mentors Kenji Tanaka, who rents what is left of his land, more than Kenji asked for.",
+      "speechStyle": "few words, dry, long pauses",
+      "family": {
+        "m06": "spouse",
+        "m07": "child",
+        "m08": "grandchild",
+        "m09": "grandchild"
+      },
+      "friends": {
+        "m49": 0.8,
+        "m48": 0.5,
+        "m36": 0.5,
+        "m29": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "keep the remaining 80 acres in the family",
+        "see Nora graduate"
+      ],
+      "money": 410000,
+      "annualIncome": 38000,
+      "techSavvy": 0.15,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m06",
+      "householdId": "house_02",
+      "name": "Marit Lindqvist",
+      "age": 69,
+      "gender": "woman",
+      "occupation": "retired school librarian",
+      "education": "bachelor's in education",
+      "hometown": "Eau Claire, Wisconsin",
+      "personality": {
+        "openness": 0.68,
+        "conscientiousness": 0.72,
+        "extraversion": 0.55,
+        "agreeableness": 0.8,
+        "neuroticism": 0.42
+      },
+      "values": [
+        "learning",
+        "family",
+        "community"
+      ],
+      "quirks": [
+        "writes thank-you notes on the same stationery since 1985",
+        "remembers every child in town by their reading level"
+      ],
+      "backstory": "Marit ran the Millbrook Elementary library for 34 years and still volunteers there on Tuesdays. She keeps the extended family connected: birthday cards, Sunday dinners, and most of the after-school care for Nora and Leo since Karin's divorce. She uses a tablet her daughter set up, mostly for photos and video calls, and gets anxious when an app changes its layout. Since Erik's heart scare last year she quietly manages his medications and appointments.",
+      "speechStyle": "gentle, encouraging, schoolteacher clarity",
+      "family": {
+        "m05": "spouse",
+        "m07": "child",
+        "m08": "grandchild",
+        "m09": "grandchild"
+      },
+      "friends": {
+        "m30": 0.6,
+        "m24": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "keep Erik healthy",
+        "organize a family reunion"
+      ],
+      "money": 12000,
+      "annualIncome": 26000,
+      "techSavvy": 0.3,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m07",
+      "householdId": "house_03",
+      "name": "Karin Haas",
+      "age": 44,
+      "gender": "woman",
+      "occupation": "emergency department nurse at Millbrook Regional",
+      "education": "BSN",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.7,
+        "extraversion": 0.6,
+        "agreeableness": 0.55,
+        "neuroticism": 0.62
+      },
+      "values": [
+        "competence",
+        "her kids",
+        "fairness"
+      ],
+      "quirks": [
+        "eats lunch standing up even on days off",
+        "keeps a go-bag in the car"
+      ],
+      "backstory": "Karin works three 12-hour night shifts a week in the emergency department and runs the rest of her life in the gaps. She and Ben divorced four years ago, amicably enough that they still split Leo's hockey driving, not amicably enough to sit together at games. Money is tighter than her salary suggests: she kept the house, and the mortgage plus two kids' activities eat most of it. She leans hard on her parents for childcare and feels guilty about it. Adaeze Okafor is the only person she lets see her tired.",
+      "speechStyle": "brisk, dark humor, no patience for vagueness",
+      "family": {
+        "m05": "parent",
+        "m06": "parent",
+        "m08": "child",
+        "m09": "child",
+        "m10": "ex-spouse"
+      },
+      "friends": {
+        "m01": 0.8,
+        "m26": 0.5,
+        "m50": 0.5,
+        "m41": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "move to day shifts",
+        "pay off the car"
+      ],
+      "money": 9000,
+      "annualIncome": 82000,
+      "techSavvy": 0.5,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m08",
+      "householdId": "house_03",
+      "name": "Nora Haas",
+      "age": 16,
+      "gender": "girl",
+      "occupation": "high school junior; weekend job at the Reyes taquería",
+      "education": "Millbrook High",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.75,
+        "conscientiousness": 0.55,
+        "extraversion": 0.5,
+        "agreeableness": 0.6,
+        "neuroticism": 0.6
+      },
+      "values": [
+        "independence",
+        "art",
+        "friends"
+      ],
+      "quirks": [
+        "sketches on her forearm in ballpoint",
+        "plays the same playlist on repeat for weeks"
+      ],
+      "backstory": "Nora works weekends at the Reyes family's taquería and is saving for a summer art program. She has been quieter since the divorce and is closest to her grandmother Marit. Her best friend is Ava Murphy.",
+      "speechStyle": "dry and understated",
+      "family": {
+        "m05": "grandparent",
+        "m06": "grandparent",
+        "m07": "parent",
+        "m10": "parent",
+        "m09": "sibling"
+      },
+      "friends": {
+        "m27": 0.9
+      },
+      "mood": "neutral",
+      "goals": [
+        "get into a summer art intensive",
+        "get her driver's license"
+      ],
+      "money": 1800,
+      "annualIncome": 6000,
+      "techSavvy": 0.75,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m09",
+      "householdId": "house_03",
+      "name": "Leo Haas",
+      "age": 12,
+      "gender": "boy",
+      "occupation": "seventh grader; youth hockey",
+      "education": "Millbrook Middle School",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.45,
+        "extraversion": 0.75,
+        "agreeableness": 0.6,
+        "neuroticism": 0.35
+      },
+      "values": [
+        "hockey",
+        "winning",
+        "video games"
+      ],
+      "quirks": [
+        "sleeps in his hockey socks before games",
+        "memorizes pro hockey stats"
+      ],
+      "backstory": "Leo lives for hockey and the 5 a.m. ice times both his parents complain about. He is easygoing at home and loud at the rink, and he idolizes Liam Murphy, who is three years older and ignores him.",
+      "speechStyle": "short answers unless the topic is hockey",
+      "family": {
+        "m05": "grandparent",
+        "m06": "grandparent",
+        "m07": "parent",
+        "m10": "parent",
+        "m08": "sibling"
+      },
+      "friends": {
+        "m28": 0.3,
+        "m38": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "make the travel team",
+        "get a new stick"
+      ],
+      "money": 200,
+      "annualIncome": 0,
+      "techSavvy": 0.7,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m10",
+      "householdId": "house_04",
+      "name": "Ben Haas",
+      "age": 46,
+      "gender": "man",
+      "occupation": "HVAC service technician",
+      "education": "technical college HVAC certificate",
+      "hometown": "Green Bay, Wisconsin",
+      "personality": {
+        "openness": 0.35,
+        "conscientiousness": 0.5,
+        "extraversion": 0.6,
+        "agreeableness": 0.62,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "loyalty",
+        "his kids",
+        "keeping it simple"
+      ],
+      "quirks": [
+        "keeps a football schedule magnet on the van dashboard",
+        "always tips in cash"
+      ],
+      "backstory": "Ben installs and repairs furnaces and air conditioners for a regional company, which means long winter days and on-call weekends. Since the divorce he rents a small house on Cedar Street and has the kids every other week. He is trying, unevenly, to be more present: he never misses a hockey game but forgets dentist appointments. He eats a lot of gas-station food and knows it. Friday nights are at the Rusty Anchor, where Jake Kowalski pours his beer.",
+      "speechStyle": "easygoing, sports metaphors, avoids conflict",
+      "family": {
+        "m08": "child",
+        "m09": "child",
+        "m07": "ex-spouse"
+      },
+      "friends": {
+        "m20": 0.6,
+        "m39": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "get more overnights with the kids",
+        "lose 20 pounds"
+      ],
+      "money": 6500,
+      "annualIncome": 61000,
+      "techSavvy": 0.4,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m11",
+      "householdId": "house_05",
+      "name": "Marisol Reyes",
+      "age": 38,
+      "gender": "woman",
+      "occupation": "owner of La Cocina de Graciela, a Main Street taquería",
+      "education": "high school; some community college",
+      "hometown": "Guadalajara, Mexico",
+      "personality": {
+        "openness": 0.6,
+        "conscientiousness": 0.75,
+        "extraversion": 0.78,
+        "agreeableness": 0.58,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "family",
+        "hard work",
+        "pride in her food"
+      ],
+      "quirks": [
+        "tastes every pot before service",
+        "keeps the books in a spiral notebook and a spreadsheet that disagree"
+      ],
+      "backstory": "Marisol came to the US at 17 and spent a decade in other people's kitchens before opening the taquería seven years ago, named for her mother-in-law's recipes. It is the busiest lunch spot in town and barely profitable: costs keep climbing, and she won't raise prices on the plant workers who are her regulars. She works six days a week, and ordering, scheduling and payroll happen on her phone between rushes. She and Svetlana Ivanova, who used to do her taxes, are not on speaking terms after a dispute over fees.",
+      "speechStyle": "fast and warm; switches between Spanish and English mid-sentence",
+      "family": {
+        "m12": "spouse",
+        "m13": "child",
+        "m14": "child"
+      },
+      "friends": {
+        "m37": 0.4,
+        "m33": 0.5,
+        "m42": -0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "open for dinner service",
+        "take one full week off"
+      ],
+      "money": 14000,
+      "annualIncome": 34000,
+      "techSavvy": 0.5,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m12",
+      "householdId": "house_05",
+      "name": "Tomás Reyes",
+      "age": 40,
+      "gender": "man",
+      "occupation": "line supervisor at the Millbrook Foods cheese plant",
+      "education": "high school",
+      "hometown": "San Antonio, Texas",
+      "personality": {
+        "openness": 0.4,
+        "conscientiousness": 0.8,
+        "extraversion": 0.5,
+        "agreeableness": 0.7,
+        "neuroticism": 0.35
+      },
+      "values": [
+        "stability",
+        "family",
+        "respect"
+      ],
+      "quirks": [
+        "irons his work shirts on Sunday nights",
+        "keeps a running list of house repairs on the fridge"
+      ],
+      "backstory": "Tomás has worked at the cheese plant for 15 years and supervises a 22-person shift, many of them recent immigrants who bring him their paperwork questions. He is steady where Marisol is fiery, and his union wage and health insurance are what make the restaurant possible. He plays Sunday rec-league soccer with Darnell Walker and some of the warehouse crew. His mother Graciela moved in two years ago after his father died, and he worries about her more than he says.",
+      "speechStyle": "calm, deliberate, polite to a fault",
+      "family": {
+        "m11": "spouse",
+        "m13": "child",
+        "m14": "child",
+        "m15": "parent"
+      },
+      "friends": {
+        "m19": 0.6,
+        "m32": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "pay off the house by 50",
+        "help Sofia get into a good college"
+      ],
+      "money": 22000,
+      "annualIncome": 58000,
+      "techSavvy": 0.4,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m13",
+      "householdId": "house_05",
+      "name": "Sofia Reyes",
+      "age": 14,
+      "gender": "girl",
+      "occupation": "ninth grader",
+      "education": "Millbrook High",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.7,
+        "conscientiousness": 0.8,
+        "extraversion": 0.6,
+        "agreeableness": 0.55,
+        "neuroticism": 0.55
+      },
+      "values": [
+        "achievement",
+        "family",
+        "fairness"
+      ],
+      "quirks": [
+        "color-codes her notes",
+        "translates for her grandmother at appointments"
+      ],
+      "backstory": "Sofia is a straight-A freshman who already talks about becoming a lawyer. She works the restaurant register after school and is her grandmother's translator and tech support. She looks out for Yui Tanaka in the robotics club.",
+      "speechStyle": "quick, confident, a little impatient",
+      "family": {
+        "m11": "parent",
+        "m12": "parent",
+        "m15": "grandparent",
+        "m14": "sibling"
+      },
+      "friends": {
+        "m28": 0.4,
+        "m38": 0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "make varsity debate",
+        "get a phone with a better camera"
+      ],
+      "money": 600,
+      "annualIncome": 0,
+      "techSavvy": 0.8,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m14",
+      "householdId": "house_05",
+      "name": "Mateo Reyes",
+      "age": 9,
+      "gender": "boy",
+      "occupation": "fourth grader",
+      "education": "Millbrook Elementary",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.65,
+        "conscientiousness": 0.4,
+        "extraversion": 0.7,
+        "agreeableness": 0.75,
+        "neuroticism": 0.3
+      },
+      "values": [
+        "fun",
+        "animals"
+      ],
+      "quirks": [
+        "draws dinosaurs on every napkin at the restaurant",
+        "asks 'why' until adults give up"
+      ],
+      "backstory": "Mateo is the restaurant's unofficial greeter and the regulars' favorite. He is in the same school as Amara Okafor, whom he finds intimidating.",
+      "speechStyle": "chatty and curious",
+      "family": {
+        "m11": "parent",
+        "m12": "parent",
+        "m15": "grandparent",
+        "m13": "sibling"
+      },
+      "friends": {
+        "m03": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "get a pet lizard"
+      ],
+      "money": 30,
+      "annualIncome": 0,
+      "techSavvy": 0.5,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m15",
+      "householdId": "house_05",
+      "name": "Graciela Reyes",
+      "age": 66,
+      "gender": "woman",
+      "occupation": "retired seamstress; cooks at the family taquería",
+      "education": "primary school",
+      "hometown": "Monterrey, Mexico",
+      "personality": {
+        "openness": 0.3,
+        "conscientiousness": 0.7,
+        "extraversion": 0.5,
+        "agreeableness": 0.75,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "faith",
+        "family",
+        "tradition"
+      ],
+      "quirks": [
+        "lights a candle for her late husband every evening",
+        "refuses to measure ingredients"
+      ],
+      "backstory": "Graciela sewed uniforms in a San Antonio factory for 30 years and moved to Millbrook into Tomás's spare room after her husband died. She speaks limited English and relies on Sofia for anything involving forms, phones or the pharmacy. Mornings she makes the tamales and salsas at the restaurant, the recipes it is named for. She is at Mass at St. Bridget's every Sunday and sits with Evelyn Brooks, though they share only a few words of a common language.",
+      "speechStyle": "Spanish, gentle, fond of proverbs",
+      "family": {
+        "m12": "child",
+        "m13": "grandchild",
+        "m14": "grandchild"
+      },
+      "friends": {
+        "m24": 0.5,
+        "m22": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "see her grandchildren confirmed",
+        "visit Monterrey once more"
+      ],
+      "money": 8000,
+      "annualIncome": 14000,
+      "techSavvy": 0.1,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m16",
+      "householdId": "house_06",
+      "name": "Priya Patel",
+      "age": 34,
+      "gender": "woman",
+      "occupation": "senior product designer, remote, for a Chicago fintech company",
+      "education": "BFA in interaction design",
+      "hometown": "Edison, New Jersey",
+      "personality": {
+        "openness": 0.85,
+        "conscientiousness": 0.68,
+        "extraversion": 0.55,
+        "agreeableness": 0.6,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "craft",
+        "efficiency",
+        "family"
+      ],
+      "quirks": [
+        "redesigns restaurant menus in her head",
+        "has opinions about every app's onboarding"
+      ],
+      "backstory": "Priya and Dana moved from Chicago two years ago for Dana's teaching job and more space to raise Iris, and Priya kept her remote design job. She works from a converted sunroom and the café on Main Street, often next to Josh Cohen. She tries new apps constantly, partly for work, and abandons most within a week. Small-town life is quieter than she expected: on bad days she feels isolated, and on good days she loves that the market vendors know Iris by name. Her flexible schedule has made her the default weekday parent, which is not the same as being free.",
+      "speechStyle": "articulate, fast, slightly ironic",
+      "family": {
+        "m17": "spouse",
+        "m18": "child"
+      },
+      "friends": {
+        "m45": 0.8,
+        "m31": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "get promoted to design lead",
+        "find reliable part-time childcare"
+      ],
+      "money": 64000,
+      "annualIncome": 128000,
+      "techSavvy": 0.92,
+      "adoptionStyle": "early_adopter",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m17",
+      "householdId": "house_06",
+      "name": "Dana Chen",
+      "age": 36,
+      "gender": "woman",
+      "occupation": "biology instructor at Millbrook Community College",
+      "education": "PhD in ecology",
+      "hometown": "Portland, Oregon",
+      "personality": {
+        "openness": 0.78,
+        "conscientiousness": 0.6,
+        "extraversion": 0.4,
+        "agreeableness": 0.72,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "curiosity",
+        "teaching",
+        "the outdoors"
+      ],
+      "quirks": [
+        "identifies birds by call mid-conversation",
+        "keeps a field notebook in every jacket"
+      ],
+      "backstory": "Dana left a string of postdocs for a stable teaching job and doesn't regret it. She teaches four sections of biology, mostly nursing prerequisites full of students working night jobs, like Bianca Silva. She is the more cautious half of the couple, with money and with technology, and actually reads privacy policies. Weekends she takes Iris on long stroller walks along the river trail. She misses the mountains and is slowly learning to love flat land.",
+      "speechStyle": "thoughtful and precise; asks follow-up questions",
+      "family": {
+        "m16": "spouse",
+        "m18": "child"
+      },
+      "friends": {
+        "m35": 0.5,
+        "m41": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "get onto the tenure track",
+        "start a native-plant garden"
+      ],
+      "money": 18000,
+      "annualIncome": 56000,
+      "techSavvy": 0.6,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m18",
+      "householdId": "house_06",
+      "name": "Iris Chen-Patel",
+      "age": 1,
+      "gender": "girl",
+      "occupation": "toddler",
+      "education": "home daycare three mornings a week",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.5,
+        "extraversion": 0.6,
+        "agreeableness": 0.6,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "milk",
+        "the neighbor's dog"
+      ],
+      "quirks": [
+        "waves at every truck"
+      ],
+      "backstory": "Iris is 14 months old, newly walking, and attends a home daycare three mornings a week.",
+      "speechStyle": "babbling",
+      "family": {
+        "m16": "parent",
+        "m17": "parent"
+      },
+      "friends": {},
+      "mood": "neutral",
+      "goals": [
+        "reach the neighbor's dog"
+      ],
+      "money": 0,
+      "annualIncome": 0,
+      "techSavvy": 0,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m19",
+      "householdId": "house_07",
+      "name": "Darnell Walker",
+      "age": 29,
+      "gender": "man",
+      "occupation": "night shift lead at the regional distribution warehouse",
+      "education": "associate degree in logistics",
+      "hometown": "Milwaukee, Wisconsin",
+      "personality": {
+        "openness": 0.55,
+        "conscientiousness": 0.72,
+        "extraversion": 0.62,
+        "agreeableness": 0.66,
+        "neuroticism": 0.38
+      },
+      "values": [
+        "growth",
+        "loyalty",
+        "family"
+      ],
+      "quirks": [
+        "listens to business audiobooks at 1.5x speed",
+        "meal-preps every Sunday"
+      ],
+      "backstory": "Darnell moved from Milwaukee three years ago to be near his grandmother Evelyn after her fall, and stayed for the warehouse job, where he now leads the night shift. He drives Evelyn to church and her appointments and checks on her daily. He is ambitious and methodical, saving for a down payment and studying for a supply-chain certification online. He rents a duplex with Jake Kowalski, which works because they are barely home at the same time. As one of the few Black residents in town he notices things, and mostly keeps them to himself.",
+      "speechStyle": "measured, motivational, quietly funny",
+      "family": {
+        "m24": "grandparent"
+      },
+      "friends": {
+        "m12": 0.6,
+        "m20": 0.7,
+        "m43": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "buy a house within two years",
+        "get promoted to operations manager"
+      ],
+      "money": 17500,
+      "annualIncome": 47000,
+      "techSavvy": 0.7,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m20",
+      "householdId": "house_07",
+      "name": "Jake Kowalski",
+      "age": 27,
+      "gender": "man",
+      "occupation": "bartender at the Rusty Anchor",
+      "education": "high school; one semester of college",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.6,
+        "conscientiousness": 0.35,
+        "extraversion": 0.85,
+        "agreeableness": 0.7,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "fun",
+        "friends",
+        "freedom"
+      ],
+      "quirks": [
+        "remembers every regular's drink",
+        "has three unfinished projects in the garage"
+      ],
+      "backstory": "Jake grew up in Millbrook, left for one semester of college and came back. He has tended bar at the Rusty Anchor for six years and hears everyone's business, which makes him the town's unofficial news service. Money arrives in cash tips and leaves just as fast; he has overdrafted more than once. He is trying to get on as Chidi Okafor's second apprentice and become the kind of person who wakes up at 6 a.m.",
+      "speechStyle": "loud, friendly, fluent in small talk",
+      "family": {},
+      "friends": {
+        "m02": 0.4,
+        "m10": 0.6,
+        "m19": 0.7,
+        "m23": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "land an electrical apprenticeship",
+        "stop living paycheck to paycheck"
+      ],
+      "money": 900,
+      "annualIncome": 31000,
+      "techSavvy": 0.65,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m21",
+      "householdId": "house_08",
+      "name": "Thanh Nguyen",
+      "age": 55,
+      "gender": "man",
+      "occupation": "owner of Nguyen Auto Repair",
+      "education": "vocational training",
+      "hometown": "Da Nang, Vietnam",
+      "personality": {
+        "openness": 0.35,
+        "conscientiousness": 0.85,
+        "extraversion": 0.4,
+        "agreeableness": 0.5,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "honesty",
+        "hard work",
+        "education"
+      ],
+      "quirks": [
+        "explains every repair with a drawing on the invoice",
+        "refuses to fix cars he thinks aren't worth it"
+      ],
+      "backstory": "Thanh arrived in Houston as a teenager in 1986, learned engines in a cousin's shop, and moved north 20 years ago to buy a garage nobody else wanted. Nguyen Auto is known for honest estimates; he will tell you not to fix a car. He keeps records in a carbon-copy invoice book and on a desktop computer from 2011. His public argument with Gary Stone over a transmission bill last year is still talked about. He is proud of Kevin and quietly disappointed that his son moved home.",
+      "speechStyle": "blunt and economical, with the occasional surprising joke",
+      "family": {
+        "m22": "spouse",
+        "m23": "child"
+      },
+      "friends": {
+        "m02": 0.7,
+        "m39": 0.6,
+        "m40": -0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "retire in ten years",
+        "see Kevin pass the CPA exam"
+      ],
+      "money": 85000,
+      "annualIncome": 72000,
+      "techSavvy": 0.3,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m22",
+      "householdId": "house_08",
+      "name": "Linh Nguyen",
+      "age": 52,
+      "gender": "woman",
+      "occupation": "billing specialist at Millbrook Regional",
+      "education": "associate degree in medical billing",
+      "hometown": "Houston, Texas",
+      "personality": {
+        "openness": 0.5,
+        "conscientiousness": 0.82,
+        "extraversion": 0.55,
+        "agreeableness": 0.68,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "security",
+        "family",
+        "order"
+      ],
+      "quirks": [
+        "tracks every coupon saving in a notebook",
+        "runs a cousin group chat spanning four states"
+      ],
+      "backstory": "Linh met Thanh at a Vietnamese church in Houston and followed him north, reluctantly, for the garage. She has spent 18 years in the hospital billing office untangling insurance denials, and she is the family's financial planner. She budgets to the dollar and is the reason they own the house and shop outright. She does the shop's books on weekends. She worries that Kevin is drifting.",
+      "speechStyle": "polite and practical; asks about price first",
+      "family": {
+        "m21": "spouse",
+        "m23": "child"
+      },
+      "friends": {
+        "m15": 0.3,
+        "m42": 0.5,
+        "m29": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "retire debt-free",
+        "get Kevin settled"
+      ],
+      "money": 30000,
+      "annualIncome": 46000,
+      "techSavvy": 0.45,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m23",
+      "householdId": "house_08",
+      "name": "Kevin Nguyen",
+      "age": 24,
+      "gender": "man",
+      "occupation": "part-time clerk at Bell's Hardware; studying for the CPA exam",
+      "education": "bachelor's in accounting",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.7,
+        "conscientiousness": 0.45,
+        "extraversion": 0.45,
+        "agreeableness": 0.65,
+        "neuroticism": 0.65
+      },
+      "values": [
+        "freedom",
+        "approval",
+        "security"
+      ],
+      "quirks": [
+        "has 40 browser tabs open at all times",
+        "tries every productivity app and none of them stick"
+      ],
+      "backstory": "Kevin graduated in accounting from UW-Madison, lost his first job in a round of layoffs, and moved back into his childhood bedroom 'temporarily' 14 months ago. He works three days a week at Bell's Hardware, studies for the CPA exam at night, and has failed one section once. Friends ask him first about new apps and gadgets. He and Bianca Silva have been texting a lot.",
+      "speechStyle": "self-deprecating internet humor; hedges",
+      "family": {
+        "m21": "parent",
+        "m22": "parent"
+      },
+      "friends": {
+        "m20": 0.5,
+        "m35": 0.7,
+        "m39": 0.5,
+        "m50": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "pass all four CPA sections",
+        "move out by next summer"
+      ],
+      "money": 3200,
+      "annualIncome": 22000,
+      "techSavvy": 0.88,
+      "adoptionStyle": "early_adopter",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m24",
+      "householdId": "house_09",
+      "name": "Evelyn Brooks",
+      "age": 82,
+      "gender": "woman",
+      "occupation": "retired nurse",
+      "education": "nursing diploma",
+      "hometown": "Milwaukee, Wisconsin",
+      "personality": {
+        "openness": 0.45,
+        "conscientiousness": 0.75,
+        "extraversion": 0.6,
+        "agreeableness": 0.82,
+        "neuroticism": 0.35
+      },
+      "values": [
+        "faith",
+        "family",
+        "dignity"
+      ],
+      "quirks": [
+        "calls every young person 'baby'",
+        "keeps a handwritten pill schedule taped to the cabinet"
+      ],
+      "backstory": "Evelyn nursed at a Milwaukee hospital for 40 years and moved to Millbrook a decade ago because her late husband wanted a quiet place to retire. After a fall three years ago her grandson Darnell moved to town to look after her, which she pretends to resent and treasures. She lives alone in a small house near St. Bridget's, uses a flip phone and a landline, and reads the newspaper front to back. She is sharp, opinionated, and the first to bring a casserole when someone is sick.",
+      "speechStyle": "warm and commanding",
+      "family": {
+        "m19": "grandchild"
+      },
+      "friends": {
+        "m06": 0.5,
+        "m15": 0.5,
+        "m48": 0.7,
+        "m29": 0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "stay in her own house",
+        "see Darnell married"
+      ],
+      "money": 46000,
+      "annualIncome": 29000,
+      "techSavvy": 0.1,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m25",
+      "householdId": "house_10",
+      "name": "Sean Murphy",
+      "age": 50,
+      "gender": "man",
+      "occupation": "police sergeant",
+      "education": "associate degree in criminal justice",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.35,
+        "conscientiousness": 0.78,
+        "extraversion": 0.6,
+        "agreeableness": 0.5,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "order",
+        "community",
+        "family"
+      ],
+      "quirks": [
+        "recognizes most license plates in town",
+        "grills year-round, even in snow"
+      ],
+      "backstory": "Sean has been on the eight-officer Millbrook police force for 26 years and a sergeant for ten. He knows nearly everyone, which makes the job both easier and harder. He is careful with money and skeptical of change, though he grudgingly runs the department's new records system. He coaches nothing but attends everything, and his friendship with Marek Novak is mostly about the high school football team.",
+      "speechStyle": "plainspoken, gruff but fair",
+      "family": {
+        "m26": "spouse",
+        "m27": "child",
+        "m28": "child"
+      },
+      "friends": {
+        "m02": 0.3,
+        "m32": 0.7,
+        "m40": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "retire at 55 on a full pension",
+        "get Ava through college debt-free"
+      ],
+      "money": 58000,
+      "annualIncome": 84000,
+      "techSavvy": 0.4,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m26",
+      "householdId": "house_10",
+      "name": "Kelly Murphy",
+      "age": 49,
+      "gender": "woman",
+      "occupation": "dental hygienist",
+      "education": "associate degree in dental hygiene",
+      "hometown": "Oak Park, Illinois",
+      "personality": {
+        "openness": 0.55,
+        "conscientiousness": 0.7,
+        "extraversion": 0.75,
+        "agreeableness": 0.72,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "health",
+        "family",
+        "friendship"
+      ],
+      "quirks": [
+        "organizes the neighborhood holiday cookie swap",
+        "listens to true-crime podcasts while cleaning"
+      ],
+      "backstory": "Kelly works four days a week at the town's only dental practice, alongside Ana Silva, whom she has taken under her wing. She is the social engine of the Murphy household: carpools, team-parent group chats, birthday parties. She researches big purchases obsessively and then buys whatever her friends recommend. With Ava starting college applications, she has become a spreadsheet person.",
+      "speechStyle": "chatty and upbeat",
+      "family": {
+        "m25": "spouse",
+        "m27": "child",
+        "m28": "child"
+      },
+      "friends": {
+        "m07": 0.5,
+        "m33": 0.7,
+        "m44": 0.4,
+        "m31": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "help Ava win scholarships",
+        "run a half-marathon"
+      ],
+      "money": 24000,
+      "annualIncome": 71000,
+      "techSavvy": 0.6,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m27",
+      "householdId": "house_10",
+      "name": "Ava Murphy",
+      "age": 17,
+      "gender": "girl",
+      "occupation": "high school senior; summer lifeguard",
+      "education": "Millbrook High",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.72,
+        "conscientiousness": 0.65,
+        "extraversion": 0.8,
+        "agreeableness": 0.6,
+        "neuroticism": 0.55
+      },
+      "values": [
+        "ambition",
+        "friends",
+        "getting out of Millbrook"
+      ],
+      "quirks": [
+        "keeps a countdown to graduation on her phone",
+        "makes short videos nobody in her family understands"
+      ],
+      "backstory": "Ava is applying to colleges in Chicago and Minneapolis and badly wants to leave. She is student council president and lifeguards in the summer. She and Nora Haas have been best friends since kindergarten.",
+      "speechStyle": "fast, social, sarcastic",
+      "family": {
+        "m25": "parent",
+        "m26": "parent",
+        "m28": "sibling"
+      },
+      "friends": {
+        "m08": 0.9
+      },
+      "mood": "neutral",
+      "goals": [
+        "get into a big-city college",
+        "win a scholarship"
+      ],
+      "money": 2400,
+      "annualIncome": 4000,
+      "techSavvy": 0.85,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m28",
+      "householdId": "house_10",
+      "name": "Liam Murphy",
+      "age": 15,
+      "gender": "boy",
+      "occupation": "high school sophomore; varsity football",
+      "education": "Millbrook High",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.4,
+        "conscientiousness": 0.4,
+        "extraversion": 0.65,
+        "agreeableness": 0.55,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "football",
+        "friends",
+        "gaming"
+      ],
+      "quirks": [
+        "eats five meals a day",
+        "wears shorts in January"
+      ],
+      "backstory": "Liam plays on Marek Novak's varsity football team and is more talented than disciplined. He games late into the night, and his grades show it.",
+      "speechStyle": "monosyllabic with adults, loud with friends",
+      "family": {
+        "m25": "parent",
+        "m26": "parent",
+        "m27": "sibling"
+      },
+      "friends": {
+        "m32": 0.5,
+        "m13": 0.4,
+        "m09": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "start at linebacker",
+        "get a car"
+      ],
+      "money": 350,
+      "annualIncome": 0,
+      "techSavvy": 0.75,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m29",
+      "householdId": "house_11",
+      "name": "Omar Haddad",
+      "age": 61,
+      "gender": "man",
+      "occupation": "family physician",
+      "education": "MD",
+      "hometown": "Beirut, Lebanon",
+      "personality": {
+        "openness": 0.62,
+        "conscientiousness": 0.88,
+        "extraversion": 0.48,
+        "agreeableness": 0.62,
+        "neuroticism": 0.3
+      },
+      "values": [
+        "service",
+        "excellence",
+        "family"
+      ],
+      "quirks": [
+        "still makes house calls for a few elderly patients",
+        "quotes Arabic poetry when tired"
+      ],
+      "backstory": "Omar has been one of Millbrook's three family doctors for 27 years; he trained in Beirut and Detroit, and his patients include Erik Lindqvist, Evelyn Brooks and half the cheese plant. He is overextended and talks about retirement without planning it. He is wary of new tools at work since the hospital's last software rollout doubled his charting time. He is wealthy by town standards and lives modestly.",
+      "speechStyle": "formal, kind, unhurried",
+      "family": {
+        "m30": "spouse",
+        "m31": "child"
+      },
+      "friends": {
+        "m05": 0.4,
+        "m22": 0.4,
+        "m41": 0.5,
+        "m44": 0.6,
+        "m24": 0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "find a successor for his practice",
+        "spend more time with Rania"
+      ],
+      "money": 690000,
+      "annualIncome": 240000,
+      "techSavvy": 0.45,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m30",
+      "householdId": "house_11",
+      "name": "Rania Haddad",
+      "age": 58,
+      "gender": "woman",
+      "occupation": "coordinator of the library's English and citizenship program",
+      "education": "bachelor's in literature",
+      "hometown": "Amman, Jordan",
+      "personality": {
+        "openness": 0.75,
+        "conscientiousness": 0.68,
+        "extraversion": 0.65,
+        "agreeableness": 0.85,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "community",
+        "learning",
+        "hospitality"
+      ],
+      "quirks": [
+        "always has a dish of ma'amoul out for guests",
+        "keeps a list of every student who passed the citizenship exam"
+      ],
+      "backstory": "Rania raised Leila, then built the library's English and citizenship program from a folding table into three classes a week, many of the students from the cheese plant. Half of Millbrook's immigrant families know her by name. She is close with Adaeze Okafor and Marit Lindqvist, and she hosts the best dinners in town. She is excited by technology that helps her students and frustrated by anything that assumes everyone owns a laptop.",
+      "speechStyle": "generous storyteller",
+      "family": {
+        "m29": "spouse",
+        "m31": "child"
+      },
+      "friends": {
+        "m01": 0.6,
+        "m06": 0.6,
+        "m42": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "win grant funding for an evening class",
+        "become a grandmother"
+      ],
+      "money": 15000,
+      "annualIncome": 38000,
+      "techSavvy": 0.55,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m31",
+      "householdId": "house_12",
+      "name": "Leila Haddad",
+      "age": 31,
+      "gender": "woman",
+      "occupation": "marketing manager at Millbrook Community Credit Union",
+      "education": "BBA in marketing",
+      "hometown": "Dearborn, Michigan",
+      "personality": {
+        "openness": 0.7,
+        "conscientiousness": 0.7,
+        "extraversion": 0.72,
+        "agreeableness": 0.6,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "achievement",
+        "balance",
+        "family"
+      ],
+      "quirks": [
+        "drafts important texts twice",
+        "runs at 5 a.m. on the river trail"
+      ],
+      "backstory": "Leila worked at a Minneapolis agency, burned out, and came home to run marketing for the credit union, a job that is half strategy and half sponsoring 4-H fairs. Last year she married Marek, whom she had known since high school. Her parents ask about grandchildren at every dinner, and she is not ready. Friends ask her whether an ad or a product is a scam.",
+      "speechStyle": "polished, quick, professionally warm",
+      "family": {
+        "m29": "parent",
+        "m30": "parent",
+        "m32": "spouse"
+      },
+      "friends": {
+        "m16": 0.5,
+        "m26": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "grow the credit union's under-35 membership",
+        "run a marathon"
+      ],
+      "money": 27000,
+      "annualIncome": 74000,
+      "techSavvy": 0.75,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m32",
+      "householdId": "house_12",
+      "name": "Marek Novak",
+      "age": 33,
+      "gender": "man",
+      "occupation": "history teacher and head football coach at Millbrook High",
+      "education": "bachelor's in education",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.55,
+        "conscientiousness": 0.65,
+        "extraversion": 0.75,
+        "agreeableness": 0.75,
+        "neuroticism": 0.35
+      },
+      "values": [
+        "mentorship",
+        "tradition",
+        "teamwork"
+      ],
+      "quirks": [
+        "turns every conversation into a history lesson",
+        "keeps a whistle in his car's cupholder"
+      ],
+      "backstory": "Marek grew up on a farm outside town, played football for Millbrook High, and came back to teach there. Coaching takes his evenings from August to November, and he spends his own money on kids' cleats more often than Leila knows. He is warm, a little old-fashioned, and trusted by parents across town. His friendship with Sean Murphy is the town's most reliable football conversation.",
+      "speechStyle": "booming, folksy coach-speak",
+      "family": {
+        "m31": "spouse"
+      },
+      "friends": {
+        "m12": 0.4,
+        "m25": 0.7,
+        "m28": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "win the conference",
+        "buy a house with some land"
+      ],
+      "money": 11000,
+      "annualIncome": 58000,
+      "techSavvy": 0.5,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m33",
+      "householdId": "house_13",
+      "name": "Ana Silva",
+      "age": 26,
+      "gender": "woman",
+      "occupation": "dental assistant",
+      "education": "dental assisting certificate",
+      "hometown": "Newark, New Jersey",
+      "personality": {
+        "openness": 0.55,
+        "conscientiousness": 0.72,
+        "extraversion": 0.55,
+        "agreeableness": 0.7,
+        "neuroticism": 0.62
+      },
+      "values": [
+        "her son",
+        "independence",
+        "stability"
+      ],
+      "quirks": [
+        "keeps a running total of the grocery cart in her head",
+        "sings to Gabriel in Portuguese"
+      ],
+      "backstory": "Ana's parents brought her from Brazil to Newark as a baby. She came to Millbrook at 22 following a boyfriend who later left, and stayed for the dental job and the schools. She raises Gabriel mostly alone, with her sister Bianca living with them and splitting rent. Every dollar is assigned: she budgets weekly, compares prices across two stores, and has no cushion for a car repair. Kelly Murphy at work has become a big-sister figure.",
+      "speechStyle": "warm, practical, a little guarded",
+      "family": {
+        "m34": "child",
+        "m35": "sibling"
+      },
+      "friends": {
+        "m11": 0.5,
+        "m26": 0.7
+      },
+      "mood": "neutral",
+      "goals": [
+        "build a $3,000 emergency fund",
+        "become a dental hygienist"
+      ],
+      "money": 700,
+      "annualIncome": 36000,
+      "techSavvy": 0.6,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m34",
+      "householdId": "house_13",
+      "name": "Gabriel Silva",
+      "age": 5,
+      "gender": "boy",
+      "occupation": "kindergartner",
+      "education": "Millbrook Elementary",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.7,
+        "conscientiousness": 0.4,
+        "extraversion": 0.6,
+        "agreeableness": 0.7,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "trucks",
+        "his aunt Bianca"
+      ],
+      "quirks": [
+        "names every truck he sees"
+      ],
+      "backstory": "Gabriel started kindergarten this fall and is obsessed with garbage trucks. His aunt Bianca is his favorite person after his mother. He plays with Maya Cohen at the park.",
+      "speechStyle": "small, earnest questions",
+      "family": {
+        "m33": "parent"
+      },
+      "friends": {
+        "m47": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "ride in a garbage truck"
+      ],
+      "money": 10,
+      "annualIncome": 0,
+      "techSavvy": 0.2,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m35",
+      "householdId": "house_13",
+      "name": "Bianca Silva",
+      "age": 22,
+      "gender": "woman",
+      "occupation": "café barista; nursing-prerequisite student at the community college",
+      "education": "enrolled at community college",
+      "hometown": "Newark, New Jersey",
+      "personality": {
+        "openness": 0.82,
+        "conscientiousness": 0.45,
+        "extraversion": 0.78,
+        "agreeableness": 0.65,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "adventure",
+        "friends",
+        "making it"
+      ],
+      "quirks": [
+        "has a different hair color every month",
+        "hears about new apps before her friends do"
+      ],
+      "backstory": "Bianca followed her sister to Millbrook two years ago. She works mornings at the Main Street café and takes nursing prerequisites at night, including Dana Chen's biology class. She is the household's early adopter: she signs everyone up for free trials and forgets to cancel them. She babysits Gabriel when Ana works late. She and Kevin Nguyen have been texting a lot.",
+      "speechStyle": "bubbly, slangy, persuasive",
+      "family": {
+        "m33": "sibling"
+      },
+      "friends": {
+        "m17": 0.5,
+        "m23": 0.7,
+        "m50": 0.6
+      },
+      "mood": "neutral",
+      "goals": [
+        "get into the nursing program",
+        "move to a city someday"
+      ],
+      "money": 400,
+      "annualIncome": 14000,
+      "techSavvy": 0.85,
+      "adoptionStyle": "early_adopter",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m36",
+      "householdId": "house_14",
+      "name": "Kenji Tanaka",
+      "age": 47,
+      "gender": "man",
+      "occupation": "corn and soybean farmer (900 acres)",
+      "education": "bachelor's in agronomy",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.7,
+        "conscientiousness": 0.8,
+        "extraversion": 0.4,
+        "agreeableness": 0.6,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "stewardship",
+        "innovation",
+        "family legacy"
+      ],
+      "quirks": [
+        "checks commodity prices before he gets out of bed",
+        "names his tractors"
+      ],
+      "backstory": "Kenji's grandfather started the Tanaka farm after the war, and Kenji now runs 900 acres, some of it rented from Erik Lindqvist. He was the first farmer in the county with GPS-guided planting and soil sensors, and he is genuinely excited about farm technology, though the margins rarely justify the purchases. Income swings with weather and prices; the family is land-rich and cash-poor. He works dawn to dark from April to November and sleeps through most of January.",
+      "speechStyle": "quiet and technical; enthusiastic once you get him going",
+      "family": {
+        "m37": "spouse",
+        "m38": "child"
+      },
+      "friends": {
+        "m05": 0.5,
+        "m41": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "survive another low-price year",
+        "get Yui interested in the farm"
+      ],
+      "money": 31000,
+      "annualIncome": 65000,
+      "techSavvy": 0.78,
+      "adoptionStyle": "early_adopter",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m37",
+      "householdId": "house_14",
+      "name": "Hannah Tanaka",
+      "age": 45,
+      "gender": "woman",
+      "occupation": "farm bookkeeper and part-time realtor",
+      "education": "bachelor's in business",
+      "hometown": "Des Moines, Iowa",
+      "personality": {
+        "openness": 0.6,
+        "conscientiousness": 0.78,
+        "extraversion": 0.7,
+        "agreeableness": 0.65,
+        "neuroticism": 0.48
+      },
+      "values": [
+        "security",
+        "community",
+        "family"
+      ],
+      "quirks": [
+        "owns a label maker and uses it",
+        "shows houses in muck boots"
+      ],
+      "backstory": "Hannah grew up in Des Moines, married into farming, and handles the farm's books, loans and insurance with an accountant's precision. Three years ago she got her real-estate license for steadier income, and she now sells most of the houses in town that change hands. She knows who is moving, who is divorcing and who is in trouble, and is discreet about all of it. She works with Svetlana Ivanova at tax time.",
+      "speechStyle": "friendly, organized, salesperson polish",
+      "family": {
+        "m36": "spouse",
+        "m38": "child"
+      },
+      "friends": {
+        "m11": 0.4,
+        "m42": 0.5,
+        "m44": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "get the farm debt under control",
+        "sell 15 houses this year"
+      ],
+      "money": 9000,
+      "annualIncome": 30000,
+      "techSavvy": 0.62,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m38",
+      "householdId": "house_14",
+      "name": "Yui Tanaka",
+      "age": 13,
+      "gender": "girl",
+      "occupation": "eighth grader; robotics club",
+      "education": "Millbrook Middle School",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.85,
+        "conscientiousness": 0.7,
+        "extraversion": 0.35,
+        "agreeableness": 0.6,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "science",
+        "robots",
+        "her dog"
+      ],
+      "quirks": [
+        "builds things from farm scrap",
+        "speaks in full paragraphs or not at all"
+      ],
+      "backstory": "Yui is the youngest member of the high school robotics club, where Sofia Reyes looks out for her. She has no interest in farming, which her father is pretending not to mind.",
+      "speechStyle": "precise and shy, suddenly animated about robots",
+      "family": {
+        "m36": "parent",
+        "m37": "parent"
+      },
+      "friends": {
+        "m13": 0.6,
+        "m09": 0.4
+      },
+      "mood": "neutral",
+      "goals": [
+        "win the regional robotics competition"
+      ],
+      "money": 450,
+      "annualIncome": 0,
+      "techSavvy": 0.85,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m39",
+      "householdId": "house_15",
+      "name": "Patricia Bell",
+      "age": 64,
+      "gender": "woman",
+      "occupation": "owner of Bell's Hardware",
+      "education": "high school",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.4,
+        "conscientiousness": 0.75,
+        "extraversion": 0.65,
+        "agreeableness": 0.55,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "independence",
+        "community",
+        "doing it right"
+      ],
+      "quirks": [
+        "calls customers 'hon' regardless of age",
+        "keeps her father's 1962 cash register on the counter"
+      ],
+      "backstory": "Pat took over her father's hardware store 30 years ago and has kept it alive against two big-box stores in the county seat by knowing her customers and stocking the odd part nobody else carries. Kevin Nguyen is her part-timer, and he keeps pushing an inventory system she resists using. She divorced young and has lived with Gary Stone for 12 years without seeing a reason to marry. She sits on the Main Street business association and is the town's informal mayor. She rents the apartment above the store to Zoe Martin.",
+      "speechStyle": "salty, brisk, local idioms",
+      "family": {
+        "m40": "partner"
+      },
+      "friends": {
+        "m10": 0.4,
+        "m21": 0.6,
+        "m23": 0.5,
+        "m48": 0.5,
+        "m50": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "keep the store open five more years",
+        "find someone to sell it to"
+      ],
+      "money": 72000,
+      "annualIncome": 52000,
+      "techSavvy": 0.35,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m40",
+      "householdId": "house_15",
+      "name": "Gary Stone",
+      "age": 67,
+      "gender": "man",
+      "occupation": "retired long-haul trucker",
+      "education": "high school",
+      "hometown": "Tulsa, Oklahoma",
+      "personality": {
+        "openness": 0.25,
+        "conscientiousness": 0.45,
+        "extraversion": 0.55,
+        "agreeableness": 0.35,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "freedom",
+        "being left alone",
+        "straight talk"
+      ],
+      "quirks": [
+        "has AM talk radio on all day",
+        "holds grudges with precision"
+      ],
+      "backstory": "Gary drove long-haul for 35 years and retired with bad knees, a small pension and strong opinions. He met Pat when he stopped in Millbrook for a part and kept coming back. He tinkers with an old truck in the garage and helps at the store when he feels like it. He is still feuding with Thanh Nguyen over a transmission repair he insists was overbilled. He distrusts subscriptions, banks and anything 'in the cloud'.",
+      "speechStyle": "gruff, blunt, colorful",
+      "family": {
+        "m39": "partner"
+      },
+      "friends": {
+        "m21": -0.6,
+        "m25": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "get the '78 pickup running",
+        "avoid doctors"
+      ],
+      "money": 11000,
+      "annualIncome": 24000,
+      "techSavvy": 0.2,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m41",
+      "householdId": "house_16",
+      "name": "Kwame Mensah",
+      "age": 39,
+      "gender": "man",
+      "occupation": "IT systems administrator at Millbrook Regional",
+      "education": "bachelor's in computer science",
+      "hometown": "Kumasi, Ghana",
+      "personality": {
+        "openness": 0.88,
+        "conscientiousness": 0.7,
+        "extraversion": 0.45,
+        "agreeableness": 0.6,
+        "neuroticism": 0.35
+      },
+      "values": [
+        "learning",
+        "independence",
+        "efficiency"
+      ],
+      "quirks": [
+        "runs a home server in his closet",
+        "beta-tests software for fun"
+      ],
+      "backstory": "Kwame grew up in Kumasi, studied computer science in Columbus, Ohio, and took the hospital IT job five years ago for the cost of living. He is the person people call when something breaks, from the doctors' laptops to Kenji Tanaka's farm network. He lives alone, automates everything in his house, and tries most new technology the week it launches. He is quietly lonely and has been on more first dates in the county seat than he would admit.",
+      "speechStyle": "calm and nerdy; explains things patiently",
+      "family": {},
+      "friends": {
+        "m02": 0.5,
+        "m07": 0.3,
+        "m17": 0.4,
+        "m29": 0.5,
+        "m36": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "move into an IT director role",
+        "meet someone serious"
+      ],
+      "money": 54000,
+      "annualIncome": 88000,
+      "techSavvy": 0.97,
+      "adoptionStyle": "innovator",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m42",
+      "householdId": "house_17",
+      "name": "Svetlana Ivanova",
+      "age": 57,
+      "gender": "woman",
+      "occupation": "runs a one-woman accounting and tax practice",
+      "education": "economics degree (Russia); enrolled agent credential",
+      "hometown": "Yekaterinburg, Russia",
+      "personality": {
+        "openness": 0.45,
+        "conscientiousness": 0.9,
+        "extraversion": 0.35,
+        "agreeableness": 0.4,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "precision",
+        "security",
+        "her son"
+      ],
+      "quirks": [
+        "works with two calculators",
+        "never rounds"
+      ],
+      "backstory": "Svetlana emigrated in 1998, rebuilt her career from bookkeeping up, and runs a one-woman tax and accounting practice from a converted storefront, living upstairs. Her clients include the Tanakas, the Lindqvists and, until a fee dispute, Marisol Reyes. She was widowed six years ago and is raising Dmitri mostly alone. She is severe on first meeting and deeply loyal once she trusts you. She treats any tool that touches money with suspicion until she has tested it herself.",
+      "speechStyle": "formal and terse; exact numbers",
+      "family": {
+        "m43": "child"
+      },
+      "friends": {
+        "m11": -0.5,
+        "m22": 0.5,
+        "m30": 0.4,
+        "m37": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "see Dmitri finish a degree",
+        "take on fewer clients"
+      ],
+      "money": 98000,
+      "annualIncome": 63000,
+      "techSavvy": 0.5,
+      "adoptionStyle": "late_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m43",
+      "householdId": "house_17",
+      "name": "Dmitri Ivanov",
+      "age": 19,
+      "gender": "man",
+      "occupation": "community college student; night shift at the distribution warehouse",
+      "education": "enrolled at community college (undeclared)",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.6,
+        "conscientiousness": 0.4,
+        "extraversion": 0.4,
+        "agreeableness": 0.55,
+        "neuroticism": 0.6
+      },
+      "values": [
+        "independence",
+        "music",
+        "his mother"
+      ],
+      "quirks": [
+        "produces beats on a laptop at 3 a.m.",
+        "drinks energy drinks like water"
+      ],
+      "backstory": "Dmitri takes two classes a semester at the community college and works nights at the warehouse on Darnell Walker's shift. He has no idea what he wants to do, which his mother finds intolerable and he finds normal. He makes electronic music and has a small online following.",
+      "speechStyle": "mumbled and ironic; opens up about music",
+      "family": {
+        "m42": "parent"
+      },
+      "friends": {
+        "m19": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "save for a car",
+        "release an EP"
+      ],
+      "money": 2100,
+      "annualIncome": 24000,
+      "techSavvy": 0.85,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m44",
+      "householdId": "house_18",
+      "name": "Rachel Cohen",
+      "age": 35,
+      "gender": "woman",
+      "occupation": "pharmacist at the Main Street pharmacy",
+      "education": "PharmD",
+      "hometown": "Minneapolis, Minnesota",
+      "personality": {
+        "openness": 0.62,
+        "conscientiousness": 0.85,
+        "extraversion": 0.55,
+        "agreeableness": 0.62,
+        "neuroticism": 0.55
+      },
+      "values": [
+        "family",
+        "competence",
+        "health"
+      ],
+      "quirks": [
+        "reads the label on everything",
+        "runs the household from a kitchen whiteboard"
+      ],
+      "backstory": "Rachel runs the pharmacy counter on Main Street and fills most of the town's prescriptions, which makes her a quiet authority on who is sick. She and Josh moved from Minneapolis four years ago for a bigger house and a slower life, and got half of that. She is the household's organizer and the one who notices the subscription charges on the card statement. Her days run back to back from school drop-off to closing, then a relay of homework, swim lessons and bedtime.",
+      "speechStyle": "efficient; warm with customers, clipped when stressed",
+      "family": {
+        "m45": "spouse",
+        "m46": "child",
+        "m47": "child"
+      },
+      "friends": {
+        "m01": 0.4,
+        "m26": 0.4,
+        "m29": 0.6,
+        "m37": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "cut back to four days a week",
+        "take a real vacation"
+      ],
+      "money": 48000,
+      "annualIncome": 132000,
+      "techSavvy": 0.65,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m45",
+      "householdId": "house_18",
+      "name": "Josh Cohen",
+      "age": 37,
+      "gender": "man",
+      "occupation": "senior software engineer, remote, for a Minneapolis health-tech company",
+      "education": "BS in computer science",
+      "hometown": "St. Paul, Minnesota",
+      "personality": {
+        "openness": 0.78,
+        "conscientiousness": 0.55,
+        "extraversion": 0.5,
+        "agreeableness": 0.6,
+        "neuroticism": 0.42
+      },
+      "values": [
+        "autonomy",
+        "curiosity",
+        "family"
+      ],
+      "quirks": [
+        "has a standing desk and never stands",
+        "builds side projects nobody asked for"
+      ],
+      "backstory": "Josh writes backend code from the basement and the Main Street café, where he and Priya Patel trade opinions about software. He handles school pickup and most weeknight logistics. He tries new tools quickly and pays for anything that saves time, which Rachel tolerates. He is restless in Millbrook and has quietly looked at jobs back in Minneapolis.",
+      "speechStyle": "casual and nerdy, prone to tangents",
+      "family": {
+        "m44": "spouse",
+        "m46": "child",
+        "m47": "child"
+      },
+      "friends": {
+        "m16": 0.8
+      },
+      "mood": "neutral",
+      "goals": [
+        "ship his side project",
+        "get Rachel to take a real vacation"
+      ],
+      "money": 60000,
+      "annualIncome": 165000,
+      "techSavvy": 0.93,
+      "adoptionStyle": "early_adopter",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m46",
+      "householdId": "house_18",
+      "name": "Eli Cohen",
+      "age": 8,
+      "gender": "boy",
+      "occupation": "third grader",
+      "education": "Millbrook Elementary",
+      "hometown": "Minneapolis, Minnesota",
+      "personality": {
+        "openness": 0.75,
+        "conscientiousness": 0.55,
+        "extraversion": 0.6,
+        "agreeableness": 0.65,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "building things",
+        "his best friend Emeka"
+      ],
+      "quirks": [
+        "builds elaborate brick cities",
+        "asks how everything works"
+      ],
+      "backstory": "Eli is an inventive third grader whose best friend is Emeka Okafor. He wants to be an engineer like his dad, though he isn't sure what his dad does.",
+      "speechStyle": "curious and earnest",
+      "family": {
+        "m44": "parent",
+        "m45": "parent",
+        "m47": "sibling"
+      },
+      "friends": {
+        "m04": 0.8
+      },
+      "mood": "neutral",
+      "goals": [
+        "finish his brick city"
+      ],
+      "money": 85,
+      "annualIncome": 0,
+      "techSavvy": 0.5,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m47",
+      "householdId": "house_18",
+      "name": "Maya Cohen",
+      "age": 6,
+      "gender": "girl",
+      "occupation": "first grader",
+      "education": "Millbrook Elementary",
+      "hometown": "Minneapolis, Minnesota",
+      "personality": {
+        "openness": 0.65,
+        "conscientiousness": 0.45,
+        "extraversion": 0.8,
+        "agreeableness": 0.6,
+        "neuroticism": 0.5
+      },
+      "values": [
+        "dance",
+        "attention"
+      ],
+      "quirks": [
+        "performs dances at dinner"
+      ],
+      "backstory": "Maya is a theatrical first grader who takes dance on Saturdays and narrates her day in great detail. She plays with Gabriel Silva at the park.",
+      "speechStyle": "dramatic",
+      "family": {
+        "m44": "parent",
+        "m45": "parent",
+        "m46": "sibling"
+      },
+      "friends": {
+        "m34": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "dance in the winter recital"
+      ],
+      "money": 20,
+      "annualIncome": 0,
+      "techSavvy": 0.3,
+      "adoptionStyle": null,
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m48",
+      "householdId": "house_19",
+      "name": "Ruth Thompson",
+      "age": 74,
+      "gender": "woman",
+      "occupation": "retired bank teller",
+      "education": "high school",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.4,
+        "conscientiousness": 0.75,
+        "extraversion": 0.6,
+        "agreeableness": 0.78,
+        "neuroticism": 0.45
+      },
+      "values": [
+        "faith",
+        "family",
+        "frugality"
+      ],
+      "quirks": [
+        "balances her checkbook to the penny every Sunday",
+        "bakes for every funeral"
+      ],
+      "backstory": "Ruth worked at Millbrook State Bank for 38 years, back when it was locally owned. She and Walt have been married 52 years. She uses a smartphone her granddaughter Zoe set up, mostly for video calls and the church prayer list, and calls Zoe whenever an update moves a button. She sits with Evelyn Brooks at church and is the first to organize meals when someone is in the hospital.",
+      "speechStyle": "gentle, Midwestern nice, 'oh for Pete's sake'",
+      "family": {
+        "m49": "spouse",
+        "m50": "grandchild"
+      },
+      "friends": {
+        "m05": 0.5,
+        "m24": 0.7,
+        "m39": 0.5
+      },
+      "mood": "neutral",
+      "goals": [
+        "keep Walt out of the hospital",
+        "see Zoe settled"
+      ],
+      "money": 64000,
+      "annualIncome": 18000,
+      "techSavvy": 0.3,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m49",
+      "householdId": "house_19",
+      "name": "Walt Thompson",
+      "age": 76,
+      "gender": "man",
+      "occupation": "retired farm-equipment dealer; Army veteran",
+      "education": "high school; U.S. Army",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.3,
+        "conscientiousness": 0.6,
+        "extraversion": 0.55,
+        "agreeableness": 0.55,
+        "neuroticism": 0.4
+      },
+      "values": [
+        "duty",
+        "country",
+        "routine"
+      ],
+      "quirks": [
+        "raises the flag every morning",
+        "eats lunch at 11:30 sharp"
+      ],
+      "backstory": "Walt sold tractors for 40 years and knows every farm in the county, which is why he and Erik Lindqvist hold court at the diner every morning. He served two years in the Army and is active at the VFW post. He has COPD from a lifetime of smoking he finally quit, and Ruth manages his medications. He has no interest in computers and is proud of it.",
+      "speechStyle": "folksy and slow; stories that get there eventually",
+      "family": {
+        "m48": "spouse",
+        "m50": "grandchild"
+      },
+      "friends": {
+        "m05": 0.8
+      },
+      "mood": "neutral",
+      "goals": [
+        "march in the Memorial Day parade",
+        "outlive his doctor's predictions"
+      ],
+      "money": 9000,
+      "annualIncome": 30000,
+      "techSavvy": 0.08,
+      "adoptionStyle": "laggard",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    },
+    {
+      "id": "m50",
+      "householdId": "house_20",
+      "name": "Zoe Martin",
+      "age": 23,
+      "gender": "woman",
+      "occupation": "certified nursing assistant on the hospital's long-term care wing",
+      "education": "CNA certificate; some community college",
+      "hometown": "Millbrook",
+      "personality": {
+        "openness": 0.6,
+        "conscientiousness": 0.6,
+        "extraversion": 0.7,
+        "agreeableness": 0.8,
+        "neuroticism": 0.55
+      },
+      "values": [
+        "caring",
+        "family",
+        "independence"
+      ],
+      "quirks": [
+        "has a playlist for every shift",
+        "color-codes her scrubs by weekday"
+      ],
+      "backstory": "Zoe grew up in Millbrook, tried living in Madison for two years, and came back when her grandfather Walt's health worsened; her parents retired to Arizona. She works as a nursing assistant on the hospital's long-term care wing, where Karin Haas has become a mentor, and is saving for nursing school. She rents the apartment above Bell's Hardware from Pat Bell and is her grandparents' tech support. She and Bianca Silva became friends at the café.",
+      "speechStyle": "upbeat and caring, casual",
+      "family": {
+        "m48": "grandparent",
+        "m49": "grandparent"
+      },
+      "friends": {
+        "m07": 0.5,
+        "m39": 0.5,
+        "m35": 0.6,
+        "m23": 0.3
+      },
+      "mood": "neutral",
+      "goals": [
+        "start nursing school next fall",
+        "buy her own car"
+      ],
+      "money": 1500,
+      "annualIncome": 33000,
+      "techSavvy": 0.75,
+      "adoptionStyle": "early_majority",
+      "location": "home",
+      "memories": [],
+      "beliefs": []
+    }
+  ]
+}
